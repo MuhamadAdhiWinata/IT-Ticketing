@@ -1,0 +1,38 @@
+{
+  "name": "it-ticketing-and-work-monitoring",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "nuxt lint"
+  },
+  "dependencies": {
+    "@google/genai": "^2.4.0",
+    "@lucide/vue": "^1.45.0",
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "@pinia/nuxt": "^1.0.2",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "lucide-vue-next": "^1.0.0",
+    "nuxt": "^4.5.2",
+    "pinia": "^4.0.3",
+    "vite": "^6.2.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.14.0",
+    "autoprefixer": "^10.4.21",
+    "esbuild": "^0.25.0",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.21.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.3"
+  }
+}

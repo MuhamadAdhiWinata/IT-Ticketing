@@ -1,0 +1,1 @@
+import{F as e,f as t,y as n,z as r}from"./BSl7Kgzz.js";var i={class:`min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col`},a=n({__name:`flat`,setup(n){return(n,a)=>(e(),t(`div`,i,[r(n.$slots,`default`)]))}});export{a as default};

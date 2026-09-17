@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #026bb1;
+  --color-primary-50: #f0f7fb;
+  --color-primary-100: #dcecf6;
+  --color-primary-200: #bde0f0;
+  --color-primary-300: #88c6e4;
+  --color-primary-400: #4ba7d5;
+  --color-primary-500: #026bb1;
+  --color-primary-600: #026bb1;
+  --color-primary-700: #025790;
+  --color-primary-800: #024675;
+  --color-primary-900: #03395e;
+  --color-primary-950: #02233b;
+
+  --color-blue-50: #f0f7fb;
+  --color-blue-100: #dcecf6;
+  --color-blue-200: #bde0f0;
+  --color-blue-300: #88c6e4;
+  --color-blue-400: #4ba7d5;
+  --color-blue-500: #026bb1;
+  --color-blue-600: #026bb1;
+  --color-blue-700: #025790;
+  --color-blue-800: #024675;
+  --color-blue-900: #03395e;
+}
+
+@utility custom-variant-dark {
+  &:where(.dark, .dark *) {
+    @apply text-white;
+  }
+}
+
+
+:root {
+  --app-primary: #026bb1;
+  --app-primary-hover: #025790;
+  --app-primary-dark: #014674;
+  --app-primary-light: #e6f1f8;
+}
+
+html {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/* Custom scrollbar for mobile & desktop */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.4);
+}

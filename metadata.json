@@ -1,0 +1,6 @@
+{
+  "name": "IT-Ticketing & Work Monitoring",
+  "description": "Sistem pelacakan tiket IT dengan tracking resi, multi-stage attachment, worklog, delegasi vendor, dan monitoring pekerjaan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
