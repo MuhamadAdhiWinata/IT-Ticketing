@@ -42,23 +42,6 @@ export const INITIAL_USERS: AppUser[] = [
     avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
   },
   {
-    id: 'IT-LEAD',
-    name: 'Hendra Wijaya',
-    email: 'hendra.wijaya@it.company.co.id',
-    role: 'IT_LEAD',
-    department: 'IT Operations Management',
-    avatarUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'VND-001',
-    name: 'Bambang Sudibyo',
-    email: 'bambang@mitrasolusiprinter.com',
-    role: 'VENDOR',
-    department: 'Hardware Vendor Partner',
-    vendorName: 'PT Mitra Solusi Printer',
-    avatarUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
-  },
-  {
     id: 'ADMIN-001',
     name: 'Administrator IT',
     email: 'sysadmin@company.co.id',

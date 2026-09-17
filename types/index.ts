@@ -1,4 +1,4 @@
-export type UserRole = 'USER_NON_IT' | 'IT_WORKER' | 'IT_LEAD' | 'VENDOR' | 'SYSTEM_ADMIN';
+export type UserRole = 'USER_NON_IT' | 'IT_WORKER' | 'SYSTEM_ADMIN';
 
 export type TicketStatus = 'DRAFT' | 'PROCESS' | 'DELEGASI' | 'SELESAI';
 

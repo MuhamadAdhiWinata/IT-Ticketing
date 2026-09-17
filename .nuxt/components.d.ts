@@ -20,7 +20,6 @@ export const CommonAppSelect: typeof import("../components/common/AppSelect.vue"
 export const CommonToastContainer: typeof import("../components/common/ToastContainer.vue")['default']
 export const DashboardDailyWorkView: typeof import("../components/dashboard/DailyWorkView.vue")['default']
 export const DashboardITDashboard: typeof import("../components/dashboard/ITDashboard.vue")['default']
-export const DashboardLeadDashboardView: typeof import("../components/dashboard/LeadDashboardView.vue")['default']
 export const DashboardMyWorkView: typeof import("../components/dashboard/MyWorkView.vue")['default']
 export const ViewsAdminMasterView: typeof import("../components/views/AdminMasterView.vue")['default']
 export const ViewsCreateTicketView: typeof import("../components/views/CreateTicketView.vue")['default']
@@ -57,7 +56,6 @@ export const LazyCommonAppSelect: LazyComponent<typeof import("../components/com
 export const LazyCommonToastContainer: LazyComponent<typeof import("../components/common/ToastContainer.vue")['default']>
 export const LazyDashboardDailyWorkView: LazyComponent<typeof import("../components/dashboard/DailyWorkView.vue")['default']>
 export const LazyDashboardITDashboard: LazyComponent<typeof import("../components/dashboard/ITDashboard.vue")['default']>
-export const LazyDashboardLeadDashboardView: LazyComponent<typeof import("../components/dashboard/LeadDashboardView.vue")['default']>
 export const LazyDashboardMyWorkView: LazyComponent<typeof import("../components/dashboard/MyWorkView.vue")['default']>
 export const LazyViewsAdminMasterView: LazyComponent<typeof import("../components/views/AdminMasterView.vue")['default']>
 export const LazyViewsCreateTicketView: LazyComponent<typeof import("../components/views/CreateTicketView.vue")['default']>

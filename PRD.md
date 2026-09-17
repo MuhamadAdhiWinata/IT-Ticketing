@@ -4,15 +4,15 @@
 
 ## IT-Ticketing
 
-**Versi:** 2.0
+**Versi:** 2.1
 **Platform:** Web Application (Nuxt 4 + Tailwind + Pinia)
-**Target Pengguna:** Karyawan Non-IT, IT Support, Programmer, Teknisi Internal, IT Lead, dan Vendor
+**Target Pengguna:** Karyawan Non-IT, IT Worker, dan System Admin
 
 ---
 
 # 1. Ringkasan Eksekutif & Tujuan
 
-Sistem **IT-Ticketing** dirancang untuk menjadi pusat komunikasi, pencatatan, monitoring, dan pengelolaan pekerjaan antara karyawan Non-IT (*User*) dengan Tim IT seperti IT Support, Programmer, Network/Hardware Specialist, maupun pihak eksternal seperti Teknisi dan Vendor.
+Sistem **IT-Ticketing** dirancang untuk menjadi pusat komunikasi, pencatatan, monitoring, dan pengelolaan pekerjaan antara karyawan Non-IT (*User*) dengan Tim IT seperti IT Support, Programmer, dan Network/Hardware Specialist.
 
 Sistem mengutamakan:
 
@@ -75,12 +75,12 @@ Management dapat melihat:
 | Peran               | Deskripsi                                                             | Hak Akses Utama                                                                                                                                                                                                    |
 | ------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **User (Non-IT)**   | Karyawan pelapor masalah / peminta pekerjaan                          | Membuat tiket, menyimpan draft, issue tiket, melihat status, tracking stepper, upload lampiran request, memberikan komentar, melakukan recall/reopen sesuai aturan                                                 |
-| **IT Worker**       | Programmer, IT Support, Network/Hardware Specialist, Teknisi Internal | Melihat tiket yang tersedia, mengambil tiket dari detail/kanban, mengerjakan tiket, menambahkan catatan kerja (Kirim), upload lampiran proses, delegasi, menyelesaikan tiket, export laporan pribadi                |
-| **IT Lead**         | Supervisor / Manager IT                                               | Seluruh akses IT Worker + membuat tiket langsung, monitoring workload, Kanban tim, laporan tim                                                                                                                      |
-| **Vendor**          | Pihak eksternal yang menerima delegasi pekerjaan                      | Hanya melihat dan memperbarui tiket yang didelegasikan kepadanya sesuai permission                                                                                                                                 |
+| **IT Worker**       | Programmer, IT Support, Network/Hardware Specialist                   | Melihat tiket yang tersedia, mengambil tiket dari detail/kanban, mengerjakan tiket, menambahkan catatan kerja (Kirim), upload lampiran proses, delegasi, menyelesaikan tiket, export laporan pribadi                |
 | **System Admin**    | Administrator aplikasi                                                | Mengelola user, role, permission, kategori, vendor, teknisi, konfigurasi sistem                                                                                                                                    |
 
 > **Catatan:** Tidak ada role "Admin" untuk assignment. Worker mengambil tiket sendiri dari detail atau kanban (self-assign).
+
+> **Catatan:** Role IT Lead dan Vendor telah dihapus. Fitur delegasi ke vendor eksternal tetap tersedia melalui menu Delegasi.
 
 ---
 
@@ -265,8 +265,9 @@ Halaman detail tiket menggunakan **Progress Tracking Stepper** sebagai pusat UI.
 * Tombol **Kirim** disabled jika textarea kosong
 * Setelah klik **Kirim**, textarea dan file input otomatis kosong
 * Setelah klik **Selesai** atau **Konfirmasi Assign**, textarea dan file input otomatis kosong
-* Tombol aksi hanya muncul untuk role IT Worker dan IT Lead (tidak untuk USER_NON_IT)
+* Tombol aksi hanya muncul untuk role IT Worker (tidak untuk USER_NON_IT)
 * Tombol aksi tidak muncul di tahap REQUEST/Created
+* Tombol aksi stacked vertically di mobile, inline horizontal di desktop
 
 ---
 
@@ -584,6 +585,13 @@ Sedangkan:
 * Tombol stacked vertically di mobile (`flex-col`)
 * Tombol sejajar horizontal di desktop (`sm:flex-row`)
 * Setiap tombol full width di mobile
+* Tombol Back (kembali) disembunyikan di mobile
+
+## 12.5. Judul Tiket di Detail
+
+* Di mobile: judul wrap natural (tanpa `truncate`), semua teks terlihat
+* Di desktop: judul tetap `truncate` satu baris rapi
+* Kode tiket ditampilkan sebagai badge mono dengan background biru
 
 ---
 
@@ -904,60 +912,76 @@ Tujuannya agar pekerja dapat langsung mengetahui:
 
 # 25. Daily Work
 
-Halaman khusus pekerjaan harian.
+Halaman khusus pekerjaan harian dengan fitur lengkap.
+
+## 25.1. Header
+
+* Banner informasi PRD 25
+* Tombol "Catat Log Kerja" untuk menambah worklog manual
+* Tombol "Ekspor Excel" untuk download rekap worklog
+* Tombol "Cetak" untuk cetak laporan
+
+## 25.2. Filter Periode
+
+Preset cepat:
 
 ```text
-12 September 2026
-
-Total Ticket       8
-Process            3
-Selesai            4
-Delegasi           1
+Hari Ini
+7 Hari Terakhir
+30 Hari Terakhir
+Bulan Ini
+Rentang Kustom
 ```
 
-Detail:
+Navigasi tanggal:
+
+* Tombol mundur/maju per periode
+* Input tanggal manual (Dari — Sampai)
+* Filter worker (Semua Worker / individual)
+
+## 25.3. KPI Cards
 
 ```text
-09:00 - 09:30
-TCK-001
-Printer Produksi
-
-09:45 - 10:20
-TCK-003
-User Login
-
-10:30 - 12:00
-TCK-007
-ERP Error
+Tiket Dikerjakan    Tiket Selesai    On-Progress    Total Jam Kerja
+     8                  4                3              42.5 Jam
 ```
+
+## 25.4. Timeline Aktivitas
+
+Urutan kronologis catatan pengerjaan tiket oleh teknisi IT:
+
+```text
+┌─────────────────────────────────────────────────────┐
+│ 📅 17 Sep 2026 │ TCK-202609-001 │ Printer Error    │
+│ ⏱ 09:00 - 09:45 (45 mnt)            [Lihat Tiket] │
+│ ─────────────────────────────────────────────────── │
+│ Pengecekan driver printer, reinstall firmware...    │
+│ 👤 Teknisi: Budi Santoso                            │
+└─────────────────────────────────────────────────────┘
+```
+
+## 25.5. Modal Catat Log Kerja
+
+Form untuk menambah worklog manual:
+
+```text
+Pilih Tiket yang Dikerjakan
+Tanggal Pengerjaan
+Durasi (Menit)
+Jam Mulai
+Jam Selesai
+Rincian Aktivitas / Troubleshooting
+```
+
+## 25.6. Export Excel
+
+Filter otomatis berdasarkan:
+* Rentang tanggal yang dipilih
+* Worker yang dipilih
 
 ---
 
-# 26. Dashboard IT Lead
-
-IT Lead dapat melihat:
-
-```text
-TOTAL TICKET       125
-
-DRAFT               12
-PROCESS             35
-SELESAI             70
-DELEGASI             8
-```
-
-Kemudian workload:
-
-```text
-Budi       8 ticket
-Andi       5 ticket
-Dedi       7 ticket
-Rizal      3 ticket
-```
-
----
-
-# 27. Laporan Pekerja
+# 26. Laporan Pekerja
 
 Laporan dapat difilter berdasarkan:
 
@@ -999,7 +1023,7 @@ Total Worklog:
 
 ---
 
-# 28. Export
+# 27. Export
 
 Sistem menyediakan:
 
@@ -1007,7 +1031,7 @@ Sistem menyediakan:
 
 Untuk:
 
-* Daily Work
+* Daily Work (dengan filter rentang tanggal & worker)
 * Weekly Work
 * Monthly Work
 * Ticket List
@@ -1027,7 +1051,7 @@ Untuk laporan formal:
 
 ---
 
-# 29. Audit Trail
+# 28. Audit Trail
 
 Semua aktivitas penting dicatat.
 
@@ -1063,7 +1087,7 @@ Audit trail tidak dapat diubah oleh user biasa.
 
 ---
 
-# 30. Search
+# 29. Search
 
 Search harus menjadi fitur utama aplikasi.
 
@@ -1098,28 +1122,20 @@ Tanggal
 
 ---
 
-# 31. Ticket Detail & Progress Stepper-Centric
+# 30. Ticket Detail & Progress Stepper-Centric
 
 Halaman detail:
 
 ```text
-TCK-202609-001          ← kode tiket ditampilkan
-
-Printer Kehabisan Tinta & Paper Jam
-
-Status:
-PROCESS
-
-Primary Worker:
-Budi
-
-Supporting:
-Andi
-Dedi
+┌─────────────────────────────────────────┐
+│ TCK-202609-001 ← badge mono biru       │
+│                                         │
+│ Printer Kehabisan Tinta & Paper Jam     │
+│ Status: PROCESS    Worker: Budi         │
+└─────────────────────────────────────────┘
 ```
 
-**Core UI/UX Concept:**
-Progress Tracking Stepper adalah pusat utama (main content) dari detail tiket.
+**Core UI/UX Concept:** Progress Tracking Stepper adalah pusat utama (main content) dari detail tiket.
 Setiap tahapan pada stepper memuat informasi detail dan lampiran terkait secara langsung:
 - **Created**: Tanggal/waktu, pembuat tiket, dan lampiran foto/request awal.
 - **Issued & Assigned**: Waktu issue, siapa yang melakukan issue, serta assignment worker.
@@ -1147,7 +1163,55 @@ Catatan & Histori pada Tahap Ini:
 
 ---
 
-# 32. Struktur Data Utama
+# 31. Navbar & Role Switcher
+
+## 31.1. Komponen Navbar
+
+* Toggle sidebar button (hamburger)
+* Judul tab aktif
+* Role switcher dropdown (untuk testing)
+* Tombol "Buat Tiket"
+* Toggle dark mode
+
+## 31.2. Role Switcher
+
+Fitur testing untuk beralih antar role pengguna:
+
+* Klik avatar/nama → dropdown muncul
+* Tampilkan daftar semua user dengan role badge
+* Klik user → switch role aktif
+* Jika tab baru tidak diizinkan → redirect ke tab pertama yang diizinkan
+
+## 31.3. Tombol "Buat Tiket"
+
+* Teks "Buat Tiket" disembunyikan di mobile (`hidden sm:inline`)
+* Hanya ikon PlusCircle yang tampil di mobile
+
+---
+
+# 32. Notifikasi Toast
+
+Sistem notifikasi menggunakan komponen toast (bukan alert() browser).
+
+## 32.1. Jenis Toast
+
+| Type | Warna | Icon |
+|------|-------|------|
+| success | hijau | ✓ |
+| error | merah | ✗ |
+| info | biru | ℹ |
+
+## 32.2. Perilaku
+
+* Muncul di pojok kanan atas
+* Auto-dismiss setelah 3 detik
+* Bisa di-dismiss manual (klik ×)
+* Animasi enter/exit (slide + fade)
+* Menggantikan penggunaan `alert()` sebelumnya
+
+---
+
+# 33. Struktur Data Utama
 
 ```json
 {
@@ -1236,7 +1300,7 @@ Catatan & Histori pada Tahap Ini:
 
 ---
 
-# 33. Entity Utama Database
+# 34. Entity Utama Database
 
 Minimal sistem membutuhkan entity:
 
@@ -1272,7 +1336,7 @@ notifications
 
 ---
 
-# 34. Aturan Bisnis Utama
+# 35. Aturan Bisnis Utama
 
 ### Rule 01
 
@@ -1354,9 +1418,13 @@ Selesai/Konfirmasi Assign/Delegasi (completeStage) menyimpan worklog sekaligus m
 
 Setelah klik tombol aksi (Kirim/Selesai/Konfirmasi/Delegasi), form input (textarea + file) otomatis kosong.
 
+### Rule 21
+
+Saat pindah tab, `selectedTicketId` dan `selectedTicket` otomatis dibersihkan dari URL dan state.
+
 ---
 
-# 35. Prinsip UX User Non-IT
+# 36. Prinsip UX User Non-IT
 
 Form User harus sederhana.
 
@@ -1378,7 +1446,7 @@ IT kemudian menentukan informasi teknis.
 
 ---
 
-# 36. Prinsip UX IT Worker
+# 37. Prinsip UX IT Worker
 
 IT Worker juga tidak boleh dibebani form panjang.
 
@@ -1400,7 +1468,7 @@ Detail teknis hanya diisi ketika memang diperlukan.
 
 ---
 
-# 37. Roadmap Pengembangan
+# 38. Roadmap Pengembangan
 
 ## Phase 1 — Core Ticketing
 
@@ -1436,11 +1504,12 @@ Detail teknis hanya diisi ketika memang diperlukan.
 ## Phase 3 — Collaboration
 
 * ~~Delegation~~
-* ~~Vendor~~
+* ~~Vendor (master data untuk delegasi)~~
 * ~~Technician~~
+* ~~Toast Notification System~~
+* ~~Role Switcher (testing)~~
 * Reopen
 * User Confirmation
-* Notification
 
 ## Phase 4 — Management
 
@@ -1449,12 +1518,12 @@ Detail teknis hanya diisi ketika memang diperlukan.
 * ~~SLA~~ (dihapus)
 * Analytics
 * Reports
-* Excel Export
-* PDF Export
+* ~~Excel Export~~
+* ~~PDF Export~~
 
 ---
 
-# 38. Definition of Done — MVP
+# 39. Definition of Done — MVP
 
 MVP dinyatakan berhasil apabila:
 
@@ -1487,13 +1556,21 @@ MVP dinyatakan berhasil apabila:
 * ~~Mobile-first responsive design.~~
 * ~~Ticket ID ditampilkan di halaman detail.~~
 * ~~Form input kosong setelah submit.~~
+* ~~Toast notification (menggantikan alert()).~~
+* ~~Daily Work dengan filter periode, KPI, timeline, dan modal catat worklog.~~
+* ~~Export Excel dengan filter rentang tanggal & worker.~~
+* ~~Role switcher untuk testing.~~
+* ~~Tombol Back disembunyikan di mobile.~~
+* ~~Judul tiket wrap natural di mobile.~~
+* ~~Tombol aksi stacked di mobile.~~
+* ~~Kode tiket ditampilkan sebagai badge mono biru.~~
+* ~~URL state bersih saat pindah tab.~~
 * Recall menghasilkan Ticket ID baru dengan referensi tiket lama.
-* IT dapat melakukan export laporan.
 * User tidak dapat melihat Internal Note dan attachment internal.
 
 ---
 
-# 39. Konsep Produk
+# 40. Konsep Produk
 
 Sistem ini bukan sekadar:
 

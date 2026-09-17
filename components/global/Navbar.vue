@@ -67,7 +67,7 @@
                 <span class="block font-semibold truncate">{{ user.name }}</span>
                 <span class="block text-[10px] text-gray-400 truncate">{{ user.department }}</span>
               </div>
-              <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase shrink-0 font-mono" :class="user.role === 'IT_LEAD' ? 'bg-purple-100 text-purple-700' : user.role === 'IT_WORKER' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'">
+              <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase shrink-0 font-mono" :class="user.role === 'IT_WORKER' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'">
                 {{ user.role.split('_')[0] }}
               </span>
             </button>

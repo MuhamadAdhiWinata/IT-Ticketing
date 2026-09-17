@@ -31532,7 +31532,7 @@ var namedMiddleware = {};
 var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default = [{
 	name: "index",
 	path: "/",
-	component: () => import('../build/pages-IostO6H0.mjs')
+	component: () => import('../build/pages-D8uh1cUw.mjs')
 }];
 //#endregion
 //#region node_modules/.pnpm/nuxt@4.5.2_@babel+plugin-syntax-jsx@7.29.7_@babel+core@7.29.7__@babel+plugin-syntax-typ_b2f3456d9ee03761d9795a2322dd2cf2/node_modules/nuxt/dist/pages/runtime/plugins/router.js
@@ -32541,10 +32541,10 @@ var plugin = /* @__PURE__ */ defineNuxtPlugin({
 });
 //#endregion
 //#region components/global/Navbar.vue?nuxt_component=async&nuxt_component_name=Navbar&nuxt_component_export=default
-var Navbar_default = (0, vue_exports.defineAsyncComponent)(() => import('../build/Navbar-EcunUAsX.mjs').then((n) => n.n).then((r) => r["default"] || r.default || r));
+var Navbar_default = (0, vue_exports.defineAsyncComponent)(() => import('../build/Navbar-GNFsSRZn.mjs').then((n) => n.n).then((r) => r["default"] || r.default || r));
 //#endregion
 //#region components/global/Sidebar.vue?nuxt_component=async&nuxt_component_name=Sidebar&nuxt_component_export=default
-var Sidebar_default = (0, vue_exports.defineAsyncComponent)(() => import('../build/Sidebar-PGZZFpWp.mjs').then((n) => n.n).then((r) => r["default"] || r.default || r));
+var Sidebar_default = (0, vue_exports.defineAsyncComponent)(() => import('../build/Sidebar-BALmhqxi.mjs').then((n) => n.n).then((r) => r["default"] || r.default || r));
 //#endregion
 //#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Fcomponents.plugin.mjs
 var lazyGlobalComponents = [["Navbar", Navbar_default], ["Sidebar", Sidebar_default]];
@@ -33863,7 +33863,7 @@ __reExport(server_renderer_exports, /* @__PURE__ */ __toESM(require_server_rende
 //#endregion
 //#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Flayouts.mjs
 var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Flayouts_default = {
-	default: (0, vue_exports.defineAsyncComponent)(() => import('../build/default-CsyWifDr.mjs').then((m) => m.default || m)),
+	default: (0, vue_exports.defineAsyncComponent)(() => import('../build/default-Cr5izjTm.mjs').then((m) => m.default || m)),
 	flat: (0, vue_exports.defineAsyncComponent)(() => import('../build/flat-BCEZ7lSM.mjs').then((m) => m.default || m))
 };
 //#endregion
@@ -34125,23 +34125,6 @@ var INITIAL_USERS = [
 		role: "IT_WORKER",
 		department: "DevOps & Database",
 		avatarUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80"
-	},
-	{
-		id: "IT-LEAD",
-		name: "Hendra Wijaya",
-		email: "hendra.wijaya@it.company.co.id",
-		role: "IT_LEAD",
-		department: "IT Operations Management",
-		avatarUrl: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80"
-	},
-	{
-		id: "VND-001",
-		name: "Bambang Sudibyo",
-		email: "bambang@mitrasolusiprinter.com",
-		role: "VENDOR",
-		department: "Hardware Vendor Partner",
-		vendorName: "PT Mitra Solusi Printer",
-		avatarUrl: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80"
 	},
 	{
 		id: "ADMIN-001",
@@ -34980,21 +34963,11 @@ var useAppStore = defineStore("app", {
 						"my-work",
 						"daily-work"
 					],
-					"IT_LEAD": [
-						"tracking",
-						"dashboard",
-						"my-work",
-						"daily-work",
-						"lead-dashboard",
-						"reports"
-					],
-					"VENDOR": ["tracking"],
 					"SYSTEM_ADMIN": [
 						"tracking",
 						"dashboard",
 						"my-work",
 						"daily-work",
-						"lead-dashboard",
 						"reports",
 						"admin"
 					]

@@ -84,18 +84,17 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Search, Kanban, Briefcase, CalendarDays, BarChart3, FileSpreadsheet, Settings, X } from 'lucide-vue-next';
+import { Search, Kanban, Briefcase, CalendarDays, FileSpreadsheet, Settings, X } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
 
 const store = useAppStore();
 
 const navItems = [
-  { id: 'tracking', label: 'Tracking', icon: Search, roles: ['USER_NON_IT', 'IT_WORKER', 'IT_LEAD', 'SYSTEM_ADMIN'] },
-  { id: 'dashboard', label: 'IT Dashboard', icon: Kanban, roles: ['IT_WORKER', 'IT_LEAD', 'SYSTEM_ADMIN'] },
-  { id: 'my-work', label: 'My Work', icon: Briefcase, roles: ['IT_WORKER', 'IT_LEAD', 'SYSTEM_ADMIN'] },
-  { id: 'daily-work', label: 'Daily Work', icon: CalendarDays, roles: ['IT_WORKER', 'IT_LEAD', 'SYSTEM_ADMIN'] },
-  { id: 'lead-dashboard', label: 'Lead View', icon: BarChart3, roles: ['IT_LEAD', 'SYSTEM_ADMIN'] },
-  { id: 'reports', label: 'Reports', icon: FileSpreadsheet, roles: ['IT_LEAD', 'SYSTEM_ADMIN'] },
+  { id: 'tracking', label: 'Tracking', icon: Search, roles: ['USER_NON_IT', 'IT_WORKER', 'SYSTEM_ADMIN'] },
+  { id: 'dashboard', label: 'IT Dashboard', icon: Kanban, roles: ['IT_WORKER', 'SYSTEM_ADMIN'] },
+  { id: 'my-work', label: 'My Work', icon: Briefcase, roles: ['IT_WORKER', 'SYSTEM_ADMIN'] },
+  { id: 'daily-work', label: 'Daily Work', icon: CalendarDays, roles: ['IT_WORKER', 'SYSTEM_ADMIN'] },
+  { id: 'reports', label: 'Reports', icon: FileSpreadsheet, roles: ['SYSTEM_ADMIN'] },
   { id: 'admin', label: 'Master Data', icon: Settings, roles: ['SYSTEM_ADMIN'] },
 ];
 

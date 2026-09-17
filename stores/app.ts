@@ -194,9 +194,7 @@ export const useAppStore = defineStore('app', {
         const roleTabs: Record<string, string[]> = {
           'USER_NON_IT': ['tracking'],
           'IT_WORKER': ['tracking', 'dashboard', 'my-work', 'daily-work'],
-          'IT_LEAD': ['tracking', 'dashboard', 'my-work', 'daily-work', 'lead-dashboard', 'reports'],
-          'VENDOR': ['tracking'],
-          'SYSTEM_ADMIN': ['tracking', 'dashboard', 'my-work', 'daily-work', 'lead-dashboard', 'reports', 'admin'],
+          'SYSTEM_ADMIN': ['tracking', 'dashboard', 'my-work', 'daily-work', 'reports', 'admin'],
         };
         const allowed = roleTabs[user.role] || ['tracking'];
         if (!allowed.includes(this.activeTab)) {

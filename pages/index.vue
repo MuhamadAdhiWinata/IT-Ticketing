@@ -32,11 +32,6 @@
 
       <DailyWorkView v-else-if="store.activeTab === 'daily-work'" />
 
-      <LeadDashboardView
-        v-else-if="store.activeTab === 'lead-dashboard'"
-        :tickets="store.tickets"
-      />
-
       <ReportsView
         v-else-if="store.activeTab === 'reports'"
         :tickets="store.tickets"
@@ -61,7 +56,6 @@ import TrackingView from '~/components/views/TrackingView.vue';
 import ITDashboard from '~/components/dashboard/ITDashboard.vue';
 import MyWorkView from '~/components/dashboard/MyWorkView.vue';
 import DailyWorkView from '~/components/dashboard/DailyWorkView.vue';
-import LeadDashboardView from '~/components/dashboard/LeadDashboardView.vue';
 import ReportsView from '~/components/views/ReportsView.vue';
 import AdminMasterView from '~/components/views/AdminMasterView.vue';
 import CreateTicketView from '~/components/views/CreateTicketView.vue';

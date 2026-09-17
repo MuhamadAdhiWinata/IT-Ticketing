@@ -429,7 +429,7 @@ const newWlDuration = ref(45);
 const newWlDesc = ref('');
 
 const itWorkers = computed(() => {
-  return store.allUsers.filter(u => u.role === 'IT_WORKER' || u.role === 'IT_LEAD');
+  return store.allUsers.filter(u => u.role === 'IT_WORKER');
 });
 
 const applyPreset = (presetId: string) => {
