@@ -69,8 +69,8 @@
           </button>
         </div>
 
-        <!-- Worker Filter -->
-        <div class="flex items-center gap-2">
+        <!-- Worker Filter (hanya untuk SYSTEM_ADMIN) -->
+        <div v-if="store.currentUser?.role === 'SYSTEM_ADMIN'" class="flex items-center gap-2">
           <span class="text-xs font-bold text-gray-500">Worker:</span>
           <select
             v-model="selectedWorkerId"
@@ -418,7 +418,11 @@ const presets = [
 const activePreset = ref<'today' | '7days' | '30days' | 'month' | 'custom'>('7days');
 const startDate = ref(getDaysAgoIso(6));
 const endDate = ref(getTodayIso());
-const selectedWorkerId = ref('ALL');
+const selectedWorkerId = ref(
+  store.currentUser?.role === 'IT_WORKER'
+    ? store.currentUser.id
+    : 'ALL'
+);
 
 const isAddModalOpen = ref(false);
 const newWlTicketId = ref('');

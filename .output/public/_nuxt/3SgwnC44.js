@@ -1,1 +1,0 @@
-import{at as e}from"./CQQR7gJa.js";var t=e([]),n=0;function r(){function e(e,r=`info`,i=3e3){let a=n++;t.value.push({id:a,message:e,type:r}),setTimeout(()=>{t.value=t.value.filter(e=>e.id!==a)},i)}function r(e){t.value=t.value.filter(t=>t.id!==e)}return{toasts:t,toast:e,dismiss:r}}export{r as t};

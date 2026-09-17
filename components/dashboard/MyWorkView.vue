@@ -29,6 +29,10 @@
           <span class="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold block">Telah Selesai</span>
           <span class="text-lg font-bold text-emerald-950 dark:text-emerald-200 font-mono">{{ completedCount }}</span>
         </div>
+        <div class="px-4 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-center">
+          <span class="text-[11px] text-gray-500 font-bold block">Draft</span>
+          <span class="text-lg font-bold text-gray-700 dark:text-gray-300 font-mono">{{ draftCount }}</span>
+        </div>
       </div>
     </div>
 
@@ -102,9 +106,12 @@ const props = defineProps<{
 const statusFilter = ref('ALL');
 
 const myAssignedTickets = computed(() => {
+  const currentUserId = props.currentUser.id;
   return props.tickets.filter(t =>
-    (t.assignedTo && t.assignedTo === props.currentUser.id) ||
-    (t.requestedBy && t.requestedBy === props.currentUser.id)
+    (t.assignedTo && t.assignedTo === currentUserId) ||
+    (t.requestedBy && t.requestedBy === currentUserId) ||
+    (t.supporting_member_details?.some(m => m.id === currentUserId)) ||
+    (t.worklogs?.some(wl => wl.worker_id === currentUserId))
   );
 });
 
@@ -116,4 +123,5 @@ const filteredTickets = computed(() => {
 const activeCount = computed(() => myAssignedTickets.value.filter(t => t.status === 'PROCESS').length);
 const delegatedCount = computed(() => myAssignedTickets.value.filter(t => t.status === 'DELEGASI').length);
 const completedCount = computed(() => myAssignedTickets.value.filter(t => t.status === 'SELESAI').length);
+const draftCount = computed(() => myAssignedTickets.value.filter(t => t.status === 'DRAFT').length);
 </script>
