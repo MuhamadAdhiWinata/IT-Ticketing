@@ -3,13 +3,13 @@
     <!-- Header -->
     <div class="p-3 sm:px-6 sm:py-4 border-b border-gray-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 rounded-2xl shadow-xs">
       <div class="flex items-center gap-3">
-        <button @click="store.backToMainView()" class="p-2 rounded-xl bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 text-gray-600 dark:text-gray-300 shrink-0">
+        <button @click="store.backToMainView()" class="hidden sm:flex p-2 rounded-xl bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 text-gray-600 dark:text-gray-300 shrink-0">
           <ArrowLeft class="w-5 h-5" />
         </button>
         <div class="min-w-0">
-          <p class="text-[10px] sm:text-xs font-bold text-[#026bb1] dark:text-[#52b5f2] tracking-wide mb-0.5">{{ ticket.id }}</p>
-          <h2 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 truncate">
-            <span class="truncate">{{ ticket.title }}</span>
+          <span class="text-xs font-mono font-bold text-[#026bb1] dark:text-[#52b5f2] bg-blue-50 dark:bg-blue-950/50 px-2.5 py-0.5 rounded-md border border-blue-200 dark:border-blue-900">{{ ticket.id }}</span>
+          <h2 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 sm:truncate">
+            <span class="sm:truncate">{{ ticket.title }}</span>
             <span v-if="isCompleted" class="inline-flex items-center gap-1 text-[10px] sm:text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800 shrink-0">
               <CheckCircle2 class="w-3.5 h-3.5" /> Selesai
             </span>
