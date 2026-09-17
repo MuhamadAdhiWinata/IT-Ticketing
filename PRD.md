@@ -4,9 +4,9 @@
 
 ## IT-Ticketing
 
-**Versi:** 1.1
-**Platform:** Web Application
-**Target Pengguna:** Karyawan Non-IT, IT Support, Programmer, Teknisi Internal, IT Lead/Admin, dan Vendor
+**Versi:** 2.0
+**Platform:** Web Application (Nuxt 4 + Tailwind + Pinia)
+**Target Pengguna:** Karyawan Non-IT, IT Support, Programmer, Teknisi Internal, IT Lead, dan Vendor
 
 ---
 
@@ -75,33 +75,57 @@ Management dapat melihat:
 | Peran               | Deskripsi                                                             | Hak Akses Utama                                                                                                                                                                                                    |
 | ------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **User (Non-IT)**   | Karyawan pelapor masalah / peminta pekerjaan                          | Membuat tiket, menyimpan draft, issue tiket, melihat status, tracking stepper, upload lampiran request, memberikan komentar, melakukan recall/reopen sesuai aturan                                                 |
-| **IT Worker**       | Programmer, IT Support, Network/Hardware Specialist, Teknisi Internal | Melihat tiket yang tersedia, mengambil tiket, menerima assignment, mengerjakan tiket, menambah supporting member, upload lampiran proses, worklog, komentar, delegasi, menyelesaikan tiket, export laporan pribadi |
-| **IT Admin / Lead** | Supervisor / Manager IT                                               | Seluruh akses IT Worker + assignment/reassignment, pengelolaan master data, monitoring workload, Kanban tim, SLA, laporan tim                                                                                      |
+| **IT Worker**       | Programmer, IT Support, Network/Hardware Specialist, Teknisi Internal | Melihat tiket yang tersedia, mengambil tiket dari detail/kanban, mengerjakan tiket, menambahkan catatan kerja (Kirim), upload lampiran proses, delegasi, menyelesaikan tiket, export laporan pribadi                |
+| **IT Lead**         | Supervisor / Manager IT                                               | Seluruh akses IT Worker + membuat tiket langsung, monitoring workload, Kanban tim, laporan tim                                                                                                                      |
 | **Vendor**          | Pihak eksternal yang menerima delegasi pekerjaan                      | Hanya melihat dan memperbarui tiket yang didelegasikan kepadanya sesuai permission                                                                                                                                 |
 | **System Admin**    | Administrator aplikasi                                                | Mengelola user, role, permission, kategori, vendor, teknisi, konfigurasi sistem                                                                                                                                    |
+
+> **Catatan:** Tidak ada role "Admin" untuk assignment. Worker mengambil tiket sendiri dari detail atau kanban (self-assign).
 
 ---
 
 # 4. Konsep Status & Lifecycle
 
-Lifecycle utama tiket:
+## 4.1. Stepper Flow (Detail Tiket)
+
+Lifecycle utama tiket mengikuti **stepper** pada halaman detail:
 
 ```text
-[ DRAFT ]
-     │
-     ▼
-[ PROCESS / ON-PROGRESS ]
-     │
-     ├──────────────► [ DELEGASI ]
-     │                    │
-     │                    ▼
-     │              kembali ke PROCESS
-     │
-     ▼
-[ SELESAI ]
+[ Created (Draft) ]        ← selalu selesai, tiket sudah dibuat
+       │
+       ▼
+[ Issued & Assigned ]      ← worker mengambil / konfirmasi assign
+       │
+       ▼
+[ Process (In Progress) ]  ← pengerjaan aktif, catatan kerja
+       │
+       ├──── [ Selesai Internal ]  ← pekerjaan IT selesai
+       │          │
+       │          ▼
+       │    [ Delegasi ]           ← eskalasi ke vendor (opsional)
+       │          │
+       │          ▼
+       │    kembali ke Selesai Internal
+       │
+       ▼
+     SELESAI
 ```
 
-## Catatan Penting
+## 4.2. Status Tiket
+
+```text
+DRAFT → PROCESS → SELESAI
+                    └─→ DELEGASI (dari tahap Selesai Internal)
+```
+
+| Status    | Keterangan |
+|-----------|------------|
+| DRAFT     | Tiket dibuat, belum di-issue ke antrean IT |
+| PROCESS   | Tiket sedang dikerjakan oleh IT Worker |
+| SELESAI   | Pekerjaan dinyatakan selesai |
+| DELEGASI  | Tiket didelegasikan ke vendor/teknisi eksternal |
+
+## 4.3. Catatan Penting
 
 **Recall bukan status lifecycle utama.**
 
@@ -156,54 +180,15 @@ Pada tahap ini:
 
 * Primary Worker ditentukan
 * Supporting Member dapat ditambahkan
-* Worklog dapat dibuat
+* Worklog dapat dibuat (dengan stageKey IN_PROGRESS)
 * Lampiran proses dapat ditambahkan
 * Komentar dapat ditambahkan
 * Internal Note dapat dibuat
-* Tiket dapat didelegasikan
+* Tiket dapat diselesaikan (→ SELESAI)
 
 ---
 
-## 5.3. DELEGASI
-
-Delegasi digunakan ketika penanganan membutuhkan pihak lain.
-
-Jenis delegasi:
-
-```text
-DELEGASI_VENDOR
-DELEGASI_TEKNISI
-```
-
-Contoh:
-
-```text
-IT Internal
-     │
-     ▼
-Vendor Printer
-     │
-     ▼
-Service Center
-```
-
-Setelah penanganan pihak tersebut selesai, tiket dapat kembali ke:
-
-```text
-PROCESS
-```
-
-atau langsung:
-
-```text
-SELESAI
-```
-
-tergantung kebutuhan pekerjaan.
-
----
-
-## 5.4. SELESAI
+## 5.3. SELESAI
 
 Pekerjaan dinyatakan selesai.
 
@@ -216,60 +201,205 @@ Pada saat status menjadi `SELESAI`:
 * Attachment tetap tersimpan
 * Audit trail tetap tersimpan
 
-Opsi tambahan:
-
-> User dapat melakukan **Konfirmasi Selesai**.
-
-Jika User menyatakan masalah belum selesai:
-
-```text
-SELESAI
-   ↓
-REOPEN
-   ↓
-PROCESS
-```
+Pada tahap Selesai Internal, worker memiliki opsi untuk **Delegasi** ke vendor jika diperlukan.
 
 ---
 
-# 6. Recall
+## 5.4. DELEGASI
 
-Recall bukan penghapusan tiket.
+Delegasi digunakan ketika penanganan membutuhkan pihak lain.
 
-Jika sebuah kasus lama membutuhkan penanganan baru, sistem membuat tiket baru.
+Delegasi **hanya bisa dilakukan dari tahap Selesai Internal** (status SELESAI).
 
-Contoh:
-
-```text
-TCK-202609-001
-Printer rusak
-SELESAI
-
-        ↓ RECALL
-
-TCK-202609-025
-Printer kembali rusak
-PROCESS
-```
-
-Tiket baru memiliki:
+Jenis delegasi:
 
 ```text
-referenced_ticket_id:
-TCK-202609-001
+DELEGASI_VENDOR
+DELEGASI_TEKNISI
 ```
 
-Sehingga hubungan antar kasus tetap dapat dilacak.
+Setelah delegasi, tiket berpindah ke status DELEGASI dan tahap Delegasi muncul di stepper.
 
 ---
 
-# 7. Multi-Stage Attachments
+# 6. Stepper & Tombol Aksi
+
+Halaman detail tiket menggunakan **Progress Tracking Stepper** sebagai pusat UI.
+
+## 6.1. Tahapan Stepper
+
+| Tahap | Label | StageKey | Keterangan |
+|-------|-------|----------|------------|
+| 1 | Created (Draft) | REQUEST | Selalu selesai. Tiket dibuat oleh user. |
+| 2 | Issued & Assigned | ASSIGN | Worker mengambil/menerima tiket |
+| 3 | Process (In Progress) | IN_PROGRESS | Pengerjaan aktif & catatan kerja |
+| 4 | Selesai Internal | COMPLETION | Penyelesaian tugas IT |
+| 5 | Delegasi (opsional) | DELEGATION | Eskalasi ke vendor/teknisi luar |
+
+## 6.2. Tombol Aksi per Tahap
+
+### Tahap ASSIGN
+
+| Tombol | Fungsi |
+|--------|--------|
+| **Kirim** | Menyimpan catatan kerja (worklog) tanpa mengubah status. Form input kosong setelah diklik. |
+| **Konfirmasi Assign** | Majukan tiket ke tahap PROCESS (status → PROCESS). |
+
+### Tahap IN_PROGRESS
+
+| Tombol | Fungsi |
+|--------|--------|
+| **Kirim** | Menyimpan catatan kerja (worklog) tanpa mengubah status. Form input kosong setelah diklik. |
+| **Selesai** | Majukan tiket ke tahap Selesai Internal (status → SELESAI). |
+
+### Tahap COMPLETION (status SELESAI)
+
+| Tombol | Fungsi |
+|--------|--------|
+| **Kirim** | Menyimpan catatan kerja (worklog) tanpa mengubah status. Form input kosong setelah diklik. |
+| **Delegasi** | Majukan tiket ke tahap Delegasi (status → DELEGASI). Hanya muncul jika status belum DELEGASI. |
+
+## 6.3. Aturan Submit
+
+* Tombol **Kirim** hanya muncul di tahap ASSIGN dan IN_PROGRESS
+* Tombol **Kirim** disabled jika textarea kosong
+* Setelah klik **Kirim**, textarea dan file input otomatis kosong
+* Setelah klik **Selesai** atau **Konfirmasi Assign**, textarea dan file input otomatis kosong
+* Tombol aksi hanya muncul untuk role IT Worker dan IT Lead (tidak untuk USER_NON_IT)
+* Tombol aksi tidak muncul di tahap REQUEST/Created
+
+---
+
+# 7. Worklog & Catatan Kerja
+
+## 7.1. Konsep
+
+Worklog berfungsi sebagai **absen/check-in kerja** — mencatat bahwa worker sedang/ sudah mengerjakan tiket.
+
+Setiap catatan kerja memiliki `stageKey` yang menunjukkan tahap mana catatan tersebut dibuat:
+
+| stageKey | Keterangan |
+|----------|------------|
+| ASSIGN | Catatan saat tahap penugasan |
+| IN_PROGRESS | Catatan saat tahap pengerjaan |
+| COMPLETION | Catatan saat tahap penyelesaian |
+
+## 7.2. Dua Cara Menyimpan
+
+### Cara 1: Tombol "Kirim" (saveWorklogNote)
+
+Menyimpan catatan **tanpa mengubah status** tiket.
+
+```text
+User ketik catatan → klik "Kirim"
+  → worklog tersimpan dengan stageKey tahap saat ini
+  → status tiket TIDAK berubah
+  → form input (textarea + file) kosong
+```
+
+### Cara 2: Tombol "Selesai" / "Konfirmasi Assign" / "Delegasi" (completeStage)
+
+Menyimpan catatan **sekaligus mengubah status** tiket.
+
+```text
+User ketik catatan → klik "Selesai"
+  → worklog tersimpan dengan stageKey tahap saat ini
+  → audit_log entry dibuat (TAHAP_[stageKey]_SELESAI)
+  → status tiket berubah ke tahap berikutnya
+  → form input (textarea + file) kosong
+```
+
+## 7.3. Struktur Data Worklog
+
+```json
+{
+  "id": "wl-1789613906338",
+  "stageKey": "IN_PROGRESS",
+  "worker_id": "IT-001",
+  "worker_name": "Budi Santoso",
+  "date": "2026-09-17",
+  "start_at": "09.58",
+  "finish_at": "09.58",
+  "duration_minutes": 0,
+  "description": "hai",
+  "created_at": "2026-09-17T02:58:34.906Z"
+}
+```
+
+## 7.4. Sumber Data
+
+Worklog menjadi sumber data utama untuk:
+
+* Daily Work
+* Weekly Report
+* Monthly Report
+* Productivity Report
+* Export Excel
+* Export PDF
+
+---
+
+# 8. Tracking (Riwayat Status Pelacakan)
+
+## 8.1. Halaman Tracking
+
+User memasukkan kode tiket (contoh: `TCK-202609-001`) dan melihat:
+
+* Kode tiket
+* Judul tiket
+* Status badge (DIPROSES, SELESAI, DIDELEGASIKAN)
+* Lokasi & peminta
+* Deskripsi permasalahan
+* **Riwayat Status Pelacakan** (timeline)
+
+## 8.2. Riwayat Status Pelacakan
+
+Timeline menampilkan **audit_logs** secara chronologis. Setiap card audit_log **juga menampilkan catatan/worklog** yang cocok dengan stage-nya.
+
+```text
+✓ TIKET_DRAFT_DISIMPAN
+  9/11/2026, 4:00:00 PM
+  Oleh: Rina Wulandari
+
+✓ TAHAP_ASSIGN_SELESAI
+  9/17/2026, 9:58:27 AM
+  Oleh: Budi Santoso
+  "meluncur"
+
+✓ TAHAP_IN_PROGRESS_SELESAI
+  9/17/2026, 9:58:50 AM
+  Oleh: Budi Santoso
+  "hai"
+  "hallo"
+  "cihui"
+
+✓ TAHAP_COMPLETION_SELESAI
+  9/17/2026, 9:59:00 AM
+  Oleh: Budi Santoso
+  "selesai sudah bisa digunakan"
+```
+
+## 8.3. Rendering Worklogs di Tracking
+
+Catatan/worklogs ditampilkan **di dalam** card audit_log yang sesuai, bukan sebagai step terpisah.
+
+Mapping action → stageKey:
+
+| audit_log action | stageKey worklog |
+|---|---|
+| TAHAP_ASSIGN_SELESAI | ASSIGN |
+| TAHAP_IN_PROGRESS_SELESAI | IN_PROGRESS |
+| TAHAP_COMPLETION_SELESAI | COMPLETION |
+
+---
+
+# 9. Multi-Stage Attachments
 
 Lampiran merupakan bagian penting dari sistem.
 
 Lampiran dipisahkan berdasarkan tahapan pekerjaan.
 
-## 7.1. REQUEST
+## 9.1. REQUEST
 
 Lampiran dari User.
 
@@ -283,7 +413,7 @@ Contoh:
 
 ---
 
-## 7.2. IN_PROGRESS
+## 9.2. IN_PROGRESS
 
 Lampiran yang dibuat ketika IT melakukan pekerjaan.
 
@@ -298,7 +428,7 @@ Contoh:
 
 ---
 
-## 7.3. DELEGATION
+## 9.3. DELEGATION
 
 Lampiran terkait proses delegasi.
 
@@ -313,7 +443,7 @@ Contoh:
 
 ---
 
-## 7.4. COMPLETION
+## 9.4. COMPLETION
 
 Lampiran hasil akhir.
 
@@ -327,11 +457,9 @@ Contoh:
 
 ---
 
-# 8. Attachment Visibility
+# 10. Attachment Visibility
 
 Selain `stage`, setiap attachment memiliki `visibility`.
-
-Contoh:
 
 ```text
 REQUEST
@@ -361,60 +489,109 @@ Sedangkan:
 
 ---
 
-# 9. Ticket Tracking seperti Resi JNE
+# 11. Sidebar & Navigasi
 
-Halaman tracking merupakan fitur utama.
-
-User memasukkan:
+## 11.1. Sidebar Desktop (Tablet & Desktop)
 
 ```text
-TCK-202609-001
+┌──────────────┐
+│   [Logo]     │
+│              │
+│  📊 Dashboard│
+│  📋 Tiket    │
+│  🏠 My Work  │
+│  📈 Tracking │
+│  ➕ Buat     │
+│              │
+│  [◄] Toggle  │
+└──────────────┘
 ```
 
-Kemudian sistem menampilkan:
+* **Toggle** berada di **Navbar** (bukan di sidebar itu sendiri)
+* Default: expanded (lebar penuh dengan label)
+* Toggle: collapse ke **icon-only** (lebar sempit, hanya ikon)
+* Transisi smooth saat expand/collapse
+* Padding konten utama menyesuaikan (`md:pl-20` collapsed, `md:pl-64` expanded)
+
+## 11.2. Sidebar Mobile
 
 ```text
-TCK-202609-001
-
-Printer Kehabisan Tinta & Paper Jam
+┌─────────────────────┐
+│ [Hamburger]  [Logo] │  ← Navbar
+├─────────────────────┤
+│ Overlay Backdrop    │
+│ ┌─────────────────┐ │
+│ │ [X] Close       │ │
+│ │ 📊 Dashboard    │ │
+│ │ 📋 Tiket        │ │
+│ │ 🏠 My Work      │ │
+│ │ 📈 Tracking     │ │
+│ │ ➕ Buat Tiket   │ │
+│ └─────────────────┘ │
+└─────────────────────┘
 ```
 
-### Tracking Stepper
-
-```text
-✓ Tiket Dibuat
-  12 Sep 2026 09:00
-
-✓ Tiket Di-issue
-  12 Sep 2026 09:05
-
-✓ Sedang Diproses
-  12 Sep 2026 09:15
-
-✓ Didelegasikan ke Vendor
-  12 Sep 2026 11:00
-
-● Menunggu Hasil Vendor
-
-○ Selesai
-```
-
-Jika tidak ada delegasi:
-
-```text
-✓ Dibuat
-✓ Di-issue
-✓ Diproses
-● Selesai
-```
+* Hamburger button di **Navbar** (kanan)
+* Klik → muncul drawer overlay dengan backdrop gelap
+* **X button** di pojok kanan atas drawer untuk menutup
+* Klik backdrop juga menutup sidebar
+* Navigation link menutup sidebar setelah diklik
 
 ---
 
-# 10. Informasi yang Dapat Dilihat User
+# 12. Mobile-First Responsive
+
+## 12.1. Kanban Mobile
+
+```text
+┌──────────────────────────────┐
+│ ← scroll horizontal →       │
+│ ┌────────┐ ┌────────┐       │
+│ │ DRAFT  │ │PROCESS │ ...   │
+│ │        │ │        │       │
+│ │ [card] │ │ [card] │       │
+│ └────────┘ └────────┘       │
+└──────────────────────────────┘
+```
+
+* Horizontal scroll (tanpa snap)
+* Setiap kolom lebar `85vw` di mobile
+* Quick status dropdown per kartu untuk pindah status
+
+## 12.2. Table Mobile
+
+```text
+┌──────────────────────────────┐
+│ ← scroll horizontal →       │
+│ ┌──────────────────────────┐ │
+│ │ ID  │ Title │ Status │..│ │
+│ │ ... │ ...   │ ...    │   │ │
+│ └──────────────────────────┘ │
+└──────────────────────────────┘
+```
+
+* Horizontal scroll hanya di mobile (`overflow-x-auto md:overflow-x-visible`)
+* `min-width: 700px` agar tabel tidak terlalu sempit
+
+## 12.3. Stepper Mobile
+
+* Horizontal scroll dengan tombol panah
+* Auto-scroll ke tahap aktif (smooth scrolling)
+* Connector lines antar tahap terlihat di semua ukuran layar
+
+## 12.4. Tombol Aksi Mobile
+
+* Tombol stacked vertically di mobile (`flex-col`)
+* Tombol sejajar horizontal di desktop (`sm:flex-row`)
+* Setiap tombol full width di mobile
+
+---
+
+# 13. Informasi yang Dapat Dilihat User
 
 User dapat melihat:
 
-* Ticket ID
+* Ticket ID (kode tiket)
 * Judul
 * Deskripsi
 * Status
@@ -437,7 +614,7 @@ User tidak dapat melihat:
 
 ---
 
-# 11. Modul Pembuatan Tiket
+# 14. Modul Pembuatan Tiket
 
 Form User dibuat sesederhana mungkin.
 
@@ -478,7 +655,7 @@ screenshot_error.png
 
 ---
 
-# 12. Draft Ticket
+# 15. Draft Ticket
 
 Ketika User membuat tiket:
 
@@ -503,34 +680,17 @@ ISSUE TICKET
 
 ---
 
-# 13. Issue & Take Ticket
+# 16. Issue & Take Ticket
 
-IT Worker memiliki dua cara memperoleh tiket.
+IT Worker memiliki cara memperoleh tiket:
 
-### 13.1. Issue to Worker
+### 16.1. Take Ticket dari Detail
 
-Supervisor:
+Worker membuka detail tiket, lalu klik **Konfirmasi Assign** di tahap ASSIGN.
 
-```text
-Ticket
-   ↓
-Assign
-   ↓
-Budi
-```
+### 16.2. Take Ticket dari Kanban
 
-### 13.2. Take Ticket
-
-Worker melihat:
-
-```text
-AVAILABLE TICKETS
-
-TCK-202609-001
-Printer Bermasalah
-
-[ Ambil Tiket ]
-```
+Worker mengambil tiket dari kolom DRAFT di kanban.
 
 Setelah diambil:
 
@@ -541,7 +701,7 @@ Budi
 
 ---
 
-# 14. Primary Worker & Supporting Member
+# 17. Primary Worker & Supporting Member
 
 Satu tiket memiliki:
 
@@ -567,7 +727,7 @@ Rizal
 
 ---
 
-# 15. Aturan Lock Member
+# 18. Aturan Lock Member
 
 Member dapat ditambahkan selama:
 
@@ -596,42 +756,7 @@ Histori tetap tersimpan.
 
 ---
 
-# 16. Worklog
-
-Setiap pekerja dapat mencatat aktivitas pekerjaan.
-
-Contoh:
-
-```text
-Tanggal:
-12 September 2026
-
-Start:
-09:15
-
-Finish:
-09:45
-
-Durasi:
-30 menit
-
-Aktivitas:
-Melakukan pengecekan koneksi printer.
-Ditemukan kabel LAN rusak.
-```
-
-Worklog menjadi sumber data utama untuk:
-
-* Daily Work
-* Weekly Report
-* Monthly Report
-* Productivity Report
-* Export Excel
-* Export PDF
-
----
-
-# 17. Internal Note
+# 19. Internal Note
 
 IT dapat membuat catatan internal.
 
@@ -649,7 +774,7 @@ Internal Note tidak terlihat oleh User.
 
 ---
 
-# 18. Comment
+# 20. Comment
 
 Comment digunakan untuk komunikasi antara User dan IT.
 
@@ -672,7 +797,7 @@ Untuk komunikasi.
 
 ### Worklog
 
-Untuk pencatatan aktivitas pekerjaan.
+Untuk pencatatan aktivitas kerja / check-in kerja.
 
 ### Internal Note
 
@@ -680,11 +805,11 @@ Untuk komunikasi internal IT.
 
 ---
 
-# 19. Dashboard IT Worker
+# 21. Dashboard IT Worker
 
 Dashboard IT memiliki tiga mode tampilan.
 
-## 19.1. Table View
+## 21.1. Table View
 
 Data dikelompokkan berdasarkan tanggal.
 
@@ -703,7 +828,7 @@ TCK-004   Network Down        Dedi    SELESAI
 
 ---
 
-# 20. Card View
+# 22. Card View
 
 Contoh:
 
@@ -714,10 +839,10 @@ Contoh:
 │                             │
 │ HIGH                        │
 │                             │
-│ 👤 Budi                     │
-│ 👥 2 Members                │
+│ Budi                        │
+│ 2 Members                   │
 │                             │
-│ 📎 4 Attachments            │
+│ 4 Attachments               │
 │                             │
 │ PROCESS                     │
 └─────────────────────────────┘
@@ -725,27 +850,28 @@ Contoh:
 
 ---
 
-# 21. Kanban View
+# 23. Kanban View
 
 Kanban:
 
 ```text
-DRAFT        PROCESS       DELEGASI       SELESAI
+DRAFT        PROCESS       SELESAI        DELEGASI
 
 ┌──────┐     ┌──────┐      ┌──────┐       ┌──────┐
-│TCK001│     │TCK004│      │TCK007│       │TCK010│
+│TCK001│     │TCK004│      │TCK010│       │TCK007│
 └──────┘     └──────┘      └──────┘       └──────┘
 
 ┌──────┐     ┌──────┐      ┌──────┐       ┌──────┐
-│TCK002│     │TCK005│      │TCK008│       │TCK011│
+│TCK002│     │TCK005│      │TCK011│       │TCK008│
 └──────┘     └──────┘      └──────┘       └──────┘
 ```
 
-Drag-and-drop hanya diperbolehkan apabila perpindahan status sesuai dengan business rules dan permission.
+* **Urutan kolom:** DRAFT → PROCESS → SELESAI → DELEGASI
+* Drag-and-drop native HTML5 hanya diperbolehkan apabila perpindahan status sesuai dengan business rules dan permission
 
 ---
 
-# 22. My Work
+# 24. My Work
 
 Setiap IT Worker memiliki halaman pekerjaan pribadi.
 
@@ -753,10 +879,10 @@ Filter:
 
 ```text
 ALL
-DRAFT
 PROCESS
-DELEGASI
 SELESAI
+DELEGASI
+DRAFT
 ```
 
 Tambahan filter:
@@ -776,7 +902,7 @@ Tujuannya agar pekerja dapat langsung mengetahui:
 
 ---
 
-# 23. Daily Work
+# 25. Daily Work
 
 Halaman khusus pekerjaan harian.
 
@@ -807,7 +933,7 @@ ERP Error
 
 ---
 
-# 24. Dashboard IT Lead
+# 26. Dashboard IT Lead
 
 IT Lead dapat melihat:
 
@@ -816,8 +942,8 @@ TOTAL TICKET       125
 
 DRAFT               12
 PROCESS             35
-DELEGASI             8
 SELESAI             70
+DELEGASI             8
 ```
 
 Kemudian workload:
@@ -831,7 +957,7 @@ Rizal      3 ticket
 
 ---
 
-# 25. Laporan Pekerja
+# 27. Laporan Pekerja
 
 Laporan dapat difilter berdasarkan:
 
@@ -873,7 +999,7 @@ Total Worklog:
 
 ---
 
-# 26. Export
+# 28. Export
 
 Sistem menyediakan:
 
@@ -901,7 +1027,7 @@ Untuk laporan formal:
 
 ---
 
-# 27. Audit Trail
+# 29. Audit Trail
 
 Semua aktivitas penting dicatat.
 
@@ -937,7 +1063,7 @@ Audit trail tidak dapat diubah oleh user biasa.
 
 ---
 
-# 28. Search
+# 30. Search
 
 Search harus menjadi fitur utama aplikasi.
 
@@ -945,7 +1071,7 @@ Search harus menjadi fitur utama aplikasi.
 
 ```text
 ┌────────────────────────────────────────┐
-│ 🔍 Masukkan ID Tiket...                │
+│ Masukkan ID Tiket...                   │
 └────────────────────────────────────────┘
 
              [ Cari Tiket ]
@@ -972,38 +1098,56 @@ Tanggal
 
 ---
 
-# 29. Ticket Detail & Progress Stepper-Centric Attachment
- 
- Halaman detail:
- 
- ```text
- TCK-202609-001
- 
- Printer Kehabisan Tinta & Paper Jam
- 
- Status:
- PROCESS
- 
- Primary Worker:
- Budi
- 
- Supporting:
- Andi
- Dedi
- ```
- 
- **Core UI/UX Concept:**
- Progress Tracking Stepper adalah pusat utama (main content) dari detail tiket. 
- Setiap tahapan pada stepper memuat informasi detail dan lampiran terkait secara langsung:
- - **Created**: Tanggal/waktu, pembuat tiket, dan lampiran foto/request awal.
- - **Issued**: Waktu issue, siapa yang melakukan issue, serta assignment worker/primary worker & supporting.
- - **Process**: Log pengerjaan (worklog), catatan, dan lampiran foto proses/progress (`IN_PROGRESS`).
- - **Delegation** (jika ada): Info vendor/teknisi, surat jalan, resi, dan lampiran delegasi.
- - **Completed**: Hasil akhir, konfirmasi user, dan lampiran completion.
+# 31. Ticket Detail & Progress Stepper-Centric
+
+Halaman detail:
+
+```text
+TCK-202609-001          ← kode tiket ditampilkan
+
+Printer Kehabisan Tinta & Paper Jam
+
+Status:
+PROCESS
+
+Primary Worker:
+Budi
+
+Supporting:
+Andi
+Dedi
+```
+
+**Core UI/UX Concept:**
+Progress Tracking Stepper adalah pusat utama (main content) dari detail tiket.
+Setiap tahapan pada stepper memuat informasi detail dan lampiran terkait secara langsung:
+- **Created**: Tanggal/waktu, pembuat tiket, dan lampiran foto/request awal.
+- **Issued & Assigned**: Waktu issue, siapa yang melakukan issue, serta assignment worker.
+- **Process**: Log pengerjaan (worklog), catatan kerja, dan lampiran foto proses/progress.
+- **Selesai Internal**: Hasil akhir, dan lampiran completion.
+- **Delegation** (jika ada): Info vendor/teknisi, surat jalan, resi, dan lampiran delegasi.
+
+### Catatan & Histori per Tahap
+
+Panel detail menampilkan lampiran dan catatan/worklog per tahap:
+
+```text
+Lampiran / Bukti pada Tahap Ini:
+├── foto_proses.jpg — Oleh: Budi — 1.8 MB
+└── log_printer.txt — Oleh: Budi — 45 KB
+
+Catatan & Histori pada Tahap Ini:
+├── Oleh: Budi Santoso — 9/17/2026, 9:02 AM
+│   "meluncur"
+├── Oleh: Budi Santoso — 9/17/2026, 9:03 AM
+│   "sedang dikerjakan"
+└── Oleh: Budi Santoso — 9/17/2026, 9:04 AM
+    "selesai"
+```
 
 ---
 
-# 30. Struktur Data Utama
+# 32. Struktur Data Utama
 
 ```json
 {
@@ -1017,63 +1161,74 @@ Tanggal
 
     "status": "PROCESS",
 
-    "created_by": "USER-001",
+    "created_by": "USR-001",
+    "created_by_name": "Rina Wulandari",
+    "created_by_dept": "Finance & Accounting",
 
     "primary_worker_id": "IT-001",
+    "primary_worker_name": "Budi Santoso",
 
-    "supporting_members": [
-      "IT-002",
-      "IT-003"
+    "supporting_members": ["Andi Pratama", "Dedi Kurniawan"],
+    "supporting_member_details": [
+      { "id": "IT-002", "name": "Andi Pratama" },
+      { "id": "IT-003", "name": "Dedi Kurniawan" }
     ],
 
-    "delegation": {
-      "type": null,
-      "vendor_id": null,
-      "technician_id": null,
-      "delegated_at": null,
-      "returned_at": null
-    },
+    "delegation": null,
 
     "referenced_ticket_id": null,
 
     "attachments": [
       {
+        "id": "ATT-001",
         "stage": "REQUEST",
         "visibility": "USER_VISIBLE",
-        "file_name": "foto_error_user.jpg",
-        "file_url": "...",
-        "uploaded_by": "USER-001",
-        "uploaded_at": "2026-09-12T09:00:00Z"
-      },
-      {
-        "stage": "IN_PROGRESS",
-        "visibility": "INTERNAL_ONLY",
-        "file_name": "foto_bongkar_printer.jpg",
-        "file_url": "...",
-        "uploaded_by": "IT-001",
-        "uploaded_at": "2026-09-12T10:15:00Z"
-      },
-      {
-        "stage": "DELEGATION",
-        "visibility": "USER_VISIBLE",
-        "file_name": "tanda_terima_vendor.pdf",
-        "file_url": "...",
-        "uploaded_by": "IT-001",
-        "uploaded_at": "2026-09-12T11:00:00Z"
+        "file_name": "foto_printer_berkedip_merah.jpg",
+        "file_size": "2.4 MB",
+        "uploaded_by": "USR-001",
+        "uploaded_by_name": "Rina Wulandari",
+        "uploaded_at": "2026-09-11T09:02:00Z"
       }
     ],
 
     "worklogs": [
       {
+        "id": "wl-1789613906338",
+        "stageKey": "IN_PROGRESS",
         "worker_id": "IT-001",
-        "start_at": "2026-09-12T10:00:00Z",
-        "finish_at": "2026-09-12T10:30:00Z",
-        "duration_minutes": 30,
-        "description": "Melakukan pengecekan koneksi printer."
+        "worker_name": "Budi Santoso",
+        "date": "2026-09-17",
+        "start_at": "09.58",
+        "finish_at": "09.58",
+        "duration_minutes": 0,
+        "description": "hai",
+        "created_at": "2026-09-17T02:58:34.906Z"
       }
     ],
 
-    "created_at": "2026-09-12T09:00:00Z",
+    "comments": [],
+    "internal_notes": [],
+
+    "audit_logs": [
+      {
+        "id": "aud-001",
+        "action": "TIKET_DRAFT_DISIMPAN",
+        "performed_at": "2026-09-11T09:00:00Z",
+        "performed_by": "USR-001",
+        "performed_by_name": "Rina Wulandari",
+        "notes": null
+      },
+      {
+        "id": "aud-002",
+        "action": "TAHAP_ASSIGN_SELESAI",
+        "performed_at": "2026-09-17T02:58:26.337Z",
+        "performed_by": "IT-001",
+        "performed_by_name": "Budi Santoso",
+        "notes": "meluncur"
+      }
+    ],
+
+    "created_at": "2026-09-11T09:00:00Z",
     "completed_at": null
   }
 }
@@ -1081,7 +1236,7 @@ Tanggal
 
 ---
 
-# 31. Entity Utama Database
+# 33. Entity Utama Database
 
 Minimal sistem membutuhkan entity:
 
@@ -1104,7 +1259,7 @@ ticket_worklogs
 
 ticket_delegations
 
-ticket_history
+ticket_history (audit_logs)
 
 categories
 subcategories
@@ -1117,7 +1272,7 @@ notifications
 
 ---
 
-# 32. Aturan Bisnis Utama
+# 34. Aturan Bisnis Utama
 
 ### Rule 01
 
@@ -1153,39 +1308,55 @@ Delegasi tidak menghilangkan histori pekerjaan internal IT.
 
 ### Rule 09
 
-Recall tidak menghapus tiket lama.
+Delegasi hanya bisa dilakukan dari tahap Selesai Internal (status SELESAI).
 
 ### Rule 10
 
-Recall menghasilkan Ticket ID baru.
+Recall tidak menghapus tiket lama.
 
 ### Rule 11
 
-Tiket baru hasil Recall memiliki hubungan `referenced_ticket_id`.
+Recall menghasilkan Ticket ID baru.
 
 ### Rule 12
 
-Audit Trail tidak dapat dihapus oleh user biasa.
+Tiket baru hasil Recall memiliki hubungan `referenced_ticket_id`.
 
 ### Rule 13
 
-Worklog menjadi bagian dari histori pekerjaan.
+Audit Trail tidak dapat dihapus oleh user biasa.
 
 ### Rule 14
 
-Internal Note tidak terlihat oleh User.
+Worklog menjadi bagian dari histori pekerjaan.
 
 ### Rule 15
 
-Attachment memiliki stage dan visibility.
+Internal Note tidak terlihat oleh User.
 
 ### Rule 16
 
+Attachment memiliki stage dan visibility.
+
+### Rule 17
+
 Tiket yang sudah selesai dapat di-Reopen jika User menyatakan masalah belum selesai, sesuai permission.
+
+### Rule 18
+
+Kirim (saveWorklogNote) hanya menyimpan worklog tanpa mengubah status.
+
+### Rule 19
+
+Selesai/Konfirmasi Assign/Delegasi (completeStage) menyimpan worklog sekaligus mengubah status.
+
+### Rule 20
+
+Setelah klik tombol aksi (Kirim/Selesai/Konfirmasi/Delegasi), form input (textarea + file) otomatis kosong.
 
 ---
 
-# 33. Prinsip UX User Non-IT
+# 35. Prinsip UX User Non-IT
 
 Form User harus sederhana.
 
@@ -1207,65 +1378,66 @@ IT kemudian menentukan informasi teknis.
 
 ---
 
-# 34. Prinsip UX IT Worker
+# 36. Prinsip UX IT Worker
 
 IT Worker juga tidak boleh dibebani form panjang.
 
 Flow utama:
 
 ```text
-Ambil Tiket
+Ambil Tiket / Konfirmasi Assign
       ↓
-Mulai Pekerjaan
+Kirim catatan (check-in kerja)
       ↓
-Worklog
+Kirim catatan lagi saat bekerja
       ↓
-Update / Attachment
+Selesaikan (tombol Selesai)
       ↓
-Delegasi jika diperlukan
-      ↓
-Selesaikan
+Delegasi jika diperlukan (tombol Delegasi)
 ```
 
 Detail teknis hanya diisi ketika memang diperlukan.
 
 ---
 
-# 35. Roadmap Pengembangan
+# 37. Roadmap Pengembangan
 
 ## Phase 1 — Core Ticketing
 
-* Authentication
-* RBAC
-* User Management
-* Create Ticket
-* Draft
-* Issue
-* Take Ticket
-* Assignment
-* Status
-* Attachment
-* Ticket Detail
-* Search
-* Ticket History
+* ~~Authentication~~
+* ~~RBAC~~
+* ~~User Management~~
+* ~~Create Ticket~~
+* ~~Draft~~
+* ~~Issue~~
+* ~~Take Ticket (Self-Assign)~~
+* ~~Assignment~~
+* ~~Status~~
+* ~~Attachment~~
+* ~~Ticket Detail~~
+* ~~Search~~
+* ~~Ticket History~~
 
 ## Phase 2 — Work Management
 
-* Supporting Member
-* Worklog
-* My Work
-* Daily Work
-* Table View
-* Card View
-* Kanban
-* Comment
-* Internal Note
+* ~~Supporting Member~~
+* ~~Worklog (with stageKey)~~
+* ~~Save Worklog Note (saveWorklogNote)~~
+* ~~My Work~~
+* ~~Daily Work~~
+* ~~Table View~~
+* ~~Card View~~
+* ~~Kanban (Drag & Drop)~~
+* ~~Comment~~
+* ~~Internal Note~~
+* ~~Sidebar Responsive (Collapse/Expand)~~
+* ~~Mobile-First Responsive~~
 
 ## Phase 3 — Collaboration
 
-* Delegation
-* Vendor
-* Technician
+* ~~Delegation~~
+* ~~Vendor~~
+* ~~Technician~~
 * Reopen
 * User Confirmation
 * Notification
@@ -1274,7 +1446,7 @@ Detail teknis hanya diisi ketika memang diperlukan.
 
 * Dashboard
 * Workload
-* SLA
+* ~~SLA~~ (dihapus)
 * Analytics
 * Reports
 * Excel Export
@@ -1282,41 +1454,46 @@ Detail teknis hanya diisi ketika memang diperlukan.
 
 ---
 
-# 36. Definition of Done — MVP
+# 38. Definition of Done — MVP
 
 MVP dinyatakan berhasil apabila:
 
-* User dapat login.
-* User dapat membuat tiket.
-* User dapat menyimpan Draft.
-* Sistem memberikan Ticket ID.
-* User dapat Issue Ticket.
-* IT dapat melihat tiket tersedia.
-* IT dapat mengambil tiket.
-* Supervisor dapat melakukan assignment.
-* Ticket memiliki Primary Worker.
-* Ticket dapat memiliki Supporting Member.
-* User dapat mengunggah foto/dokumen.
-* IT dapat mengunggah attachment berdasarkan stage.
-* Attachment memiliki visibility.
-* Ticket memiliki tracking stepper.
-* User dapat melihat progres tiket.
-* IT dapat membuat Worklog.
-* IT memiliki My Work.
-* Tersedia Table View.
-* Tersedia Card View.
-* Tersedia Kanban View.
-* Ticket memiliki Audit Trail.
-* Ticket dapat didelegasikan.
-* Ticket dapat diselesaikan.
-* Supporting Member terkunci setelah selesai.
+* ~~User dapat login.~~
+* ~~User dapat membuat tiket.~~
+* ~~User dapat menyimpan Draft.~~
+* ~~Sistem memberikan Ticket ID.~~
+* ~~User dapat Issue Ticket.~~
+* ~~IT dapat melihat tiket tersedia.~~
+* ~~IT dapat mengambil tiket (self-assign).~~
+* ~~Ticket memiliki Primary Worker.~~
+* ~~Ticket dapat memiliki Supporting Member.~~
+* ~~User dapat mengunggah foto/dokumen.~~
+* ~~IT dapat mengunggah attachment berdasarkan stage.~~
+* ~~Attachment memiliki visibility.~~
+* ~~Ticket memiliki tracking stepper.~~
+* ~~User dapat melihat progres tiket.~~
+* ~~IT dapat membuat Worklog (check-in/absen).~~
+* ~~IT dapat menyimpan catatan tanpa mengubah status (Kirim).~~
+* ~~IT dapat menyelesaikan tiket (Selesai).~~
+* ~~IT dapat mendelegasikan tiket (Delegasi).~~
+* ~~IT memiliki My Work.~~
+* ~~Tersedia Table View.~~
+* ~~Tersedia Card View.~~
+* ~~Tersedia Kanban View (Drag & Drop).~~
+* ~~Ticket memiliki Audit Trail.~~
+* ~~Tracking menampilkan catatan worklog di dalam card audit_log.~~
+* ~~Supporting Member terkunci setelah selesai.~~
+* ~~Sidebar responsive (collapse/expand).~~
+* ~~Mobile-first responsive design.~~
+* ~~Ticket ID ditampilkan di halaman detail.~~
+* ~~Form input kosong setelah submit.~~
 * Recall menghasilkan Ticket ID baru dengan referensi tiket lama.
 * IT dapat melakukan export laporan.
 * User tidak dapat melihat Internal Note dan attachment internal.
 
 ---
 
-# 37. Konsep Produk
+# 39. Konsep Produk
 
 Sistem ini bukan sekadar:
 
@@ -1351,13 +1528,11 @@ TAKE / ASSIGN
    ↓
 PROCESS
    ↓
-WORKLOG
+KIRIM (check-in kerja)
    ↓
-COLLABORATE
+SELESAI
    ↓
-DELEGATE
-   ↓
-COMPLETE
+DELEGASI (jika perlu)
    ↓
 REPORT
 ```
