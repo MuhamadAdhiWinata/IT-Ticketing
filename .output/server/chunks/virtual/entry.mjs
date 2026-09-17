@@ -31532,7 +31532,7 @@ var namedMiddleware = {};
 var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default = [{
 	name: "index",
 	path: "/",
-	component: () => import('../build/pages-ah-E1Q-3.mjs')
+	component: () => import('../build/pages-DkxDzv0o.mjs')
 }];
 //#endregion
 //#region node_modules/.pnpm/nuxt@4.5.2_@babel+plugin-syntax-jsx@7.29.7_@babel+core@7.29.7__@babel+plugin-syntax-typ_b2f3456d9ee03761d9795a2322dd2cf2/node_modules/nuxt/dist/pages/runtime/plugins/router.js
@@ -32541,7 +32541,7 @@ var plugin = /* @__PURE__ */ defineNuxtPlugin({
 });
 //#endregion
 //#region components/global/Navbar.vue?nuxt_component=async&nuxt_component_name=Navbar&nuxt_component_export=default
-var Navbar_default = (0, vue_exports.defineAsyncComponent)(() => import('../build/Navbar-eP1lMilO.mjs').then((n) => n.n).then((r) => r["default"] || r.default || r));
+var Navbar_default = (0, vue_exports.defineAsyncComponent)(() => import('../build/Navbar-EcunUAsX.mjs').then((n) => n.n).then((r) => r["default"] || r.default || r));
 //#endregion
 //#region components/global/Sidebar.vue?nuxt_component=async&nuxt_component_name=Sidebar&nuxt_component_export=default
 var Sidebar_default = (0, vue_exports.defineAsyncComponent)(() => import('../build/Sidebar-PGZZFpWp.mjs').then((n) => n.n).then((r) => r["default"] || r.default || r));
@@ -33863,7 +33863,7 @@ __reExport(server_renderer_exports, /* @__PURE__ */ __toESM(require_server_rende
 //#endregion
 //#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Flayouts.mjs
 var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Flayouts_default = {
-	default: (0, vue_exports.defineAsyncComponent)(() => import('../build/default-BVWpLmS8.mjs').then((m) => m.default || m)),
+	default: (0, vue_exports.defineAsyncComponent)(() => import('../build/default-CsyWifDr.mjs').then((m) => m.default || m)),
 	flat: (0, vue_exports.defineAsyncComponent)(() => import('../build/flat-BCEZ7lSM.mjs').then((m) => m.default || m))
 };
 //#endregion
@@ -34846,9 +34846,16 @@ var useAppStore = defineStore("app", {
 		isCreateModalOpen: false,
 		selectedTicket: null,
 		isSidebarCollapsed: false,
-		isMobileSidebarOpen: false
+		isMobileSidebarOpen: false,
+		successNotification: null
 	}),
 	actions: {
+		setSuccessNotification(msg) {
+			this.successNotification = msg;
+			if (msg) setTimeout(() => {
+				if (this.successNotification === msg) this.successNotification = null;
+			}, 8e3);
+		},
 		initApp() {
 			this.darkMode = StorageService.getDarkMode();
 			this.tickets = StorageService.getTickets();
@@ -34936,6 +34943,7 @@ var useAppStore = defineStore("app", {
 			};
 			this.tickets = [newTicket, ...this.tickets];
 			StorageService.saveTickets(this.tickets);
+			return newTicket;
 		},
 		updateTicket(updatedTicket) {
 			this.tickets = this.tickets.map((t) => t.id === updatedTicket.id ? updatedTicket : t);
@@ -34957,6 +34965,40 @@ var useAppStore = defineStore("app", {
 				assignedToName: user?.name
 			} : t);
 			StorageService.saveTickets(this.tickets);
+		},
+		switchUser(userId) {
+			const user = this.allUsers.find((u) => u.id === userId);
+			if (user) {
+				this.currentUser = user;
+				const allowed = {
+					"USER_NON_IT": ["tracking"],
+					"IT_WORKER": [
+						"tracking",
+						"dashboard",
+						"my-work",
+						"daily-work"
+					],
+					"IT_LEAD": [
+						"tracking",
+						"dashboard",
+						"my-work",
+						"daily-work",
+						"lead-dashboard",
+						"reports"
+					],
+					"VENDOR": ["tracking"],
+					"SYSTEM_ADMIN": [
+						"tracking",
+						"dashboard",
+						"my-work",
+						"daily-work",
+						"lead-dashboard",
+						"reports",
+						"admin"
+					]
+				}[user.role] || ["tracking"];
+				if (!allowed.includes(this.activeTab)) this.setActiveTab(allowed[0]);
+			}
 		},
 		saveWorklogNote(ticketId, stageKey, notes, filePayload) {
 			if (!this.currentUser) return;
@@ -35061,6 +35103,27 @@ var useAppStore = defineStore("app", {
 				attachments: newAttachments,
 				worklogs: newWorklogs,
 				audit_logs: newAuditLogs
+			};
+			this.updateTicket(updated);
+		},
+		addCustomWorklog(ticketId, wlData) {
+			const ticket = this.tickets.find((t) => t.id === ticketId);
+			if (!ticket) return;
+			const newWl = {
+				id: `wl-${Date.now()}`,
+				stageKey: wlData.stageKey,
+				worker_id: wlData.worker_id || this.currentUser?.id || "",
+				worker_name: wlData.worker_name || this.currentUser?.name || "",
+				date: wlData.date,
+				start_at: wlData.start_at,
+				finish_at: wlData.finish_at,
+				duration_minutes: wlData.duration_minutes,
+				description: wlData.description,
+				created_at: (/* @__PURE__ */ new Date()).toISOString()
+			};
+			const updated = {
+				...ticket,
+				worklogs: [...ticket.worklogs || [], newWl]
 			};
 			this.updateTicket(updated);
 		}

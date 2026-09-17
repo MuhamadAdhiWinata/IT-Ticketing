@@ -71,7 +71,7 @@ export function exportTicketsToExcel(tickets: Ticket[]) {
   downloadExcelCSV(`Laporan_Tiket_IT_${new Date().toISOString().slice(0, 10)}`, headers, rows);
 }
 
-export function exportWorklogsToExcel(tickets: Ticket[], workerFilter?: string) {
+export function exportWorklogsToExcel(tickets: Ticket[], workerFilter?: string, dateRange?: { start: string; end: string }) {
   const headers = [
     'Tanggal',
     'Worker',
@@ -88,7 +88,10 @@ export function exportWorklogsToExcel(tickets: Ticket[], workerFilter?: string) 
 
   tickets.forEach((t) => {
     t.worklogs.forEach((wl) => {
-      if (!workerFilter || wl.worker_name.toLowerCase().includes(workerFilter.toLowerCase())) {
+      const matchWorker = !workerFilter || wl.worker_name.toLowerCase().includes(workerFilter.toLowerCase());
+      const wlDate = wl.date || (wl.created_at ? wl.created_at.split('T')[0] : '');
+      const matchDate = !dateRange || (wlDate >= dateRange.start && wlDate <= dateRange.end);
+      if (matchWorker && matchDate) {
         rows.push([
           wl.date,
           wl.worker_name,
@@ -104,7 +107,8 @@ export function exportWorklogsToExcel(tickets: Ticket[], workerFilter?: string) 
     });
   });
 
-  downloadExcelCSV(`Laporan_Worklog_IT_${new Date().toISOString().slice(0, 10)}`, headers, rows);
+  const suffix = dateRange ? `_${dateRange.start}_sd_${dateRange.end}` : `_${new Date().toISOString().slice(0, 10)}`;
+  downloadExcelCSV(`Laporan_Worklog_IT${suffix}`, headers, rows);
 }
 
 /**

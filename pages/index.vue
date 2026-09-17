@@ -30,10 +30,7 @@
         :onSelectTicket="(ticket) => store.openTicketDetail(ticket.id)"
       />
 
-      <DailyWorkView
-        v-else-if="store.activeTab === 'daily-work'"
-        :tickets="store.tickets"
-      />
+      <DailyWorkView v-else-if="store.activeTab === 'daily-work'" />
 
       <LeadDashboardView
         v-else-if="store.activeTab === 'lead-dashboard'"

@@ -19,9 +19,21 @@ export const useAppStore = defineStore('app', {
     selectedTicket: null as Ticket | null,
     isSidebarCollapsed: false,
     isMobileSidebarOpen: false,
+    successNotification: null as string | null,
   }),
 
   actions: {
+    setSuccessNotification(msg: string | null) {
+      this.successNotification = msg;
+      if (msg) {
+        setTimeout(() => {
+          if (this.successNotification === msg) {
+            this.successNotification = null;
+          }
+        }, 8000);
+      }
+    },
+
     initApp() {
       this.darkMode = StorageService.getDarkMode();
       this.tickets = StorageService.getTickets();
@@ -43,6 +55,8 @@ export const useAppStore = defineStore('app', {
     setActiveTab(tab: string) {
       this.activeTab = tab;
       this.activeView = 'main';
+      this.selectedTicketId = null;
+      this.selectedTicket = null;
       this.isMobileSidebarOpen = false;
       this.pushHistoryState();
     },
@@ -117,7 +131,7 @@ export const useAppStore = defineStore('app', {
       this.selectedTicket = ticket;
     },
 
-    addTicket(ticketPayload: Partial<Ticket>, shouldIssue: boolean) {
+    addTicket(ticketPayload: Partial<Ticket>, shouldIssue: boolean): Ticket | null {
       if (!this.currentUser) return;
       const prefix = ticketPayload.category === 'Support IT' ? 'TIKSP' : 'TIKPG';
       const newTicket: Ticket = {
@@ -151,6 +165,7 @@ export const useAppStore = defineStore('app', {
 
       this.tickets = [newTicket, ...this.tickets];
       StorageService.saveTickets(this.tickets);
+      return newTicket;
     },
 
     updateTicket(updatedTicket: Ticket) {
@@ -170,6 +185,24 @@ export const useAppStore = defineStore('app', {
       const user = this.allUsers.find(u => u.id === userId);
       this.tickets = this.tickets.map(t => t.id === ticketId ? { ...t, assignedTo: userId, assignedToName: user?.name } : t);
       StorageService.saveTickets(this.tickets);
+    },
+
+    switchUser(userId: string) {
+      const user = this.allUsers.find(u => u.id === userId);
+      if (user) {
+        this.currentUser = user;
+        const roleTabs: Record<string, string[]> = {
+          'USER_NON_IT': ['tracking'],
+          'IT_WORKER': ['tracking', 'dashboard', 'my-work', 'daily-work'],
+          'IT_LEAD': ['tracking', 'dashboard', 'my-work', 'daily-work', 'lead-dashboard', 'reports'],
+          'VENDOR': ['tracking'],
+          'SYSTEM_ADMIN': ['tracking', 'dashboard', 'my-work', 'daily-work', 'lead-dashboard', 'reports', 'admin'],
+        };
+        const allowed = roleTabs[user.role] || ['tracking'];
+        if (!allowed.includes(this.activeTab)) {
+          this.setActiveTab(allowed[0]);
+        }
+      }
     },
 
     saveWorklogNote(ticketId: string, stageKey: string, notes: string, filePayload?: { file_name: string; file_size: string; stage: string; visibility: string }) {
@@ -232,6 +265,31 @@ export const useAppStore = defineStore('app', {
         attachments: newAttachments,
         worklogs: newWorklogs,
         audit_logs: newAuditLogs,
+      };
+
+      this.updateTicket(updated);
+    },
+
+    addCustomWorklog(ticketId: string, wlData: { date: string; start_at: string; finish_at: string; duration_minutes: number; description: string; stageKey: string; worker_id?: string; worker_name?: string }) {
+      const ticket = this.tickets.find(t => t.id === ticketId);
+      if (!ticket) return;
+
+      const newWl = {
+        id: `wl-${Date.now()}`,
+        stageKey: wlData.stageKey,
+        worker_id: wlData.worker_id || this.currentUser?.id || '',
+        worker_name: wlData.worker_name || this.currentUser?.name || '',
+        date: wlData.date,
+        start_at: wlData.start_at,
+        finish_at: wlData.finish_at,
+        duration_minutes: wlData.duration_minutes,
+        description: wlData.description,
+        created_at: new Date().toISOString(),
+      };
+
+      const updated: Ticket = {
+        ...ticket,
+        worklogs: [...(ticket.worklogs || []), newWl],
       };
 
       this.updateTicket(updated);

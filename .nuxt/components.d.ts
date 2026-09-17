@@ -17,6 +17,7 @@ type LazyComponent<T> = DefineComponent<HydrationStrategies, {}, {}, {}, {}, {},
 export const Navbar: typeof import("../components/global/Navbar.vue")['default']
 export const Sidebar: typeof import("../components/global/Sidebar.vue")['default']
 export const CommonAppSelect: typeof import("../components/common/AppSelect.vue")['default']
+export const CommonToastContainer: typeof import("../components/common/ToastContainer.vue")['default']
 export const DashboardDailyWorkView: typeof import("../components/dashboard/DailyWorkView.vue")['default']
 export const DashboardITDashboard: typeof import("../components/dashboard/ITDashboard.vue")['default']
 export const DashboardLeadDashboardView: typeof import("../components/dashboard/LeadDashboardView.vue")['default']
@@ -53,6 +54,7 @@ export const NuxtIsland: typeof import("../node_modules/.pnpm/nuxt@4.5.2_@babel+
 export const LazyNavbar: LazyComponent<typeof import("../components/global/Navbar.vue")['default']>
 export const LazySidebar: LazyComponent<typeof import("../components/global/Sidebar.vue")['default']>
 export const LazyCommonAppSelect: LazyComponent<typeof import("../components/common/AppSelect.vue")['default']>
+export const LazyCommonToastContainer: LazyComponent<typeof import("../components/common/ToastContainer.vue")['default']>
 export const LazyDashboardDailyWorkView: LazyComponent<typeof import("../components/dashboard/DailyWorkView.vue")['default']>
 export const LazyDashboardITDashboard: LazyComponent<typeof import("../components/dashboard/ITDashboard.vue")['default']>
 export const LazyDashboardLeadDashboardView: LazyComponent<typeof import("../components/dashboard/LeadDashboardView.vue")['default']>

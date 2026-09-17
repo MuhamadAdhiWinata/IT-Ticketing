@@ -164,7 +164,7 @@
                 class="p-3 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-800 text-xs space-y-1"
               >
                 <div class="flex items-center justify-between text-[10px] text-gray-400">
-                  <div class="flex items-center gap-2">
+              <div class="flex flex-wrap items-center gap-2">
                     <span class="font-bold text-[#026bb1] dark:text-[#52b5f2]">Oleh: {{ wl.worker_name || 'Worker' }}</span>
                     <span class="px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-[#026bb1] dark:text-[#52b5f2] font-semibold text-[9px]">
                       Tahap {{ stepperStages[selectedStepIndex]?.label }}
@@ -202,16 +202,16 @@
                 class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#026bb1]/50 resize-none"
               ></textarea>
             </div>
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              <input type="file" ref="stageFileInput" @change="handleStageFile" class="w-full sm:w-auto text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-[#026bb1] hover:file:bg-blue-100" />
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <input type="file" ref="stageFileInput" @change="handleStageFile" class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-[#026bb1] hover:file:bg-blue-100" />
               
-              <div class="flex items-center gap-2">
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <!-- Simpan Catatan / Absen Button (IN_PROGRESS & ASSIGN saja) -->
                 <button
                   v-if="stepperStages[selectedStepIndex]?.stageKey === 'IN_PROGRESS' || stepperStages[selectedStepIndex]?.stageKey === 'ASSIGN'"
                   @click="handleSaveNote()"
                   :disabled="!stageNotes.trim()"
-                  class="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 dark:disabled:bg-slate-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 shrink-0"
+                  class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 dark:disabled:bg-slate-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
                 >
                   <Clock class="w-4 h-4" />
                   <span>Kirim</span>
@@ -220,7 +220,7 @@
                 <!-- Submit Normal Button -->
                 <button
                   @click="handleSubmitCurrentStage()"
-                  class="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 shrink-0"
+                  class="w-full px-4 py-2.5 bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
                 >
                   <CheckCircle2 class="w-4 h-4" />
                   <span>
@@ -238,7 +238,7 @@
                 <button
                   v-if="stepperStages[selectedStepIndex]?.stageKey === 'COMPLETION' && ticket?.status !== 'DELEGASI'"
                   @click="handleSubmitCurrentStage('DELEGASI')"
-                  class="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 shrink-0"
+                  class="w-full px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
                 >
                   <ExternalLinkIcon class="w-4 h-4" />
                   <span>Delegasi</span>
@@ -257,7 +257,6 @@ import { ref, computed, watch, nextTick } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon } from 'lucide-vue-next';
 import { triggerPrintPDF } from '~/utils/export';
-import { ExternalLink } from '@lucide/vue';
 
 const store = useAppStore();
 const isOpen = computed(() => store.activeView === 'ticket-detail');

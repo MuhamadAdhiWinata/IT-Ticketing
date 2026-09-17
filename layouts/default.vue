@@ -17,12 +17,15 @@
         <slot />
       </main>
     </div>
+
+    <ToastContainer />
   </div>
 </template>
 
 <script setup lang="ts">
 import Sidebar from '~/components/global/Sidebar.vue';
 import Navbar from '~/components/global/Navbar.vue';
+import ToastContainer from '~/components/common/ToastContainer.vue';
 import { useAppStore } from '~/stores/app';
 
 const store = useAppStore();

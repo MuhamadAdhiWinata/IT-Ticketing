@@ -69,7 +69,7 @@
           <span class="text-gray-700 dark:text-gray-300 ml-1">{{ store.currentUser?.department || 'General' }}</span>
         </div>
         <span class="px-2.5 py-1 bg-blue-100 dark:bg-blue-900/40 text-[#026bb1] dark:text-[#52b5f2] rounded-lg font-mono font-bold text-xs">
-          {{ ticketPrefix }}-{{ Math.floor(100000 + Math.random() * 900000) }}
+          {{ ticketPrefix }}-{{ ticketNumber }}
         </span>
       </div>
 
@@ -188,14 +188,17 @@
 import { ref, computed, watch } from 'vue';
 import { ArrowLeft, Upload, Check } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
+import { useToast } from '~/composables/useToast';
 import { TicketPriority, Ticket } from '~/types';
 import AppSelect from '~/components/common/AppSelect.vue';
 
 const store = useAppStore();
+const { toast } = useToast();
 const isOpen = computed(() => store.activeView === 'create-ticket');
 
 const serviceView = ref<'SUPPORT_IT' | 'IT_PROGRAMMER'>('SUPPORT_IT');
 const ticketPrefix = computed(() => serviceView.value === 'SUPPORT_IT' ? 'TIKSP' : 'TIKPG');
+const ticketNumber = ref(Math.floor(100000 + Math.random() * 900000));
 
 const title = ref('');
 const subcategory = ref('Printer');
@@ -254,7 +257,7 @@ const handleFileDrop = (e: Event) => {
 
 const handleSubmit = (shouldIssue: boolean) => {
   if (!title.value.trim() || !description.value.trim()) {
-    alert('Mohon isi Judul Tiket dan Deskripsi Masalah.');
+    toast('Mohon isi Judul Tiket dan Deskripsi Masalah.', 'error');
     return;
   }
 

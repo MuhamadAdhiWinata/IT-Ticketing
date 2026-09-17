@@ -17,6 +17,7 @@ interface _GlobalComponents {
   Navbar: typeof import("../../components/global/Navbar.vue")['default']
   Sidebar: typeof import("../../components/global/Sidebar.vue")['default']
   CommonAppSelect: typeof import("../../components/common/AppSelect.vue")['default']
+  CommonToastContainer: typeof import("../../components/common/ToastContainer.vue")['default']
   DashboardDailyWorkView: typeof import("../../components/dashboard/DailyWorkView.vue")['default']
   DashboardITDashboard: typeof import("../../components/dashboard/ITDashboard.vue")['default']
   DashboardLeadDashboardView: typeof import("../../components/dashboard/LeadDashboardView.vue")['default']
@@ -53,6 +54,7 @@ interface _GlobalComponents {
   LazyNavbar: LazyComponent<typeof import("../../components/global/Navbar.vue")['default']>
   LazySidebar: LazyComponent<typeof import("../../components/global/Sidebar.vue")['default']>
   LazyCommonAppSelect: LazyComponent<typeof import("../../components/common/AppSelect.vue")['default']>
+  LazyCommonToastContainer: LazyComponent<typeof import("../../components/common/ToastContainer.vue")['default']>
   LazyDashboardDailyWorkView: LazyComponent<typeof import("../../components/dashboard/DailyWorkView.vue")['default']>
   LazyDashboardITDashboard: LazyComponent<typeof import("../../components/dashboard/ITDashboard.vue")['default']>
   LazyDashboardLeadDashboardView: LazyComponent<typeof import("../../components/dashboard/LeadDashboardView.vue")['default']>
