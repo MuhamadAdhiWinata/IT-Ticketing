@@ -5,7 +5,7 @@
       <div class="space-y-1">
         <div class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#026bb1] dark:text-[#52b5f2] bg-[#e6f1f8] dark:bg-[#026bb1]/20 px-2.5 py-1 rounded-md border border-[#026bb1]/30">
           <Briefcase class="w-3.5 h-3.5" />
-          <span>PRD 22: Halaman Pekerjaan Pribadi IT Worker</span>
+          <span>Halaman Pekerjaan Pribadi IT Worker</span>
         </div>
         <h2 class="text-xl font-bold text-gray-900 dark:text-white">
           Pekerjaan Saya ({{ currentUser.name }})

@@ -57,7 +57,7 @@
         </div>
       </div>
 
-      <!-- Progress Tracking Stepper (PRD Section 29 - Stepper Centric) -->
+      <!-- Progress Tracking Stepper -->
       <div class="bg-gray-50 dark:bg-slate-800/40 p-3 sm:p-5 rounded-2xl border border-gray-100 dark:border-slate-800 space-y-4">
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Progress Pengerjaan & Lampiran Per Tahap</h3>

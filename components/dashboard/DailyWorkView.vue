@@ -5,7 +5,7 @@
       <div class="space-y-1">
         <div class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#026bb1] dark:text-[#52b5f2] bg-[#e6f1f8] dark:bg-[#026bb1]/20 px-2.5 py-1 rounded-md border border-[#026bb1]/30">
           <CalendarDays class="w-3.5 h-3.5" />
-          <span>PRD 25: Daily Work Log & Monitoring Aktivitas Kerja</span>
+          <span>Daily Work Log & Monitoring Aktivitas Kerja</span>
         </div>
         <h1 class="text-xl font-extrabold text-gray-900 dark:text-white">
           Aktivitas Kerja Harian & Rentang Waktu IT
@@ -47,30 +47,32 @@
 
     <!-- Date Range Navigation & Filter Controls -->
     <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-4 sm:p-5 shadow-xs space-y-3.5">
-      <!-- Quick Preset Filter Tabs -->
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 dark:border-slate-800 pb-3">
-        <div class="flex flex-wrap items-center gap-1.5">
-          <span class="text-xs font-bold text-gray-500 dark:text-gray-400 mr-1 flex items-center gap-1">
+      <!-- Quick Preset Filter Tabs & Worker Filter -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 dark:border-slate-800 pb-3">
+        <div class="flex-1">
+          <span class="text-xs font-bold text-gray-500 dark:text-gray-400 mr-1 flex items-center gap-1 mb-2 sm:mb-0">
             <Filter class="w-3.5 h-3.5 text-[#026bb1]" />
             Periode:
           </span>
-          <button
-            v-for="preset in presets"
-            :key="preset.id"
-            @click="applyPreset(preset.id)"
-            :class="[
-              'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border',
-              activePreset === preset.id
-                ? 'bg-[#026bb1] text-white border-[#026bb1] shadow-xs'
-                : 'bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-gray-100'
-            ]"
-          >
-            {{ preset.label }}
-          </button>
+          <div class="overflow-x-auto no-scrollbar flex items-center gap-1.5 py-1">
+            <button
+              v-for="preset in presets"
+              :key="preset.id"
+              @click="applyPreset(preset.id)"
+              :class="[
+                'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border shrink-0',
+                activePreset === preset.id
+                  ? 'bg-[#026bb1] text-white border-[#026bb1] shadow-xs'
+                  : 'bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-gray-100'
+              ]"
+            >
+              {{ preset.label }}
+            </button>
+          </div>
         </div>
 
         <!-- Worker Filter (hanya untuk SYSTEM_ADMIN) -->
-        <div v-if="store.currentUser?.role === 'SYSTEM_ADMIN'" class="flex items-center gap-2">
+        <div v-if="store.currentUser?.role === 'SYSTEM_ADMIN'" class="w-full sm:w-auto flex items-center justify-end sm:justify-start gap-2 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-slate-800">
           <span class="text-xs font-bold text-gray-500">Worker:</span>
           <select
             v-model="selectedWorkerId"
@@ -86,51 +88,51 @@
 
       <!-- Date Range Inputs with Step Navigation -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-2 text-xs">
+        <div class="flex-1 flex items-center gap-2 text-xs">
           <!-- Step backward button -->
           <button
             @click="shiftRange(-1)"
-            class="p-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-gray-50 text-gray-600 dark:text-gray-300"
+            class="p-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-gray-50 text-gray-600 dark:text-gray-300 shrink-0"
             title="Mundur Satu Periode"
           >
             <ChevronLeft class="w-4 h-4" />
           </button>
 
-          <!-- Start Date -->
-          <div class="flex items-center gap-1.5">
-            <span class="text-gray-500 font-semibold text-[11px]">Dari:</span>
-            <input
-              v-model="startDate"
-              type="date"
-              @change="onDateInputChange"
-              class="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#026bb1]/40"
-            />
-          </div>
+          <div class="flex-1 grid grid-cols-2 gap-2">
+            <!-- Start Date -->
+            <div class="flex flex-col">
+              <span class="text-gray-500 font-semibold text-[11px] mb-1">Dari:</span>
+              <input
+                v-model="startDate"
+                type="date"
+                @change="onDateInputChange"
+                class="w-full px-2 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#026bb1]/40"
+              />
+            </div>
 
-          <span class="text-gray-400 font-bold">—</span>
-
-          <!-- End Date -->
-          <div class="flex items-center gap-1.5">
-            <span class="text-gray-500 font-semibold text-[11px]">Sampai:</span>
-            <input
-              v-model="endDate"
-              type="date"
-              @change="onDateInputChange"
-              class="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#026bb1]/40"
-            />
+            <!-- End Date -->
+            <div class="flex flex-col">
+              <span class="text-gray-500 font-semibold text-[11px] mb-1">Sampai:</span>
+              <input
+                v-model="endDate"
+                type="date"
+                @change="onDateInputChange"
+                class="w-full px-2 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#026bb1]/40"
+              />
+            </div>
           </div>
 
           <!-- Step forward button -->
           <button
             @click="shiftRange(1)"
-            class="p-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-gray-50 text-gray-600 dark:text-gray-300"
+            class="p-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-gray-50 text-gray-600 dark:text-gray-300 shrink-0"
             title="Maju Satu Periode"
           >
             <ChevronRight class="w-4 h-4" />
           </button>
         </div>
 
-        <div class="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1.5">
+        <div class="w-full sm:w-auto text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center justify-center sm:justify-end gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-slate-800">
           <Calendar class="w-3.5 h-3.5 text-[#026bb1]" />
           <span>Rentang aktif: <strong class="text-gray-900 dark:text-white font-bold">{{ formattedDateRangeDisplay }}</strong></span>
         </div>
