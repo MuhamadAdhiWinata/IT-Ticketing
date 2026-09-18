@@ -209,33 +209,23 @@ const fileName = ref('');
 const fileSize = ref('');
 
 const currentSubcategories = computed(() => {
-  if (serviceView.value === 'SUPPORT_IT') {
-    return ['Printer', 'Scanner', 'Laptop & PC', 'Wifi Kantor', 'Kabel LAN', 'Reset Password', 'Email & O365'];
-  } else {
-    return [
-      'Development Sistem Baru',
-      'Pengelolaan Database dan Backup Sistem ERP',
-      'Maintenance ERP Desktop',
-      'Penanganan Bug ERP Desktop',
-      'Permintaan Penambahan Fitur Baru ERP Desktop',
-      'Perubahan Fitur Sistem (Modifikasi) ERP Desktop',
-      'Release, Deployment, dan Distribusi ERP Desktop Dev Trial',
-      'Release, Deployment, dan Distribusi ERP Desktop Production',
-      'Maintenance ERP Web',
-      'Penanganan Bug ERP Web',
-      'Permintaan Penambahan Fitur Baru ERP Web',
-      'Perubahan Fitur Sistem (Modifikasi) ERP Web',
-      'Release dan Pengujian Lingkungan Dev Trial',
-      'Release dan Deployment ERP Web Production'
-    ];
-  }
+  const targetCatName = serviceView.value === 'SUPPORT_IT' ? 'Support IT' : 'IT Programmer';
+  const targetCategory = store.categories.find(c => c.name.toLowerCase() === targetCatName.toLowerCase());
+  
+  if (!targetCategory) return [];
+
+  const storeSubs = store.subcategories
+    .filter(s => s.category_id === targetCategory.id)
+    .map(s => s.name);
+
+  return storeSubs;
 });
 
 const priorities = [
   { id: 'LOW', label: 'Low', activeClass: 'bg-slate-100 dark:bg-slate-800 border-slate-400 text-slate-700 dark:text-slate-300' },
   { id: 'MEDIUM', label: 'Med', activeClass: 'bg-blue-50 dark:bg-blue-950/60 border-blue-400 text-[#026bb1] dark:text-[#52b5f2]' },
   { id: 'HIGH', label: 'High', activeClass: 'bg-amber-50 dark:bg-amber-950/60 border-amber-400 text-amber-700 dark:text-amber-300' },
-  { id: 'URGENT', label: 'Urgent', activeClass: 'bg-red-50 dark:bg-red-950/60 border-red-400 text-red-700 dark:text-red-300' },
+  { id: 'CRITICAL', label: 'Critical', activeClass: 'bg-red-50 dark:bg-red-950/60 border-red-400 text-red-700 dark:text-red-300' },
 ];
 
 watch(serviceView, (newView) => {

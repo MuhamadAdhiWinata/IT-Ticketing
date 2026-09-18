@@ -2,12 +2,14 @@ import type {
   Ticket,
   AppUser,
   CategoryItem,
+  SubcategoryItem,
   VendorItem,
   TechnicianItem,
 } from '~/types';
 import {
   INITIAL_USERS,
   INITIAL_CATEGORIES,
+  INITIAL_SUBCATEGORIES,
   INITIAL_VENDORS,
   INITIAL_TECHNICIANS,
   INITIAL_TICKETS,
@@ -17,6 +19,7 @@ const STORAGE_KEYS = {
   THEME_DARK: 'it_theme_dark',
   TICKETS: 'it_tickets_data',
   CATEGORIES: 'it_categories_data',
+  SUBCATEGORIES: 'it_subcategories_data',
   VENDORS: 'it_vendors_data',
   TECHNICIANS: 'it_technicians_data',
   USERS: 'it_users_data',
@@ -85,6 +88,21 @@ export const StorageService = {
   saveCategories(categories: CategoryItem[]): void {
     if (typeof window === 'undefined') return;
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+  },
+
+  getSubcategories(): SubcategoryItem[] {
+    if (typeof window === 'undefined') return INITIAL_SUBCATEGORIES;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SUBCATEGORIES);
+      return saved ? JSON.parse(saved) : INITIAL_SUBCATEGORIES;
+    } catch {
+      return INITIAL_SUBCATEGORIES;
+    }
+  },
+
+  saveSubcategories(subcategories: SubcategoryItem[]): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.SUBCATEGORIES, JSON.stringify(subcategories));
   },
 
   getVendors(): VendorItem[] {

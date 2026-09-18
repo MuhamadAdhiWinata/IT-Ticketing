@@ -45,6 +45,12 @@
         <div class="bg-gray-50 dark:bg-slate-800/40 p-4 rounded-xl border border-gray-100 dark:border-slate-800 space-y-2">
           <span class="text-[10px] uppercase tracking-wider text-gray-400 font-bold block">Status & Penanganan</span>
           <div class="flex items-center justify-between">
+            <span class="text-xs text-gray-500">Prioritas:</span>
+            <span :class="['px-2 py-0.5 rounded text-xs font-bold uppercase', getTicketPriorityBadgeClass(ticket.priority)]">
+              {{ getTicketPriorityLabel(ticket.priority) }}
+            </span>
+          </div>
+          <div class="flex items-center justify-between">
             <span class="text-xs text-gray-500">Status Saat Ini:</span>
             <span class="px-2 py-0.5 rounded text-xs font-bold bg-blue-100 dark:bg-blue-900/60 text-[#026bb1] dark:text-[#52b5f2]">
               {{ ticket.status }}
@@ -257,6 +263,7 @@ import { ref, computed, watch, nextTick } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon } from 'lucide-vue-next';
 import { triggerPrintPDF } from '~/utils/export';
+import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
 
 const store = useAppStore();
 const isOpen = computed(() => store.activeView === 'ticket-detail');

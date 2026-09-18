@@ -55,7 +55,7 @@
           <option value="LOW">Low</option>
           <option value="MEDIUM">Medium</option>
           <option value="HIGH">High</option>
-          <option value="URGENT">Urgent</option>
+          <option value="CRITICAL">Critical</option>
         </select>
       </div>
     </div>
@@ -105,7 +105,7 @@
             <div class="flex items-center justify-between text-[10px] font-semibold text-gray-400">
               <span class="font-mono text-[#026bb1] dark:text-[#52b5f2] font-bold">{{ t.id }}</span>
               <div class="flex items-center gap-1.5">
-                <span class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300">{{ t.priority }}</span>
+                <span :class="['px-1.5 py-0.5 rounded text-[9px] font-bold uppercase font-mono', getTicketPriorityBadgeClass(t.priority)]">{{ getTicketPriorityLabel(t.priority) }}</span>
               </div>
             </div>
 
@@ -168,7 +168,9 @@
             >
               <td class="p-3.5 font-mono font-bold text-[#026bb1] dark:text-[#52b5f2]">
                 {{ t.id }}
-                <div class="text-[10px] text-gray-400 font-sans font-normal">{{ t.priority }}</div>
+                <div>
+                  <span :class="['px-1.5 py-0.5 rounded text-[9px] font-bold font-sans uppercase inline-block mt-0.5', getTicketPriorityBadgeClass(t.priority)]">{{ getTicketPriorityLabel(t.priority) }}</span>
+                </div>
               </td>
               <td class="p-3.5">
                 <div class="font-bold text-gray-900 dark:text-white">{{ t.title }}</div>
@@ -201,6 +203,7 @@
 import { ref, computed } from 'vue';
 import { Columns, Table as TableIcon, LayoutGrid, Search } from 'lucide-vue-next';
 import { AppUser, Ticket, TicketStatus } from '~/types';
+import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
 
 const props = defineProps<{
   tickets: Ticket[];

@@ -135,7 +135,13 @@ export interface Ticket {
 export interface CategoryItem {
   id: string;
   name: string;
-  subcategories: string[];
+  subcategories?: string[];
+}
+
+export interface SubcategoryItem {
+  id: string;
+  category_id: string;
+  name: string;
 }
 
 export interface VendorItem {

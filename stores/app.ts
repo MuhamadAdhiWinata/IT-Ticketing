@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { AppUser, Ticket, CategoryItem, VendorItem, TechnicianItem } from '~/types';
+import type { AppUser, Ticket, CategoryItem, SubcategoryItem, VendorItem, TechnicianItem } from '~/types';
 import { StorageService } from '~/services/storage';
 
 export const useAppStore = defineStore('app', {
@@ -12,6 +12,7 @@ export const useAppStore = defineStore('app', {
     currentUser: null as AppUser | null,
     tickets: [] as Ticket[],
     categories: [] as CategoryItem[],
+    subcategories: [] as SubcategoryItem[],
     vendors: [] as VendorItem[],
     technicians: [] as TechnicianItem[],
     allUsers: [] as AppUser[],
@@ -38,6 +39,7 @@ export const useAppStore = defineStore('app', {
       this.darkMode = StorageService.getDarkMode();
       this.tickets = StorageService.getTickets();
       this.categories = StorageService.getCategories();
+      this.subcategories = StorageService.getSubcategories();
       this.vendors = StorageService.getVendors();
       this.technicians = StorageService.getTechnicians();
       this.allUsers = StorageService.getUsers();
@@ -138,7 +140,7 @@ export const useAppStore = defineStore('app', {
         id: `TCK-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(this.tickets.length + 1).padStart(3, '0')}`,
         ticket_number: ticketPayload.ticket_number || `${prefix}-${Math.floor(100000 + Math.random() * 900000)}`,
         title: ticketPayload.title || '',
-        category: ticketPayload.category || 'Hardware',
+        category: ticketPayload.category || 'Support IT',
         subcategory: ticketPayload.subcategory || 'General',
         location: ticketPayload.location || 'Lantai 1',
         priority: ticketPayload.priority || 'MEDIUM',
@@ -291,6 +293,44 @@ export const useAppStore = defineStore('app', {
       };
 
       this.updateTicket(updated);
-    }
+    },
+
+    // Master Data Actions: Category & Subcategory
+    addCategory(cat: CategoryItem) {
+      this.categories = [...this.categories, cat];
+      StorageService.saveCategories(this.categories);
+    },
+
+    updateCategory(cat: CategoryItem) {
+      this.categories = this.categories.map(c => c.id === cat.id ? cat : c);
+      StorageService.saveCategories(this.categories);
+    },
+
+    deleteCategory(catId: string) {
+      this.categories = this.categories.filter(c => c.id !== catId);
+      this.subcategories = this.subcategories.filter(s => s.category_id !== catId);
+      StorageService.saveCategories(this.categories);
+      StorageService.saveSubcategories(this.subcategories);
+    },
+
+    addSubcategory(sub: SubcategoryItem) {
+      this.subcategories = [...this.subcategories, sub];
+      StorageService.saveSubcategories(this.subcategories);
+    },
+
+    updateSubcategory(sub: SubcategoryItem) {
+      this.subcategories = this.subcategories.map(s => s.id === sub.id ? sub : s);
+      StorageService.saveSubcategories(this.subcategories);
+    },
+
+    deleteSubcategory(subId: string) {
+      this.subcategories = this.subcategories.filter(s => s.id !== subId);
+      StorageService.saveSubcategories(this.subcategories);
+    },
+
+    addUser(user: AppUser) {
+      this.allUsers = [...this.allUsers, user];
+      StorageService.saveUsers(this.allUsers);
+    },
   }
 });

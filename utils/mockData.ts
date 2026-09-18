@@ -1,4 +1,4 @@
-import type { AppUser, CategoryItem, TechnicianItem, Ticket, VendorItem } from '~/types';
+import type { AppUser, CategoryItem, SubcategoryItem, TechnicianItem, Ticket, VendorItem } from '~/types';
 
 export const INITIAL_USERS: AppUser[] = [
   {
@@ -54,29 +54,46 @@ export const INITIAL_USERS: AppUser[] = [
 export const INITIAL_CATEGORIES: CategoryItem[] = [
   {
     id: 'CAT-01',
-    name: 'Hardware',
-    subcategories: ['Printer', 'Scanner', 'Laptop', 'PC Desktop', 'Monitor', 'Mouse & Keyboard'],
+    name: 'Support IT',
   },
   {
     id: 'CAT-02',
-    name: 'Software & Aplikasi',
-    subcategories: ['SAP ERP', 'Office 365', 'Email Outlook', 'Web Portal Internal', 'Browser / VPN Client'],
+    name: 'IT Programmer',
   },
-  {
-    id: 'CAT-03',
-    name: 'Jaringan & Koneksi',
-    subcategories: ['Wifi Kantor', 'Kabel LAN Meja', 'Akses Internet Drop', 'Koneksi Server Lokal'],
-  },
-  {
-    id: 'CAT-04',
-    name: 'Akun & Keamanan',
-    subcategories: ['Reset Password', 'Permintaan Akun Baru', 'Izin Akses Shared Folder', 'Autentikasi 2FA'],
-  },
-  {
-    id: 'CAT-05',
-    name: 'Infrastruktur & Server',
-    subcategories: ['Database Maintenance', 'Server High Load', 'Backup & Restore', 'Virtual Machine'],
-  },
+];
+
+export const INITIAL_SUBCATEGORIES: SubcategoryItem[] = [
+  // Support IT (CAT-01)
+  { id: 'SUB-001', category_id: 'CAT-01', name: 'Printer & Mesin Fotokopi' },
+  { id: 'SUB-002', category_id: 'CAT-01', name: 'Scanner & Digitalisasi Dokumen' },
+  { id: 'SUB-003', category_id: 'CAT-01', name: 'Hardware Laptop, PC & Monitor' },
+  { id: 'SUB-004', category_id: 'CAT-01', name: 'Koneksi Wifi & Jaringan Kantor' },
+  { id: 'SUB-005', category_id: 'CAT-01', name: 'Kabel LAN & Wall Outlet' },
+  { id: 'SUB-006', category_id: 'CAT-01', name: 'Reset Password & Unlock Account' },
+  { id: 'SUB-007', category_id: 'CAT-01', name: 'Email Perusahaan & Office 365' },
+  { id: 'SUB-008', category_id: 'CAT-01', name: 'Akses Shared Folder & Server NAS' },
+  { id: 'SUB-009', category_id: 'CAT-01', name: 'Instalasi Software Client & Driver' },
+  { id: 'SUB-010', category_id: 'CAT-01', name: 'Penanganan Virus & Antivirus Client' },
+  { id: 'SUB-011', category_id: 'CAT-01', name: 'Telepon IP PBX & Komunikasi Line' },
+  { id: 'SUB-012', category_id: 'CAT-01', name: 'CCTV & Keamanan Akses Fisik IT' },
+
+  // IT Programmer (CAT-02)
+  { id: 'SUB-013', category_id: 'CAT-02', name: 'Development Aplikasi / Sistem Baru' },
+  { id: 'SUB-014', category_id: 'CAT-02', name: 'Pengelolaan Database dan Backup Sistem ERP' },
+  { id: 'SUB-015', category_id: 'CAT-02', name: 'Maintenance ERP Desktop' },
+  { id: 'SUB-016', category_id: 'CAT-02', name: 'Penanganan Bug ERP Desktop' },
+  { id: 'SUB-017', category_id: 'CAT-02', name: 'Permintaan Penambahan Fitur Baru ERP Desktop' },
+  { id: 'SUB-018', category_id: 'CAT-02', name: 'Perubahan Fitur Sistem (Modifikasi) ERP Desktop' },
+  { id: 'SUB-019', category_id: 'CAT-02', name: 'Release, Deployment, dan Distribusi ERP Desktop Dev Trial' },
+  { id: 'SUB-020', category_id: 'CAT-02', name: 'Release, Deployment, dan Distribusi ERP Desktop Production' },
+  { id: 'SUB-021', category_id: 'CAT-02', name: 'Maintenance ERP Web' },
+  { id: 'SUB-022', category_id: 'CAT-02', name: 'Penanganan Bug ERP Web' },
+  { id: 'SUB-023', category_id: 'CAT-02', name: 'Permintaan Penambahan Fitur Baru ERP Web' },
+  { id: 'SUB-024', category_id: 'CAT-02', name: 'Perubahan Fitur Sistem (Modifikasi) ERP Web' },
+  { id: 'SUB-025', category_id: 'CAT-02', name: 'Release dan Pengujian Lingkungan Dev Trial' },
+  { id: 'SUB-026', category_id: 'CAT-02', name: 'Release dan Deployment ERP Web Production' },
+  { id: 'SUB-027', category_id: 'CAT-02', name: 'Integrasi API & Webhook Service Eksternal' },
+  { id: 'SUB-028', category_id: 'CAT-02', name: 'Optimasi Performa Query & Tuning Database' },
 ];
 
 export const INITIAL_VENDORS: VendorItem[] = [
@@ -123,8 +140,8 @@ export const INITIAL_TICKETS: Ticket[] = [
     id: 'TCK-202609-001',
     title: 'Printer Lantai 2 Kehabisan Tinta & Paper Jam Parah',
     description: 'Printer EPSON L3150 di divisi Keuangan Lantai 2 tidak dapat mencetak invoice akhir bulan. Ada kertas tersangkut dan lampu indikator tinta berkedip merah terus menerus.',
-    category: 'Hardware',
-    subcategory: 'Printer',
+    category: 'Support IT',
+    subcategory: 'Printer & Mesin Fotokopi',
     location: 'Gedung A, Lantai 2 - Ruang Finance',
     priority: 'HIGH',
     status: 'PROCESS',
@@ -279,8 +296,8 @@ export const INITIAL_TICKETS: Ticket[] = [
     id: 'TCK-202609-002',
     title: 'Gagal Login Akun ERP SAP Keuangan (User Locked)',
     description: 'Muncul error pesan "User account locked due to 3 incorrect password attempts". Tidak bisa approval batch vendor.',
-    category: 'Software & Aplikasi',
-    subcategory: 'SAP ERP',
+    category: 'IT Programmer',
+    subcategory: 'Maintenance ERP Desktop',
     location: 'Gedung A, Lantai 3 - Akuntansi',
     priority: 'CRITICAL',
     status: 'SELESAI',
@@ -388,8 +405,8 @@ export const INITIAL_TICKETS: Ticket[] = [
     id: 'TCK-202609-003',
     title: 'Koneksi Wifi Ruang Rapat Direksi Drop Berulang Kali',
     description: 'Access Point Aruba di Ruang Rapat Direksi Lantai 5 sering disconnect mendadak saat video conference Zoom board meeting.',
-    category: 'Jaringan & Koneksi',
-    subcategory: 'Wifi Kantor',
+    category: 'Support IT',
+    subcategory: 'Koneksi Wifi & Jaringan Kantor',
     location: 'Gedung Utama, Lantai 5 - Boardroom',
     priority: 'HIGH',
     status: 'DELEGASI',
@@ -509,8 +526,8 @@ export const INITIAL_TICKETS: Ticket[] = [
     id: 'TCK-202609-004',
     title: 'Request Lisensi & Instalasi Software Figma Professional',
     description: 'Permintaan lisensi figma untuk 2 staff UI/UX baru serta instalasi font korporat.',
-    category: 'Software & Aplikasi',
-    subcategory: 'Web Portal Internal',
+    category: 'IT Programmer',
+    subcategory: 'Development Aplikasi / Sistem Baru',
     location: 'Gedung B, Lantai 4 - Tim Desain',
     priority: 'LOW',
     status: 'DRAFT',
@@ -554,8 +571,8 @@ export const INITIAL_TICKETS: Ticket[] = [
     id: 'TCK-202609-005',
     title: 'Server Database Payroll High CPU & Memory Spike > 95%',
     description: 'Alert monitoring Zabbix: Server DB-PAYROLL-01 utilisasi memory 96% dan query lock timeout pada perhitungan lembur bulanan.',
-    category: 'Infrastruktur & Server',
-    subcategory: 'Database Maintenance',
+    category: 'IT Programmer',
+    subcategory: 'Pengelolaan Database dan Backup Sistem ERP',
     location: 'Data Center Lt 1 - Server Room A',
     priority: 'CRITICAL',
     status: 'PROCESS',
@@ -631,8 +648,8 @@ export const INITIAL_TICKETS: Ticket[] = [
     id: 'TCK-202609-006',
     title: 'Monitor PC Kasir Toko Bergaris Vertikal & Berkedip',
     description: 'Monitor Dell 24 inch pada meja kasir front-office bergaris hijau vertikal saat dinyalakan.',
-    category: 'Hardware',
-    subcategory: 'Monitor',
+    category: 'Support IT',
+    subcategory: 'Hardware Laptop, PC & Monitor',
     location: 'Cabang Thamrin - Front Desk',
     priority: 'MEDIUM',
     status: 'SELESAI',

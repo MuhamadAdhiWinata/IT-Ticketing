@@ -70,8 +70,8 @@
           <span class="font-mono font-bold text-[#026bb1] dark:text-[#52b5f2] bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-900">
             {{ t.id }}
           </span>
-          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300">
-            {{ t.priority }}
+          <span :class="['px-2 py-0.5 rounded text-[10px] font-bold uppercase', getTicketPriorityBadgeClass(t.priority)]">
+            {{ getTicketPriorityLabel(t.priority) }}
           </span>
         </div>
 
@@ -96,6 +96,7 @@
 import { ref, computed } from 'vue';
 import { Briefcase } from 'lucide-vue-next';
 import { AppUser, Ticket } from '~/types';
+import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
 
 const props = defineProps<{
   tickets: Ticket[];
