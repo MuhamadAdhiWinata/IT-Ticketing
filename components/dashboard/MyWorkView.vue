@@ -39,14 +39,14 @@
     <!-- Filter Tabs -->
     <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-4 shadow-xs space-y-3 transition-colors">
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 dark:border-slate-800 pb-3">
-        <div class="flex flex-wrap items-center gap-1">
+        <div class="overflow-x-auto no-scrollbar flex items-center gap-1.5 py-1 w-full">
           <button
             v-for="st in ['ALL', 'PROCESS', 'SELESAI', 'DELEGASI', 'DRAFT']"
             :key="st"
             type="button"
             @click="statusFilter = st"
             :class="[
-              'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all',
+              'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0',
               statusFilter === st
                 ? 'bg-[#026bb1] text-white shadow-xs'
                 : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'

@@ -166,18 +166,18 @@
       <div class="pt-4 border-t border-gray-100 dark:border-slate-800 flex items-center justify-end gap-3">
         <button
           type="button"
-          @click="handleSubmit(false)"
-          class="px-5 py-3 rounded-xl border border-[#026bb1]/30 bg-white dark:bg-slate-800 text-[#026bb1] dark:text-[#52b5f2] text-xs font-bold hover:bg-blue-50 transition-colors"
+          @click="handleSubmit(true)"
+          class="px-5 py-3 rounded-xl border border-[#026bb1]/30 bg-white dark:bg-slate-800 text-[#026bb1] dark:text-[#52b5f2] text-xs font-bold hover:bg-blue-50 transition-colors flex items-center gap-1.5"
         >
-          Simpan sebagai Draft
+          <Check class="w-4 h-4" />
+          <span>Simpan & Assign</span>
         </button>
         <button
           type="button"
-          @click="handleSubmit(true)"
-          class="px-6 py-3 rounded-xl bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold transition-colors shadow-md flex items-center gap-2"
+          @click="handleSubmit(false)"
+          class="px-6 py-3 rounded-xl bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold transition-colors shadow-md"
         >
-          <Check class="w-4 h-4" />
-          <span>Kirim Tiket Sekarang</span>
+          Simpan
         </button>
       </div>
     </div>
