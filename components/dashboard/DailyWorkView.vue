@@ -261,106 +261,108 @@
     </div>
 
     <!-- Modal Catat Log Kerja Cepat -->
-    <div
-      v-if="isAddModalOpen"
-      class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4"
-    >
-      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-6 max-w-lg w-full shadow-2xl space-y-4">
-        <div class="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-3">
-          <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Clock class="w-5 h-5 text-[#026bb1]" />
-            <span>Catat Log Pekerjaan IT</span>
-          </h3>
-          <button @click="isAddModalOpen = false" class="text-gray-400 hover:text-gray-600">
-            ✕
-          </button>
+    <Teleport to="body">
+      <div
+        v-if="isAddModalOpen"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4"
+      >
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-6 max-w-lg w-full shadow-2xl space-y-4">
+          <div class="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-3">
+            <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Clock class="w-5 h-5 text-[#026bb1]" />
+              <span>Catat Log Pekerjaan IT</span>
+            </h3>
+            <button @click="isAddModalOpen = false" class="text-gray-400 hover:text-gray-600 cursor-pointer">
+              ✕
+            </button>
+          </div>
+
+          <form @submit.prevent="submitWorklog" class="space-y-4">
+            <div>
+              <AppSelect
+                v-model="newWlTicketId"
+                :options="candidateTicketOptions"
+                label="Pilih Tiket yang Dikerjakan *"
+                placeholder="-- Pilih Tiket --"
+              />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Tanggal Pengerjaan</label>
+                <input
+                  v-model="newWlDate"
+                  type="date"
+                  required
+                  class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
+                />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Durasi (Menit)</label>
+                <input
+                  v-model.number="newWlDuration"
+                  type="number"
+                  min="5"
+                  step="5"
+                  required
+                  class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Jam Mulai</label>
+                <input
+                  v-model="newWlStart"
+                  type="time"
+                  required
+                  class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
+                />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Jam Selesai</label>
+                <input
+                  v-model="newWlFinish"
+                  type="time"
+                  required
+                  class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                Rincian Aktivitas / Troubleshooting <span class="text-red-500">*</span>
+              </label>
+              <textarea
+                v-model="newWlDesc"
+                rows="3"
+                required
+                placeholder="Jelaskan tindakan teknis yang telah dilakukan..."
+                class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#026bb1]/40 resize-none"
+              ></textarea>
+            </div>
+
+            <div class="pt-2 flex items-center justify-end gap-2 border-t border-gray-100 dark:border-slate-800">
+              <button
+                type="button"
+                @click="isAddModalOpen = false"
+                class="px-4 py-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                class="px-5 py-2 bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer"
+              >
+                Simpan Log
+              </button>
+            </div>
+          </form>
         </div>
-
-        <form @submit.prevent="submitWorklog" class="space-y-4">
-          <div>
-            <AppSelect
-              v-model="newWlTicketId"
-              :options="candidateTicketOptions"
-              label="Pilih Tiket yang Dikerjakan *"
-              placeholder="-- Pilih Tiket --"
-            />
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Tanggal Pengerjaan</label>
-              <input
-                v-model="newWlDate"
-                type="date"
-                required
-                class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
-              />
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Durasi (Menit)</label>
-              <input
-                v-model.number="newWlDuration"
-                type="number"
-                min="5"
-                step="5"
-                required
-                class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
-              />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Jam Mulai</label>
-              <input
-                v-model="newWlStart"
-                type="time"
-                required
-                class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
-              />
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Jam Selesai</label>
-              <input
-                v-model="newWlFinish"
-                type="time"
-                required
-                class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-              Rincian Aktivitas / Troubleshooting <span class="text-red-500">*</span>
-            </label>
-            <textarea
-              v-model="newWlDesc"
-              rows="3"
-              required
-              placeholder="Jelaskan tindakan teknis yang telah dilakukan..."
-              class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#026bb1]/40 resize-none"
-            ></textarea>
-          </div>
-
-          <div class="pt-2 flex items-center justify-end gap-2 border-t border-gray-100 dark:border-slate-800">
-            <button
-              type="button"
-              @click="isAddModalOpen = false"
-              class="px-4 py-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              class="px-5 py-2 bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold rounded-xl shadow-xs"
-            >
-              Simpan Log
-            </button>
-          </div>
-        </form>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 

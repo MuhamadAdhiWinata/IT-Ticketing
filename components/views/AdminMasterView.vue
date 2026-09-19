@@ -321,94 +321,100 @@
     </div>
 
     <!-- MODAL ADD / EDIT CATEGORY -->
-    <div v-if="isCategoryModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-6 max-w-md w-full shadow-2xl space-y-4">
-        <h3 class="text-base font-bold text-gray-900 dark:text-white">
-          {{ editingCatId ? 'Edit Kategori Induk' : 'Tambah Kategori Induk Baru' }}
-        </h3>
-        <form @submit.prevent="saveCategoryForm" class="space-y-3 text-xs">
-          <div>
-            <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">ID Kategori</label>
-            <input v-model="catForm.id" required :disabled="!!editingCatId" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono" />
-          </div>
-          <div>
-            <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Nama Kategori</label>
-            <input v-model="catForm.name" required placeholder="Cth: Support IT / IT Programmer" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs" />
-          </div>
-          <div class="pt-2 flex justify-end gap-2">
-            <button type="button" @click="isCategoryModalOpen = false" class="px-3 py-1.5 bg-gray-100 dark:bg-slate-800 rounded-xl font-bold">Batal</button>
-            <button type="submit" class="px-4 py-1.5 bg-[#026bb1] text-white rounded-xl font-bold">Simpan Kategori</button>
-          </div>
-        </form>
+    <Teleport to="body">
+      <div v-if="isCategoryModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-6 max-w-md w-full shadow-2xl space-y-4">
+          <h3 class="text-base font-bold text-gray-900 dark:text-white">
+            {{ editingCatId ? 'Edit Kategori Induk' : 'Tambah Kategori Induk Baru' }}
+          </h3>
+          <form @submit.prevent="saveCategoryForm" class="space-y-3 text-xs">
+            <div>
+              <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">ID Kategori</label>
+              <input v-model="catForm.id" required :disabled="!!editingCatId" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono" />
+            </div>
+            <div>
+              <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Nama Kategori</label>
+              <input v-model="catForm.name" required placeholder="Cth: Support IT / IT Programmer" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs" />
+            </div>
+            <div class="pt-2 flex justify-end gap-2">
+              <button type="button" @click="isCategoryModalOpen = false" class="px-3 py-1.5 bg-gray-100 dark:bg-slate-800 rounded-xl font-bold">Batal</button>
+              <button type="submit" class="px-4 py-1.5 bg-[#026bb1] text-white rounded-xl font-bold">Simpan Kategori</button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </Teleport>
 
     <!-- MODAL ADD / EDIT SUBCATEGORY (INDIVIDU RECORD) -->
-    <div v-if="isSubcategoryModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-6 max-w-md w-full shadow-2xl space-y-4">
-        <h3 class="text-base font-bold text-gray-900 dark:text-white">
-          {{ editingSubId ? 'Edit Record Subkategori' : 'Tambah Record Subkategori Baru' }}
-        </h3>
-        <form @submit.prevent="saveSubcategoryForm" class="space-y-3 text-xs">
-          <div>
-            <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">ID Subkategori</label>
-            <input v-model="subForm.id" required :disabled="!!editingSubId" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono" />
-          </div>
-          <div>
-            <AppSelect
-              v-model="subForm.category_id"
-              :options="categoryFormOptions"
-              label="Pilih Kategori Induk (FK: category_id)"
-              placeholder="-- Pilih Kategori --"
-            />
-          </div>
-          <div>
-            <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Nama Subkategori</label>
-            <input v-model="subForm.name" required placeholder="Cth: Maintenance ERP Web / Printer" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium" />
-          </div>
-          <div class="pt-2 flex justify-end gap-2">
-            <button type="button" @click="isSubcategoryModalOpen = false" class="px-3 py-1.5 bg-gray-100 dark:bg-slate-800 rounded-xl font-bold">Batal</button>
-            <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold">Simpan Record</button>
-          </div>
-        </form>
+    <Teleport to="body">
+      <div v-if="isSubcategoryModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-6 max-w-md w-full shadow-2xl space-y-4">
+          <h3 class="text-base font-bold text-gray-900 dark:text-white">
+            {{ editingSubId ? 'Edit Record Subkategori' : 'Tambah Record Subkategori Baru' }}
+          </h3>
+          <form @submit.prevent="saveSubcategoryForm" class="space-y-3 text-xs">
+            <div>
+              <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">ID Subkategori</label>
+              <input v-model="subForm.id" required :disabled="!!editingSubId" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono" />
+            </div>
+            <div>
+              <AppSelect
+                v-model="subForm.category_id"
+                :options="categoryFormOptions"
+                label="Pilih Kategori Induk (FK: category_id)"
+                placeholder="-- Pilih Kategori --"
+              />
+            </div>
+            <div>
+              <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Nama Subkategori</label>
+              <input v-model="subForm.name" required placeholder="Cth: Maintenance ERP Web / Printer" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium" />
+            </div>
+            <div class="pt-2 flex justify-end gap-2">
+              <button type="button" @click="isSubcategoryModalOpen = false" class="px-3 py-1.5 bg-gray-100 dark:bg-slate-800 rounded-xl font-bold">Batal</button>
+              <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold">Simpan Record</button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </Teleport>
 
     <!-- MODAL ADD USER -->
-    <div v-if="isUserModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-6 max-w-md w-full shadow-2xl space-y-4">
-        <h3 class="text-base font-bold text-gray-900 dark:text-white">Tambah Pengguna Baru</h3>
-        <form @submit.prevent="saveUserForm" class="space-y-3 text-xs">
-          <div>
-            <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">ID User</label>
-            <input v-model="userForm.id" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono" />
-          </div>
-          <div>
-            <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Nama Lengkap</label>
-            <input v-model="userForm.name" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs" />
-          </div>
-          <div>
-            <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Email</label>
-            <input v-model="userForm.email" type="email" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs" />
-          </div>
-          <div>
-            <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Departemen</label>
-            <input v-model="userForm.department" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs" />
-          </div>
-          <div>
-            <AppSelect
-              v-model="userForm.role"
-              :options="roleFormOptions"
-              label="Role"
-            />
-          </div>
-          <div class="pt-2 flex justify-end gap-2">
-            <button type="button" @click="isUserModalOpen = false" class="px-3 py-1.5 bg-gray-100 dark:bg-slate-800 rounded-xl font-bold">Batal</button>
-            <button type="submit" class="px-4 py-1.5 bg-[#026bb1] text-white rounded-xl font-bold">Simpan</button>
-          </div>
-        </form>
+    <Teleport to="body">
+      <div v-if="isUserModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-6 max-w-md w-full shadow-2xl space-y-4">
+          <h3 class="text-base font-bold text-gray-900 dark:text-white">Tambah Pengguna Baru</h3>
+          <form @submit.prevent="saveUserForm" class="space-y-3 text-xs">
+            <div>
+              <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">ID User</label>
+              <input v-model="userForm.id" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono" />
+            </div>
+            <div>
+              <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Nama Lengkap</label>
+              <input v-model="userForm.name" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs" />
+            </div>
+            <div>
+              <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Email</label>
+              <input v-model="userForm.email" type="email" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs" />
+            </div>
+            <div>
+              <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Departemen</label>
+              <input v-model="userForm.department" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs" />
+            </div>
+            <div>
+              <AppSelect
+                v-model="userForm.role"
+                :options="roleFormOptions"
+                label="Role"
+              />
+            </div>
+            <div class="pt-2 flex justify-end gap-2">
+              <button type="button" @click="isUserModalOpen = false" class="px-3 py-1.5 bg-gray-100 dark:bg-slate-800 rounded-xl font-bold">Batal</button>
+              <button type="submit" class="px-4 py-1.5 bg-[#026bb1] text-white rounded-xl font-bold">Simpan</button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
