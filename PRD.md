@@ -4,7 +4,7 @@
 
 ## IT-Ticketing
 
-**Versi:** 2.1
+**Versi:** 2.2
 **Platform:** Web Application (Nuxt 4 + Tailwind + Pinia)
 **Target Pengguna:** Karyawan Non-IT, IT Worker, dan System Admin
 
@@ -76,11 +76,11 @@ Management dapat melihat:
 | ------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **User (Non-IT)**   | Karyawan pelapor masalah / peminta pekerjaan                          | Membuat tiket, menyimpan draft, issue tiket, melihat status, tracking stepper, upload lampiran request, memberikan komentar, melakukan recall/reopen sesuai aturan                                                 |
 | **IT Worker**       | Programmer, IT Support, Network/Hardware Specialist                   | Melihat tiket yang tersedia, mengambil tiket dari detail/kanban, mengerjakan tiket, menambahkan catatan kerja (Kirim), upload lampiran proses, delegasi, menyelesaikan tiket, export laporan pribadi                |
-| **System Admin**    | Administrator aplikasi                                                | Mengelola user, role, permission, kategori, vendor, teknisi, konfigurasi sistem                                                                                                                                    |
+| **System Admin**    | Administrator aplikasi                                                | Mengelola user, kategori, subkategori, prioritas, master data. **Buat Tiket Atas Nama** user lain. Akses penuh ke semua modul termasuk Laporan dan Admin                                                          |
 
 > **Catatan:** Tidak ada role "Admin" untuk assignment. Worker mengambil tiket sendiri dari detail atau kanban (self-assign).
 
-> **Catatan:** Role IT Lead dan Vendor telah dihapus. Fitur delegasi ke vendor eksternal tetap tersedia melalui menu Delegasi.
+> **Catatan:** Role IT Lead dan Vendor telah dihapus dari sistem. Fitur delegasi ke vendor eksternal tetap tersedia melalui menu Delegasi.
 
 ---
 
@@ -178,7 +178,7 @@ Tiket sedang dikerjakan oleh IT.
 
 Pada tahap ini:
 
-* Primary Worker ditentukan
+* Worker ditugaskan / berkontribusi pada tiket
 * Supporting Member dapat ditambahkan
 * Worklog dapat dibuat (dengan stageKey IN_PROGRESS)
 * Lampiran proses dapat ditambahkan
@@ -580,14 +580,21 @@ Sedangkan:
 * Auto-scroll ke tahap aktif (smooth scrolling)
 * Connector lines antar tahap terlihat di semua ukuran layar
 
-## 12.4. Tombol Aksi Mobile
+## 12.4. Modal Dialog
+
+* Semua modal menggunakan `<Teleport to="body">` agar render di root `<body>`
+* Z-index `z-[9999]` untuk semua modal agar di atas elemen lain (sidebar, dropdown, navbar)
+* Backdrop `bg-slate-900/60 backdrop-blur-xs`
+* Contoh modal: Create Ticket Success, Catat Log Kerja, Add/Edit Kategori, Add/Edit Subkategori, Tambah User
+
+## 12.5. Tombol Aksi Mobile
 
 * Tombol stacked vertically di mobile (`flex-col`)
 * Tombol sejajar horizontal di desktop (`sm:flex-row`)
 * Setiap tombol full width di mobile
 * Tombol Back (kembali) disembunyikan di mobile
 
-## 12.5. Judul Tiket di Detail
+## 12.6. Judul Tiket di Detail
 
 * Di mobile: judul wrap natural (tanpa `truncate`), semua teks terlihat
 * Di desktop: judul tetap `truncate` satu baris rapi
@@ -605,7 +612,7 @@ User dapat melihat:
 * Status
 * Tanggal dibuat
 * Tanggal issue
-* Primary Worker
+* Assigned Worker
 * Supporting Member jika diizinkan
 * Status delegasi
 * Komentar yang bersifat user-visible
@@ -630,9 +637,10 @@ Form User dibuat sesederhana mungkin.
 
 ```text
 Judul
-Kategori
-Subkategori
+Kategori (Support IT / IT Programmer)
+Subkategori (relasional berdasarkan kategori induk)
 Lokasi
+Prioritas (LOW / MEDIUM / HIGH / CRITICAL)
 Deskripsi
 Attachment
 ```
@@ -644,7 +652,7 @@ Judul:
 Printer Lantai 2 Tidak Bisa Print
 
 Kategori:
-Hardware
+Support IT
 
 Subkategori:
 Printer
@@ -703,34 +711,44 @@ Worker mengambil tiket dari kolom DRAFT di kanban.
 Setelah diambil:
 
 ```text
-Primary Worker:
+Assigned Worker:
 Budi
 ```
 
 ---
 
-# 17. Primary Worker & Supporting Member
+# 17. Kontributor Tiket
 
-Satu tiket memiliki:
+Satu tiket memiliki beberapa kontributor yang berperan dalam pengerjaan:
 
-### Primary Worker
+### Assigned Worker
 
-Orang yang bertanggung jawab terhadap tiket.
+Worker yang ditugaskan menangani tiket (ditentukan saat konfirmasi assign).
 
 ### Supporting Member
 
-Orang lain yang membantu pengerjaan.
+Worker lain yang membantu pengerjaan.
+
+### Worklog Contributor
+
+Worker yang pernah mengisi catatan kerja (worklog) pada tiket, baik sebagai assigned worker maupun supporting member.
+
+Kontribusi dicatat melalui **worklog** — setiap entry worklog memiliki `worker_id` yang menunjukkan siapa yang melakukan aktivitas.
 
 Contoh:
 
 ```text
-Primary Worker
+Assigned Worker:
 Budi
 
-Supporting Member
+Supporting Member:
 Andi
 Dedi
-Rizal
+
+Worklog Contributors:
+Budi (3 aktivitas)
+Andi (1 aktivitas)
+Rizal (2 aktivitas)
 ```
 
 ---
@@ -916,7 +934,6 @@ Halaman khusus pekerjaan harian dengan fitur lengkap.
 
 ## 25.1. Header
 
-* Banner informasi PRD 25
 * Tombol "Catat Log Kerja" untuk menambah worklog manual
 * Tombol "Ekspor Excel" untuk download rekap worklog
 * Tombol "Cetak" untuk cetak laporan
@@ -1220,7 +1237,7 @@ Sistem notifikasi menggunakan komponen toast (bukan alert() browser).
     "title": "Printer Kehabisan Tinta & Paper Jam",
     "description": "Printer Lantai 2 tidak bisa print laporan",
 
-    "category": "Hardware",
+    "category": "Support IT",
     "subcategory": "Printer",
 
     "status": "PROCESS",
@@ -1228,9 +1245,15 @@ Sistem notifikasi menggunakan komponen toast (bukan alert() browser).
     "created_by": "USR-001",
     "created_by_name": "Rina Wulandari",
     "created_by_dept": "Finance & Accounting",
+    "created_by_admin_id": null,
+    "created_by_admin_name": null,
 
-    "primary_worker_id": "IT-001",
-    "primary_worker_name": "Budi Santoso",
+    "requestedBy": "USR-001",
+    "requestedByName": "Rina Wulandari",
+    "requestedByDept": "Finance & Accounting",
+
+    "assignedTo": "IT-001",
+    "assignedToName": "Budi Santoso",
 
     "supporting_members": ["Andi Pratama", "Dedi Kurniawan"],
     "supporting_member_details": [
@@ -1352,7 +1375,7 @@ Issue membuat tiket masuk ke antrean pekerjaan.
 
 ### Rule 04
 
-Setiap tiket memiliki satu Primary Worker.
+Setiap tiket memiliki satu Assigned Worker.
 
 ### Rule 05
 
@@ -1421,6 +1444,18 @@ Setelah klik tombol aksi (Kirim/Selesai/Konfirmasi/Delegasi), form input (textar
 ### Rule 21
 
 Saat pindah tab, `selectedTicketId` dan `selectedTicket` otomatis dibersihkan dari URL dan state.
+
+### Rule 22
+
+SYSTEM_ADMIN dapat membuat tiket atas nama user lain menggunakan fitur "Buat Atas Nama". Field `created_by_admin_id` dan `created_by_admin_name` dicatat untuk audit trail.
+
+### Rule 23
+
+Ketika tiket dibuat atas nama user lain, audit trail `DIBUAT_ATAS_NAMA` otomatis ditambahkan.
+
+### Rule 24
+
+Semua modal dialog menggunakan `<Teleport to="body">` dengan `z-[9999]` agar konsisten dan tidak tertimpa elemen lain.
 
 ---
 
@@ -1513,13 +1548,16 @@ Detail teknis hanya diisi ketika memang diperlukan.
 
 ## Phase 4 — Management
 
-* Dashboard
-* Workload
+* ~~Dashboard (IT Kanban + Table)~~
+* ~~Workload (My Work + Daily Work)~~
 * ~~SLA~~ (dihapus)
 * Analytics
-* Reports
+* ~~Reports (Laporan & Export)~~
 * ~~Excel Export~~
 * ~~PDF Export~~
+* ~~Admin Master Data (Kategori, Subkategori, Prioritas, User)~~
+* ~~Buat Tiket Atas Nama (Admin On Behalf)~~
+* ~~AppSelect Component (menggantikan select native)~~
 
 ---
 
@@ -1534,7 +1572,7 @@ MVP dinyatakan berhasil apabila:
 * ~~User dapat Issue Ticket.~~
 * ~~IT dapat melihat tiket tersedia.~~
 * ~~IT dapat mengambil tiket (self-assign).~~
-* ~~Ticket memiliki Primary Worker.~~
+* ~~Ticket memiliki Primary Worker~~ → Assigned Worker (kontributor model)
 * ~~Ticket dapat memiliki Supporting Member.~~
 * ~~User dapat mengunggah foto/dokumen.~~
 * ~~IT dapat mengunggah attachment berdasarkan stage.~~
@@ -1565,6 +1603,14 @@ MVP dinyatakan berhasil apabila:
 * ~~Tombol aksi stacked di mobile.~~
 * ~~Kode tiket ditampilkan sebagai badge mono biru.~~
 * ~~URL state bersih saat pindah tab.~~
+* ~~SYSTEM_ADMIN dapat membuat tiket atas nama user lain.~~
+* ~~Laporan & Export dengan 3 tab (Rekapitulasi Tiket, Log Pekerjaan, Ringkasan Per Teknisi).~~
+* ~~Admin Master Data (Kategori, Subkategori, Prioritas, User).~~
+* ~~AppSelect component (menggantikan select native).~~
+* ~~Semua modal menggunakan Teleport to body + z-[9999].~~
+* ~~Contributor model (assigned + supporting + worklog writer).~~
+* ~~Prioritas tiket: LOW, MEDIUM, HIGH, CRITICAL (tanpa URGENT).~~
+* ~~Kategori: Support IT & IT Programmer (model relasional).~~
 * Recall menghasilkan Ticket ID baru dengan referensi tiket lama.
 * User tidak dapat melihat Internal Note dan attachment internal.
 
