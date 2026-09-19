@@ -8,3 +8,5 @@ coverage/
 !.env.example
 .output/
 .nuxt/
+server/uploads/
+drizzle/

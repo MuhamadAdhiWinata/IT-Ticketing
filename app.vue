@@ -12,7 +12,7 @@ import { useAppStore } from '~/stores/app';
 
 const store = useAppStore();
 
-onMounted(() => {
-  store.initApp();
+onMounted(async () => {
+  await store.initApp();
 });
 </script>

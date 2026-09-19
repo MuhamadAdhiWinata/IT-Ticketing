@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import type { AppUser, Ticket, CategoryItem, SubcategoryItem, VendorItem, TechnicianItem } from '~/types';
-import { StorageService } from '~/services/storage';
 
 export const useAppStore = defineStore('app', {
   state: () => ({
@@ -35,15 +34,35 @@ export const useAppStore = defineStore('app', {
       }
     },
 
-    initApp() {
-      this.darkMode = StorageService.getDarkMode();
-      this.tickets = StorageService.getTickets();
-      this.categories = StorageService.getCategories();
-      this.subcategories = StorageService.getSubcategories();
-      this.vendors = StorageService.getVendors();
-      this.technicians = StorageService.getTechnicians();
-      this.allUsers = StorageService.getUsers();
-      this.currentUser = this.allUsers[1] || this.allUsers[0] || null;
+    async initApp() {
+      try {
+        const [usersRes, prefsRes] = await Promise.all([
+          $fetch<{ success: boolean; data: AppUser[] }>('/api/users'),
+          $fetch<{ success: boolean; data: { darkMode: boolean } }>('/api/user/preferences', {
+            headers: { 'X-User-Id': 'USR-001' },
+          }).catch(() => null),
+        ]);
+
+        this.allUsers = usersRes.data;
+        this.currentUser = this.allUsers[1] || this.allUsers[0] || null;
+
+        if (prefsRes) {
+          this.darkMode = prefsRes.data.darkMode;
+        }
+
+        const [ticketsRes, catsRes, subcatsRes] = await Promise.all([
+          $fetch<{ success: boolean; data: Ticket[] }>('/api/tickets').catch(() => null),
+          $fetch<{ success: boolean; data: CategoryItem[] }>('/api/categories').catch(() => null),
+          $fetch<{ success: boolean; data: SubcategoryItem[] }>('/api/subcategories').catch(() => null),
+        ]);
+
+        if (ticketsRes) this.tickets = ticketsRes.data;
+        if (catsRes) this.categories = catsRes.data;
+        if (subcatsRes) this.subcategories = subcatsRes.data;
+      } catch {
+        // Use empty state on failure
+      }
+
       this.loadStateFromUrl();
       this.isLoaded = true;
     },
@@ -51,7 +70,11 @@ export const useAppStore = defineStore('app', {
     toggleDarkMode() {
       this.darkMode = !this.darkMode;
       document.documentElement.classList.toggle('dark', this.darkMode);
-      StorageService.setDarkMode(this.darkMode);
+      $fetch('/api/user/preferences', {
+        method: 'PUT',
+        headers: { 'X-User-Id': this.currentUser?.id || '' },
+        body: { darkMode: this.darkMode },
+      }).catch(() => {});
     },
 
     setActiveTab(tab: string) {
@@ -133,91 +156,73 @@ export const useAppStore = defineStore('app', {
       this.selectedTicket = ticket;
     },
 
-    addTicket(ticketPayload: Partial<Ticket>, shouldIssue: boolean, behalfUserId?: string | null): Ticket | null {
-      if (!this.currentUser) return;
-      const prefix = ticketPayload.category === 'Support IT' ? 'TIKSP' : 'TIKPG';
+    async addTicket(ticketPayload: Partial<Ticket>, shouldIssue: boolean, behalfUserId?: string | null): Promise<Ticket | null> {
+      if (!this.currentUser) return null;
 
-      let requestedBy = this.currentUser.id;
-      let requestedByName = this.currentUser.name;
-      let requestedByDept = this.currentUser.department;
-      let created_by_admin_id: string | null = null;
-      let created_by_admin_name: string | null = null;
-
-      if (behalfUserId) {
-        const behalfUser = this.allUsers.find(u => u.id === behalfUserId);
-        if (behalfUser) {
-          requestedBy = behalfUser.id;
-          requestedByName = behalfUser.name;
-          requestedByDept = behalfUser.department;
-          created_by_admin_id = this.currentUser.id;
-          created_by_admin_name = this.currentUser.name;
-        }
-      }
-
-      const newTicket: Ticket = {
-        id: `TCK-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(this.tickets.length + 1).padStart(3, '0')}`,
-        ticket_number: ticketPayload.ticket_number || `${prefix}-${Math.floor(100000 + Math.random() * 900000)}`,
-        title: ticketPayload.title || '',
-        category: ticketPayload.category || 'Support IT',
-        subcategory: ticketPayload.subcategory || 'General',
-        location: ticketPayload.location || 'Lantai 1',
-        priority: ticketPayload.priority || 'MEDIUM',
-        description: ticketPayload.description || '',
-        status: shouldIssue ? 'PROCESS' : 'DRAFT',
-        created_at: new Date().toISOString(),
-        created_by: behalfUserId ? this.currentUser.id : this.currentUser.id,
-        created_by_name: requestedByName,
-        created_by_dept: requestedByDept,
-        created_by_admin_id,
-        created_by_admin_name,
-        requestedBy,
-        requestedByName,
-        requestedByDept,
-        attachments: ticketPayload.attachments || [],
-        worklogs: [],
-        comments: [],
-        internal_notes: [],
-        audit_logs: [
-          {
-            action: shouldIssue ? 'TIKET_DITERBITKAN' : 'TIKET_DRAFT_DISIMPAN',
-            performed_at: new Date().toISOString(),
-            performed_by: this.currentUser.id,
-            performed_by_name: this.currentUser.name,
+      try {
+        const res = await $fetch<{ success: boolean; data: Ticket }>('/api/tickets', {
+          method: 'POST',
+          headers: { 'X-User-Id': this.currentUser.id },
+          body: {
+            title: ticketPayload.title,
+            category: ticketPayload.category,
+            subcategory: ticketPayload.subcategory,
+            location: ticketPayload.location,
+            priority: ticketPayload.priority,
+            description: ticketPayload.description,
+            shouldIssue,
+            behalfUserId,
+            requestedByName: ticketPayload.requestedByName,
+            requestedByDept: ticketPayload.requestedByDept,
           },
-          ...(behalfUserId
-            ? [{
-                action: 'DIBUAT_ATAS_NAMA',
-                detail: `Dibuat oleh ${this.currentUser.name} atas nama ${requestedByName}`,
-                performed_at: new Date().toISOString(),
-                performed_by: this.currentUser.id,
-                performed_by_name: this.currentUser.name,
-              }]
-            : []),
-        ]
-      };
+        });
 
-      this.tickets = [newTicket, ...this.tickets];
-      StorageService.saveTickets(this.tickets);
-      return newTicket;
-    },
-
-    updateTicket(updatedTicket: Ticket) {
-      this.tickets = this.tickets.map(t => t.id === updatedTicket.id ? updatedTicket : t);
-      if (this.selectedTicket?.id === updatedTicket.id) {
-        this.selectedTicket = updatedTicket;
+        const newTicket = res.data;
+        this.tickets = [newTicket, ...this.tickets];
+        return newTicket;
+      } catch (e) {
+        console.error('Failed to create ticket:', e);
+        return null;
       }
-      StorageService.saveTickets(this.tickets);
     },
 
-    updateTicketStatus(ticketId: string, status: Ticket['status']) {
+    async updateTicket(updatedTicket: Ticket) {
+      try {
+        await $fetch(`/api/tickets/${updatedTicket.id}`, {
+          method: 'PUT',
+          headers: { 'X-User-Id': this.currentUser?.id || '' },
+          body: updatedTicket,
+        });
+      } catch (e) {
+        console.error('Failed to update ticket:', e);
+      }
+    },
+
+    async updateTicketStatus(ticketId: string, status: Ticket['status']) {
       this.tickets = this.tickets.map(t => t.id === ticketId ? { ...t, status } : t);
-      StorageService.saveTickets(this.tickets);
+      try {
+        await $fetch(`/api/tickets/${ticketId}/status`, {
+          method: 'PATCH',
+          headers: { 'X-User-Id': this.currentUser?.id || '' },
+          body: { status },
+        });
+      } catch (e) {
+        console.error('Failed to update status:', e);
+      }
     },
 
-    updateTicketAssignee(ticketId: string, userId: string) {
+    async updateTicketAssignee(ticketId: string, userId: string) {
       const user = this.allUsers.find(u => u.id === userId);
       this.tickets = this.tickets.map(t => t.id === ticketId ? { ...t, assignedTo: userId, assignedToName: user?.name } : t);
-      StorageService.saveTickets(this.tickets);
+      try {
+        await $fetch(`/api/tickets/${ticketId}/assignee`, {
+          method: 'PATCH',
+          headers: { 'X-User-Id': this.currentUser?.id || '' },
+          body: { userId },
+        });
+      } catch (e) {
+        console.error('Failed to update assignee:', e);
+      }
     },
 
     switchUser(userId: string) {
@@ -236,49 +241,46 @@ export const useAppStore = defineStore('app', {
       }
     },
 
-    saveWorklogNote(ticketId: string, stageKey: string, notes: string, filePayload?: { file_name: string; file_size: string; stage: string; visibility: string }) {
+    async saveWorklogNote(ticketId: string, stageKey: string, notes: string, filePayload?: { file_name: string; file_size: string; stage: string; visibility: string }) {
       if (!this.currentUser) return;
-      const ticket = this.tickets.find(t => t.id === ticketId);
-      if (!ticket) return;
 
       const now = new Date().toISOString();
-      const newWorklogs = [...(ticket.worklogs || []), { id: `wl-${Date.now()}`, stageKey, description: notes, created_at: now, worker_id: this.currentUser.id, worker_name: this.currentUser.name, date: new Date().toISOString().split('T')[0], start_at: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }), finish_at: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }), duration_minutes: 0 }];
-      const newAttachments = filePayload ? [...(ticket.attachments || []), { id: `att-${Date.now()}`, ...filePayload, uploaded_by: this.currentUser.id, uploaded_by_name: this.currentUser.name, uploaded_at: now }] : (ticket.attachments || []);
+      const newWorklogs = [...(this.selectedTicket?.worklogs || []), { id: `wl-${Date.now()}`, stageKey, description: notes, created_at: now, worker_id: this.currentUser.id, worker_name: this.currentUser.name, date: new Date().toISOString().split('T')[0], start_at: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }), finish_at: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }), duration_minutes: 0 }];
+      const newAttachments = filePayload ? [...(this.selectedTicket?.attachments || []), { id: `att-${Date.now()}`, ...filePayload, uploaded_by: this.currentUser.id, uploaded_by_name: this.currentUser.name, uploaded_at: now }] : (this.selectedTicket?.attachments || []);
 
-      const updated: Ticket = {
-        ...ticket,
-        attachments: newAttachments,
-        worklogs: newWorklogs,
-      };
-
-      this.updateTicket(updated);
+      if (this.selectedTicket) {
+        const updated: Ticket = {
+          ...this.selectedTicket,
+          attachments: newAttachments,
+          worklogs: newWorklogs,
+        };
+        this.updateTicket(updated);
+      }
     },
 
-    completeStage(ticketId: string, stageKey: string, notes?: string, filePayload?: { file_name: string; file_size: string; stage: string; visibility: string }, targetStatus?: Ticket['status']) {
+    async completeStage(ticketId: string, stageKey: string, notes?: string, filePayload?: { file_name: string; file_size: string; stage: string; visibility: string }, targetStatus?: Ticket['status']) {
       if (!this.currentUser) return;
       const ticket = this.tickets.find(t => t.id === ticketId);
       if (!ticket) return;
 
       const now = new Date().toISOString();
-      let newStatus = targetStatus || ticket.status; // Use targetStatus if provided, otherwise keep current
+      let newStatus = targetStatus || ticket.status;
       let completedAt = ticket.completed_at;
       let assignedTo = ticket.assignedTo;
       let assignedToName = ticket.assignedToName;
 
       if (stageKey === 'ASSIGN') {
         newStatus = targetStatus || 'PROCESS';
-        // Auto-assign to current user if unassigned when completing assign stage
         if (!assignedTo && this.currentUser.role !== 'USER_NON_IT') {
           assignedTo = this.currentUser.id;
           assignedToName = this.currentUser.name;
         }
       } else if (stageKey === 'IN_PROGRESS') {
-        newStatus = targetStatus || 'SELESAI'; // Submitting IN_PROGRESS moves to SELESAI
-        completedAt = now; // Mark as completed when IN_PROGRESS is done
-      } else if (stageKey === 'COMPLETION') {
-        // This stage is already 'SELESAI'. If a targetStatus is provided (e.g., DELEGASI), use it.
         newStatus = targetStatus || 'SELESAI';
-        if (targetStatus === 'SELESAI') completedAt = now; // Only set completedAt if specifically marking as SELESAI
+        completedAt = now;
+      } else if (stageKey === 'COMPLETION') {
+        newStatus = targetStatus || 'SELESAI';
+        if (targetStatus === 'SELESAI') completedAt = now;
       } else if (stageKey === 'DELEGATION') {
         newStatus = targetStatus || 'DELEGASI';
       }
@@ -299,9 +301,19 @@ export const useAppStore = defineStore('app', {
       };
 
       this.updateTicket(updated);
+
+      try {
+        await $fetch(`/api/tickets/${ticketId}/stages/complete`, {
+          method: 'POST',
+          headers: { 'X-User-Id': this.currentUser.id },
+          body: { stageKey, notes, targetStatus, attachment: filePayload ? { stage: filePayload.stage, visibility: filePayload.visibility, file_name: filePayload.file_name, file_size: filePayload.file_size } : undefined },
+        });
+      } catch (e) {
+        console.error('Failed to complete stage:', e);
+      }
     },
 
-    addCustomWorklog(ticketId: string, wlData: { date: string; start_at: string; finish_at: string; duration_minutes: number; description: string; stageKey: string; worker_id?: string; worker_name?: string }) {
+    async addCustomWorklog(ticketId: string, wlData: { date: string; start_at: string; finish_at: string; duration_minutes: number; description: string; stageKey: string; worker_id?: string; worker_name?: string }) {
       const ticket = this.tickets.find(t => t.id === ticketId);
       if (!ticket) return;
 
@@ -326,42 +338,71 @@ export const useAppStore = defineStore('app', {
       this.updateTicket(updated);
     },
 
-    // Master Data Actions: Category & Subcategory
-    addCategory(cat: CategoryItem) {
-      this.categories = [...this.categories, cat];
-      StorageService.saveCategories(this.categories);
+    async addCategory(cat: CategoryItem) {
+      try {
+        const res = await $fetch<{ success: boolean; data: CategoryItem }>('/api/categories', {
+          method: 'POST',
+          body: cat,
+        });
+        this.categories = [...this.categories, res.data];
+      } catch (e) {
+        console.error('Failed to add category:', e);
+      }
     },
 
-    updateCategory(cat: CategoryItem) {
+    async updateCategory(cat: CategoryItem) {
       this.categories = this.categories.map(c => c.id === cat.id ? cat : c);
-      StorageService.saveCategories(this.categories);
+      try {
+        await $fetch(`/api/categories/${cat.id}`, { method: 'PUT', body: cat });
+      } catch (e) {
+        console.error('Failed to update category:', e);
+      }
     },
 
-    deleteCategory(catId: string) {
+    async deleteCategory(catId: string) {
       this.categories = this.categories.filter(c => c.id !== catId);
       this.subcategories = this.subcategories.filter(s => s.category_id !== catId);
-      StorageService.saveCategories(this.categories);
-      StorageService.saveSubcategories(this.subcategories);
+      try {
+        await $fetch(`/api/categories/${catId}`, { method: 'DELETE' });
+      } catch (e) {
+        console.error('Failed to delete category:', e);
+      }
     },
 
-    addSubcategory(sub: SubcategoryItem) {
+    async addSubcategory(sub: SubcategoryItem) {
       this.subcategories = [...this.subcategories, sub];
-      StorageService.saveSubcategories(this.subcategories);
+      try {
+        await $fetch('/api/subcategories', { method: 'POST', body: sub });
+      } catch (e) {
+        console.error('Failed to add subcategory:', e);
+      }
     },
 
-    updateSubcategory(sub: SubcategoryItem) {
+    async updateSubcategory(sub: SubcategoryItem) {
       this.subcategories = this.subcategories.map(s => s.id === sub.id ? sub : s);
-      StorageService.saveSubcategories(this.subcategories);
+      try {
+        await $fetch(`/api/subcategories/${sub.id}`, { method: 'PUT', body: sub });
+      } catch (e) {
+        console.error('Failed to update subcategory:', e);
+      }
     },
 
-    deleteSubcategory(subId: string) {
+    async deleteSubcategory(subId: string) {
       this.subcategories = this.subcategories.filter(s => s.id !== subId);
-      StorageService.saveSubcategories(this.subcategories);
+      try {
+        await $fetch(`/api/subcategories/${subId}`, { method: 'DELETE' });
+      } catch (e) {
+        console.error('Failed to delete subcategory:', e);
+      }
     },
 
-    addUser(user: AppUser) {
+    async addUser(user: AppUser) {
       this.allUsers = [...this.allUsers, user];
-      StorageService.saveUsers(this.allUsers);
+      try {
+        await $fetch('/api/users', { method: 'POST', body: user });
+      } catch (e) {
+        console.error('Failed to add user:', e);
+      }
     },
   }
 });
