@@ -324,7 +324,9 @@ const stepperStages = computed(() => {
       stageKey: 'REQUEST',
       completed: true,
       current: false,
-      actorInfo: `Dibuat oleh: ${t.created_by_name || 'User'} (${t.created_by_dept || 'General'})`,
+      actorInfo: (t.created_by_admin_name && t.created_by_admin_id !== t.requestedBy)
+        ? `Dibuat oleh Admin: ${t.created_by_admin_name} atas nama ${t.created_by_name || 'User'} (${t.created_by_dept || 'General'})`
+        : `Dibuat oleh: ${t.created_by_name || 'User'} (${t.created_by_dept || 'General'})`,
       attachments: atts.filter(a => a.stage === 'REQUEST'),
     },
     {

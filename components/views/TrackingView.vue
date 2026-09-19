@@ -70,6 +70,10 @@
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
             <span class="flex items-center gap-1"><MapPin class="w-3.5 h-3.5 shrink-0" /> {{ activeTicket.location }}</span>
             <span class="flex items-center gap-1"><User class="w-3.5 h-3.5 shrink-0" /> {{ activeTicket.requestedByName }} ({{ activeTicket.requestedByDept }})</span>
+            <span v-if="activeTicket.created_by_admin_name && activeTicket.created_by_admin_id !== activeTicket.requestedBy" class="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+              <Shield class="w-3.5 h-3.5 shrink-0" />
+              Dibuat oleh Admin: {{ activeTicket.created_by_admin_name }}
+            </span>
           </div>
         </div>
 
@@ -128,7 +132,7 @@
 import { ref, computed, h } from 'vue';
 import {
   Search, CheckCircle2, Clock, ExternalLink, MapPin, User,
-  PlusCircle, AlertTriangle
+  PlusCircle, AlertTriangle, Shield
 } from 'lucide-vue-next';
 import { AppUser, Ticket } from '~/types';
 

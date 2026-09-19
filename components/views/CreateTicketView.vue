@@ -63,14 +63,30 @@
       <div class="p-3.5 bg-blue-50/60 dark:bg-slate-800/60 rounded-xl border border-blue-100 dark:border-slate-700/80 flex items-center justify-between text-xs">
         <div>
           <span class="text-gray-500 dark:text-gray-400">Pelapor:</span>
-          <strong class="text-gray-800 dark:text-gray-200 ml-1">{{ store.currentUser?.name || 'User' }}</strong>
+          <strong class="text-gray-800 dark:text-gray-200 ml-1">{{ displayPelaporName }}</strong>
           <span class="text-gray-400 mx-1.5">•</span>
           <span class="text-gray-500 dark:text-gray-400">Dept:</span>
-          <span class="text-gray-700 dark:text-gray-300 ml-1">{{ store.currentUser?.department || 'General' }}</span>
+          <span class="text-gray-700 dark:text-gray-300 ml-1">{{ displayPelaporDept }}</span>
         </div>
         <span class="px-2.5 py-1 bg-blue-100 dark:bg-blue-900/40 text-[#026bb1] dark:text-[#52b5f2] rounded-lg font-mono font-bold text-xs">
           {{ ticketPrefix }}-{{ ticketNumber }}
         </span>
+      </div>
+
+      <!-- Buat Atas Nama (Hanya untuk SYSTEM_ADMIN) -->
+      <div v-if="store.currentUser?.role === 'SYSTEM_ADMIN'" class="p-3.5 bg-amber-50/60 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800/40 space-y-2">
+        <div class="flex items-center gap-2">
+          <Shield class="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <span class="text-xs font-bold text-amber-700 dark:text-amber-300">Buat Atas Nama (Opsional)</span>
+        </div>
+        <p class="text-[11px] text-amber-600/70 dark:text-amber-400/60">Pilih user lain sebagai pelapor tiket. Jika tidak dipilih, tiket dibuat atas nama Anda sendiri.</p>
+        <AppSelect
+          v-model="behalfUserId"
+          :options="behalfUserOptions"
+          label="Pilih Pelapor Tiket"
+          placeholder="-- Buat untuk diri sendiri --"
+          size="sm"
+        />
       </div>
 
       <!-- Title -->
@@ -233,7 +249,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { ArrowLeft, Upload, Check, CheckCircle2, Eye, X } from 'lucide-vue-next';
+import { ArrowLeft, Upload, Check, CheckCircle2, Eye, X, Shield } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
 import { useToast } from '~/composables/useToast';
 import { TicketPriority, Ticket } from '~/types';
@@ -246,6 +262,30 @@ const isOpen = computed(() => store.activeView === 'create-ticket');
 const serviceView = ref<'SUPPORT_IT' | 'IT_PROGRAMMER'>('SUPPORT_IT');
 const ticketPrefix = computed(() => serviceView.value === 'SUPPORT_IT' ? 'TIKSP' : 'TIKPG');
 const ticketNumber = ref(Math.floor(100000 + Math.random() * 900000));
+const behalfUserId = ref<string | null>(null);
+
+const behalfUserOptions = computed(() => [
+  { value: '', label: '-- Buat untuk diri sendiri --' },
+  ...store.allUsers
+    .filter(u => u.id !== store.currentUser?.id)
+    .map(u => ({ value: u.id, label: `${u.name} (${u.department})` }))
+]);
+
+const displayPelaporName = computed(() => {
+  if (behalfUserId.value) {
+    const user = store.allUsers.find(u => u.id === behalfUserId.value);
+    if (user) return user.name;
+  }
+  return store.currentUser?.name || 'User';
+});
+
+const displayPelaporDept = computed(() => {
+  if (behalfUserId.value) {
+    const user = store.allUsers.find(u => u.id === behalfUserId.value);
+    if (user) return user.department;
+  }
+  return store.currentUser?.department || 'General';
+});
 
 const title = ref('');
 const subcategory = ref('Printer');
@@ -325,7 +365,7 @@ const handleSubmit = (shouldIssue: boolean) => {
     ticket_number: `${ticketPrefix.value}-${Math.floor(100000 + Math.random() * 900000)}`,
   };
 
-  const newTicket = store.addTicket(ticketPayload, shouldIssue);
+  const newTicket = store.addTicket(ticketPayload, shouldIssue, behalfUserId.value || null);
   if (newTicket) {
     createdTicketSuccess.value = newTicket;
   } else {
@@ -353,5 +393,6 @@ const resetForm = () => {
   description.value = '';
   fileName.value = '';
   fileSize.value = '';
+  behalfUserId.value = null;
 };
 </script>

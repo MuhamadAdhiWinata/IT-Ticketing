@@ -98,6 +98,8 @@ export interface Ticket {
   created_by: string; // User ID
   created_by_name: string;
   created_by_dept: string;
+  created_by_admin_id?: string | null;   // Admin ID if created on behalf of
+  created_by_admin_name?: string | null; // Admin name if created on behalf of
   
   requestedBy: string; // For compatibility
   requestedByName: string;

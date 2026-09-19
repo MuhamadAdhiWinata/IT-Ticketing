@@ -133,9 +133,27 @@ export const useAppStore = defineStore('app', {
       this.selectedTicket = ticket;
     },
 
-    addTicket(ticketPayload: Partial<Ticket>, shouldIssue: boolean): Ticket | null {
+    addTicket(ticketPayload: Partial<Ticket>, shouldIssue: boolean, behalfUserId?: string | null): Ticket | null {
       if (!this.currentUser) return;
       const prefix = ticketPayload.category === 'Support IT' ? 'TIKSP' : 'TIKPG';
+
+      let requestedBy = this.currentUser.id;
+      let requestedByName = this.currentUser.name;
+      let requestedByDept = this.currentUser.department;
+      let created_by_admin_id: string | null = null;
+      let created_by_admin_name: string | null = null;
+
+      if (behalfUserId) {
+        const behalfUser = this.allUsers.find(u => u.id === behalfUserId);
+        if (behalfUser) {
+          requestedBy = behalfUser.id;
+          requestedByName = behalfUser.name;
+          requestedByDept = behalfUser.department;
+          created_by_admin_id = this.currentUser.id;
+          created_by_admin_name = this.currentUser.name;
+        }
+      }
+
       const newTicket: Ticket = {
         id: `TCK-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(this.tickets.length + 1).padStart(3, '0')}`,
         ticket_number: ticketPayload.ticket_number || `${prefix}-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -147,10 +165,14 @@ export const useAppStore = defineStore('app', {
         description: ticketPayload.description || '',
         status: shouldIssue ? 'PROCESS' : 'DRAFT',
         created_at: new Date().toISOString(),
-        requestedBy: this.currentUser.id,
-        requestedByName: this.currentUser.name,
-        requestedByDept: this.currentUser.department,
-        created_by_name: this.currentUser.name,
+        created_by: behalfUserId ? this.currentUser.id : this.currentUser.id,
+        created_by_name: requestedByName,
+        created_by_dept: requestedByDept,
+        created_by_admin_id,
+        created_by_admin_name,
+        requestedBy,
+        requestedByName,
+        requestedByDept,
         attachments: ticketPayload.attachments || [],
         worklogs: [],
         comments: [],
@@ -161,7 +183,16 @@ export const useAppStore = defineStore('app', {
             performed_at: new Date().toISOString(),
             performed_by: this.currentUser.id,
             performed_by_name: this.currentUser.name,
-          }
+          },
+          ...(behalfUserId
+            ? [{
+                action: 'DIBUAT_ATAS_NAMA',
+                detail: `Dibuat oleh ${this.currentUser.name} atas nama ${requestedByName}`,
+                performed_at: new Date().toISOString(),
+                performed_by: this.currentUser.id,
+                performed_by_name: this.currentUser.name,
+              }]
+            : []),
         ]
       };
 
