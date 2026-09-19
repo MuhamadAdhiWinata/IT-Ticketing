@@ -145,15 +145,13 @@
           <!-- Filter Kategori Induk -->
           <div class="flex items-center gap-2 bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl border border-gray-200 dark:border-slate-800 text-xs">
             <span class="font-bold text-gray-600 dark:text-gray-400 shrink-0">Filter Kategori Induk:</span>
-            <select
-              v-model="selectedCategoryFilter"
-              class="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#026bb1]/40"
-            >
-              <option value="ALL">Semua Kategori ({{ store.subcategories.length }} record)</option>
-              <option v-for="c in store.categories" :key="c.id" :value="c.id">
-                [{{ c.id }}] {{ c.name }}
-              </option>
-            </select>
+            <div class="min-w-[200px]">
+              <AppSelect
+                v-model="selectedCategoryFilter"
+                :options="categoryFilterOptions"
+                size="sm"
+              />
+            </div>
           </div>
 
           <!-- Subcategories Table -->
@@ -357,13 +355,12 @@
             <input v-model="subForm.id" required :disabled="!!editingSubId" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono" />
           </div>
           <div>
-            <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Pilih Kategori Induk (FK: category_id)</label>
-            <select v-model="subForm.category_id" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold">
-              <option value="" disabled>-- Pilih Kategori --</option>
-              <option v-for="c in store.categories" :key="c.id" :value="c.id">
-                [{{ c.id }}] {{ c.name }}
-              </option>
-            </select>
+            <AppSelect
+              v-model="subForm.category_id"
+              :options="categoryFormOptions"
+              label="Pilih Kategori Induk (FK: category_id)"
+              placeholder="-- Pilih Kategori --"
+            />
           </div>
           <div>
             <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Nama Subkategori</label>
@@ -399,12 +396,11 @@
             <input v-model="userForm.department" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs" />
           </div>
           <div>
-            <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Role</label>
-            <select v-model="userForm.role" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs">
-              <option value="USER_NON_IT">USER_NON_IT</option>
-              <option value="IT_WORKER">IT_WORKER</option>
-              <option value="SYSTEM_ADMIN">SYSTEM_ADMIN</option>
-            </select>
+            <AppSelect
+              v-model="userForm.role"
+              :options="roleFormOptions"
+              label="Role"
+            />
           </div>
           <div class="pt-2 flex justify-end gap-2">
             <button type="button" @click="isUserModalOpen = false" class="px-3 py-1.5 bg-gray-100 dark:bg-slate-800 rounded-xl font-bold">Batal</button>
@@ -429,11 +425,28 @@ import {
 } from 'lucide-vue-next';
 import type { CategoryItem, SubcategoryItem, UserRole } from '~/types';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
+import AppSelect from '~/components/common/AppSelect.vue';
 
 const store = useAppStore();
 
 const activeTab = ref<'CATEGORIES' | 'PRIORITIES' | 'USERS'>('CATEGORIES');
 const selectedCategoryFilter = ref('ALL');
+
+const categoryFilterOptions = computed(() => [
+  { value: 'ALL', label: `Semua Kategori (${store.subcategories.length} record)` },
+  ...store.categories.map(c => ({ value: c.id, label: `[${c.id}] ${c.name}` }))
+]);
+
+const categoryFormOptions = computed(() => store.categories.map(c => ({
+  value: c.id,
+  label: `[${c.id}] ${c.name}`
+})));
+
+const roleFormOptions = [
+  { value: 'USER_NON_IT', label: 'USER_NON_IT' },
+  { value: 'IT_WORKER', label: 'IT_WORKER' },
+  { value: 'SYSTEM_ADMIN', label: 'SYSTEM_ADMIN' },
+];
 
 const prioritiesList = [
   { id: 'LOW', label: 'Low', desc: 'Kendala ringan / non-urgently, penanganan rutin.' },

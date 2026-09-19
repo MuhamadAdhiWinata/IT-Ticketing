@@ -42,21 +42,21 @@
           <Search class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
         </div>
 
-        <select v-model="statusFilter" class="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium">
-          <option value="ALL">Semua Status</option>
-          <option value="DRAFT">DRAFT</option>
-          <option value="PROCESS">ON-PROGRESS</option>
-          <option value="SELESAI">SELESAI INTERNAL</option>
-          <option value="DELEGASI">DIDELEGASIKAN</option>
-        </select>
+        <div class="min-w-[140px]">
+          <AppSelect
+            v-model="statusFilter"
+            :options="statusOptions"
+            size="sm"
+          />
+        </div>
 
-        <select v-model="priorityFilter" class="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium">
-          <option value="ALL">Semua Prioritas</option>
-          <option value="LOW">Low</option>
-          <option value="MEDIUM">Medium</option>
-          <option value="HIGH">High</option>
-          <option value="CRITICAL">Critical</option>
-        </select>
+        <div class="min-w-[140px]">
+          <AppSelect
+            v-model="priorityFilter"
+            :options="priorityOptions"
+            size="sm"
+          />
+        </div>
       </div>
     </div>
 
@@ -124,17 +124,14 @@
                 >
                   Ambil Tiket
                 </button>
-                <select
-                  :value="t.status"
-                  @change="e => onMoveStatus(t.id, (e.target as HTMLSelectElement).value as TicketStatus)"
-                  class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-700 text-[10px] font-bold text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-slate-600 focus:outline-none"
-                  title="Pindah Status"
-                >
-                  <option value="DRAFT">Draft</option>
-                  <option value="PROCESS">Process</option>
-                  <option value="SELESAI">Selesai</option>
-                  <option value="DELEGASI">Delegasi</option>
-                </select>
+                <div class="min-w-[100px]">
+                  <AppSelect
+                    :modelValue="t.status"
+                    @update:modelValue="val => onMoveStatus(t.id, val as TicketStatus)"
+                    :options="cardStatusOptions"
+                    size="sm"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -204,6 +201,7 @@ import { ref, computed } from 'vue';
 import { Columns, Table as TableIcon, LayoutGrid, Search } from 'lucide-vue-next';
 import { AppUser, Ticket, TicketStatus } from '~/types';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
+import AppSelect from '~/components/common/AppSelect.vue';
 
 const props = defineProps<{
   tickets: Ticket[];
@@ -217,6 +215,29 @@ const viewMode = ref<'kanban' | 'card' | 'table'>('kanban');
 const searchQuery = ref('');
 const statusFilter = ref('ALL');
 const priorityFilter = ref('ALL');
+
+const statusOptions = [
+  { value: 'ALL', label: 'Semua Status' },
+  { value: 'DRAFT', label: 'DRAFT' },
+  { value: 'PROCESS', label: 'ON-PROGRESS' },
+  { value: 'SELESAI', label: 'SELESAI INTERNAL' },
+  { value: 'DELEGASI', label: 'DIDELEGASIKAN' },
+];
+
+const priorityOptions = [
+  { value: 'ALL', label: 'Semua Prioritas' },
+  { value: 'LOW', label: 'Low' },
+  { value: 'MEDIUM', label: 'Medium' },
+  { value: 'HIGH', label: 'High' },
+  { value: 'CRITICAL', label: 'Critical' },
+];
+
+const cardStatusOptions = [
+  { value: 'DRAFT', label: 'Draft' },
+  { value: 'PROCESS', label: 'Process' },
+  { value: 'SELESAI', label: 'Selesai' },
+  { value: 'DELEGASI', label: 'Delegasi' },
+];
 
 const viewModes = [
   { id: 'kanban', label: 'Kanban', icon: Columns },

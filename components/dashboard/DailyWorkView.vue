@@ -73,16 +73,14 @@
 
         <!-- Worker Filter (hanya untuk SYSTEM_ADMIN) -->
         <div v-if="store.currentUser?.role === 'SYSTEM_ADMIN'" class="w-full sm:w-auto flex items-center justify-end sm:justify-start gap-2 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-slate-800">
-          <span class="text-xs font-bold text-gray-500">Worker:</span>
-          <select
-            v-model="selectedWorkerId"
-            class="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#026bb1]/40"
-          >
-            <option value="ALL">Semua Worker (Tim IT)</option>
-            <option v-for="user in itWorkers" :key="user.id" :value="user.id">
-              {{ user.name }} ({{ user.department }})
-            </option>
-          </select>
+          <span class="text-xs font-bold text-gray-500 shrink-0">Worker:</span>
+          <div class="min-w-[180px]">
+            <AppSelect
+              v-model="selectedWorkerId"
+              :options="workerOptions"
+              size="sm"
+            />
+          </div>
         </div>
       </div>
 
@@ -280,19 +278,12 @@
 
         <form @submit.prevent="submitWorklog" class="space-y-4">
           <div>
-            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-              Pilih Tiket yang Dikerjakan <span class="text-red-500">*</span>
-            </label>
-            <select
+            <AppSelect
               v-model="newWlTicketId"
-              required
-              class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#026bb1]/40"
-            >
-              <option value="" disabled>-- Pilih Tiket --</option>
-              <option v-for="t in activeCandidateTickets" :key="t.id" :value="t.id">
-                [{{ t.id }}] {{ t.title }} ({{ t.status }})
-              </option>
-            </select>
+              :options="candidateTicketOptions"
+              label="Pilih Tiket yang Dikerjakan *"
+              placeholder="-- Pilih Tiket --"
+            />
           </div>
 
           <div class="grid grid-cols-2 gap-3">
@@ -377,6 +368,7 @@
 import { ref, computed } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { useToast } from '~/composables/useToast';
+import AppSelect from '~/components/common/AppSelect.vue';
 import {
   CalendarDays,
   Calendar,
@@ -564,6 +556,20 @@ const totalHoursInRange = computed(() => {
 
 const activeCandidateTickets = computed(() => {
   return store.tickets.filter(t => t.status !== 'DRAFT');
+});
+
+const workerOptions = computed(() => {
+  return [
+    { value: 'ALL', label: 'Semua Worker (Tim IT)' },
+    ...itWorkers.value.map(u => ({ value: u.id, label: `${u.name} (${u.department})` }))
+  ];
+});
+
+const candidateTicketOptions = computed(() => {
+  return activeCandidateTickets.value.map(t => ({
+    value: t.id,
+    label: `[${t.id}] ${t.title} (${t.status})`
+  }));
 });
 
 const submitWorklog = () => {
