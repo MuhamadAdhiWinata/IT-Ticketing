@@ -181,12 +181,59 @@
         </button>
       </div>
     </div>
+
+    <!-- Modal Dialog Sukses Buat Tiket (Android / Mobile Responsive - Teleport to Body) -->
+    <Teleport to="body">
+      <div v-if="createdTicketSuccess" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 max-w-sm w-full shadow-2xl space-y-4 text-center relative">
+          <button
+            @click="closeSuccessModalAndGoMain"
+            class="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            title="Tutup"
+          >
+            <X class="w-5 h-5" />
+          </button>
+
+          <!-- Success Icon -->
+          <div class="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto pt-0.5">
+            <CheckCircle2 class="w-7 h-7" />
+          </div>
+
+          <div class="space-y-1.5">
+            <h3 class="text-base font-extrabold text-gray-900 dark:text-white">Tiket Berhasil Dibuat!</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+              Tiket dengan kode <span class="font-mono font-bold text-[#026bb1] dark:text-[#52b5f2] bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 rounded border border-blue-200 dark:border-blue-900 inline-block my-0.5">{{ createdTicketSuccess.id }}</span> telah berhasil dibuat.
+            </p>
+          </div>
+
+          <!-- Action Buttons (Stacked on Mobile) -->
+          <div class="pt-2 flex flex-col gap-2">
+            <button
+              type="button"
+              @click="goToTicketDetail"
+              class="w-full py-3 bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Eye class="w-4 h-4" />
+              <span>Klik untuk Melihat Detail</span>
+            </button>
+
+            <button
+              type="button"
+              @click="closeSuccessModalAndGoMain"
+              class="w-full py-2.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl transition-all cursor-pointer"
+            >
+              Kembali ke Beranda
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { ArrowLeft, Upload, Check } from 'lucide-vue-next';
+import { ArrowLeft, Upload, Check, CheckCircle2, Eye, X } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
 import { useToast } from '~/composables/useToast';
 import { TicketPriority, Ticket } from '~/types';
@@ -207,6 +254,7 @@ const priority = ref<TicketPriority>('MEDIUM');
 const description = ref('');
 const fileName = ref('');
 const fileSize = ref('');
+const createdTicketSuccess = ref<Ticket | null>(null);
 
 const currentSubcategories = computed(() => {
   const targetCatName = serviceView.value === 'SUPPORT_IT' ? 'Support IT' : 'IT Programmer';
@@ -277,7 +325,33 @@ const handleSubmit = (shouldIssue: boolean) => {
     ticket_number: `${ticketPrefix.value}-${Math.floor(100000 + Math.random() * 900000)}`,
   };
 
-  store.addTicket(ticketPayload, shouldIssue);
+  const newTicket = store.addTicket(ticketPayload, shouldIssue);
+  if (newTicket) {
+    createdTicketSuccess.value = newTicket;
+  } else {
+    store.backToMainView();
+  }
+};
+
+const goToTicketDetail = () => {
+  if (createdTicketSuccess.value) {
+    const id = createdTicketSuccess.value.id;
+    createdTicketSuccess.value = null;
+    resetForm();
+    store.openTicketDetail(id);
+  }
+};
+
+const closeSuccessModalAndGoMain = () => {
+  createdTicketSuccess.value = null;
+  resetForm();
   store.backToMainView();
+};
+
+const resetForm = () => {
+  title.value = '';
+  description.value = '';
+  fileName.value = '';
+  fileSize.value = '';
 };
 </script>
