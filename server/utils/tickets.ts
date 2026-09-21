@@ -39,8 +39,8 @@ export async function getTicketsWithRelations(whereClause?: any) {
     ...ticket,
     worklogs: worklogsList.filter(w => w.ticketId === ticket.id),
     comments: commentsList.filter(c => c.ticketId === ticket.id),
-    internalNotes: internalNotesList.filter(n => n.ticketId === ticket.id),
-    auditLogs: auditLogsList.filter(a => a.ticketId === ticket.id),
+    internal_notes: internalNotesList.filter(n => n.ticketId === ticket.id),
+    audit_logs: auditLogsList.filter(a => a.ticketId === ticket.id),
     attachments: attachmentsList.filter(a => a.ticketId === ticket.id),
   }));
 }
@@ -74,8 +74,8 @@ export async function getTicketById(ticketId: string) {
     ...ticket,
     worklogs: worklogsList,
     comments: commentsList,
-    internalNotes: internalNotesList,
-    auditLogs: auditLogsList,
+    internal_notes: internalNotesList,
+    audit_logs: auditLogsList,
     attachments: attachmentsList,
   };
 }
