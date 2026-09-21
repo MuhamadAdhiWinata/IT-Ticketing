@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { subcategories } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
+import { serializeSubcategory } from '~/server/utils/serialize';
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
@@ -13,6 +14,7 @@ export default defineEventHandler(async (event) => {
 
   if (method === 'PUT') {
     const body = await readBody(event);
+    const categoryId = body.categoryId || body.category_id;
 
     const existing = await db.query.subcategories.findFirst({
       where: (s, { eq: e }) => e(s.id, id),
@@ -22,7 +24,7 @@ export default defineEventHandler(async (event) => {
     }
 
     await db.update(subcategories).set({
-      categoryId: body.categoryId ?? existing.categoryId,
+      categoryId: categoryId ?? existing.categoryId,
       name: body.name ?? existing.name,
     }).where(eq(subcategories.id, id)).execute();
 
@@ -30,7 +32,7 @@ export default defineEventHandler(async (event) => {
       where: (s, { eq: e }) => e(s.id, id),
     });
 
-    return successResponse(result);
+    return successResponse(result ? serializeSubcategory(result) : null);
   }
 
   if (method === 'DELETE') {

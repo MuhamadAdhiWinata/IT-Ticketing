@@ -1,8 +1,15 @@
 import mysql from 'mysql2/promise';
 
+import { config } from 'dotenv';
+config({ path: '.env' });
+
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is required in .env');
+}
+
 async function main() {
   const pool = mysql.createPool({
-    uri: 'mysql2://root:rootpassword@localhost:3306/ticket_db',
+    uri: process.env.DATABASE_URL,
   });
 
   console.log('[MIGRANT] Membaca data tiket...');

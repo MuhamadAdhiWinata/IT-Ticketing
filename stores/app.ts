@@ -35,44 +35,39 @@ export const useAppStore = defineStore('app', {
     },
 
     async initApp() {
-      try {
-        const [usersRes, prefsRes, ticketsRes, catsRes, subcatsRes, vendorsRes, techsRes] = await Promise.all([
-          $fetch<{ success: boolean; data: AppUser[] }>('/api/users'),
-          $fetch<{ success: boolean; data: { darkMode: boolean } }>('/api/user/preferences', {
-            headers: { 'X-User-Id': 'USR-001' },
-          }).catch(() => null),
-          $fetch<{ success: boolean; data: Ticket[] }>('/api/tickets').catch(() => null),
-          $fetch<{ success: boolean; data: CategoryItem[] }>('/api/categories').catch(() => null),
-          $fetch<{ success: boolean; data: SubcategoryItem[] }>('/api/subcategories').catch(() => null),
-          $fetch<{ success: boolean; data: VendorItem[] }>('/api/vendors').catch(() => null),
-          $fetch<{ success: boolean; data: TechnicianItem[] }>('/api/technicians').catch(() => null),
-        ]);
+      // Step 1: Load users first to determine currentUser
+      const usersRes = await $fetch<{ success: boolean; data: AppUser[] }>('/api/users').catch(() => null);
 
+      if (usersRes) {
         this.allUsers = usersRes.data;
-        this.currentUser = this.allUsers[1] || this.allUsers[0] || null; // IT-001 or USR-001 for initial user
-
-        if (prefsRes) {
-          this.darkMode = prefsRes.data.darkMode;
-        }
-
-        if (ticketsRes) this.tickets = ticketsRes.data;
-        if (catsRes) this.categories = catsRes.data;
-        if (subcatsRes) this.subcategories = subcatsRes.data;
-        if (vendorsRes) this.vendors = vendorsRes.data;
-        if (techsRes) this.technicians = techsRes.data;
-
-      } catch (e) {
-        console.error('Failed to initialize app from API:', e);
-        // Fallback to empty state on API failure
+        this.currentUser = this.allUsers[1] || this.allUsers[0] || null;
+      } else {
         this.allUsers = [];
-        this.tickets = [];
-        this.categories = [];
-        this.subcategories = [];
-        this.vendors = [];
-        this.technicians = [];
-        this.darkMode = false;
         this.currentUser = null;
       }
+
+      // Step 2: Fetch remaining data in parallel using currentUser
+      const userId = this.currentUser?.id || '';
+      const [prefsRes, ticketsRes, catsRes, subcatsRes, vendorsRes, techsRes] = await Promise.all([
+        $fetch<{ success: boolean; data: { darkMode: boolean } }>('/api/user/preferences', {
+          headers: { 'X-User-Id': userId },
+        }).catch(() => null),
+        $fetch<{ success: boolean; data: Ticket[] }>('/api/tickets').catch(() => null),
+        $fetch<{ success: boolean; data: CategoryItem[] }>('/api/categories').catch(() => null),
+        $fetch<{ success: boolean; data: SubcategoryItem[] }>('/api/subcategories').catch(() => null),
+        $fetch<{ success: boolean; data: VendorItem[] }>('/api/vendors').catch(() => null),
+        $fetch<{ success: boolean; data: TechnicianItem[] }>('/api/technicians').catch(() => null),
+      ]);
+
+      if (prefsRes) {
+        this.darkMode = prefsRes.data.darkMode;
+      }
+
+      if (ticketsRes) this.tickets = ticketsRes.data;
+      if (catsRes) this.categories = catsRes.data;
+      if (subcatsRes) this.subcategories = subcatsRes.data;
+      if (vendorsRes) this.vendors = vendorsRes.data;
+      if (techsRes) this.technicians = techsRes.data;
 
       this.loadStateFromUrl();
       this.isLoaded = true;

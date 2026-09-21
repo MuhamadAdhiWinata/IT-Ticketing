@@ -1,7 +1,8 @@
-import { eq, and, or, like, between, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { worklogs, tickets } from '~/server/database/schema';
+import { worklogs } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
+import { serializeWorklog, serializeTicket } from '~/server/utils/serialize';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -19,17 +20,27 @@ export default defineEventHandler(async (event) => {
       }
       return conditions.length === 0 ? undefined : (conditions.length === 1 ? conditions[0] : a(...conditions));
     },
-    with: {
-      ticket: true,
-    },
     orderBy: (wl, { desc }) => [desc(wl.createdAt)],
   });
 
-  const formatted = results.map(wl => ({
-    ticketId: wl.ticketId,
-    ticketTitle: wl.ticket?.title,
-    ...wl,
-  }));
+  // Fetch related tickets
+  const ticketIds = [...new Set(results.map(wl => wl.ticketId))];
+  const ticketMap = new Map();
+  if (ticketIds.length > 0) {
+    const ticketList = await db.query.tickets.findMany({
+      where: (t, { inArray: i }) => i(t.id, ticketIds),
+    });
+    ticketList.forEach(t => ticketMap.set(t.id, t));
+  }
+
+  const formatted = results.map(wl => {
+    const ticket = ticketMap.get(wl.ticketId);
+    return {
+      ticketId: wl.ticketId,
+      ticketTitle: ticket?.title || '',
+      ...serializeWorklog(wl),
+    };
+  });
 
   return successResponse(formatted);
 });

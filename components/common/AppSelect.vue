@@ -25,6 +25,9 @@
       leave-to-class="transform scale-95 opacity-0"
     >
       <div v-if="isOpen" class="absolute z-50 mt-1.5 w-full min-w-[140px] bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 max-h-60 overflow-y-auto custom-scrollbar p-1">
+        <div v-if="normalizedOptions.length === 0" class="px-3 py-2.5 text-[11px] text-gray-400 dark:text-gray-500 text-center font-medium">
+          Tidak ada data tersedia
+        </div>
         <div
           v-for="option in normalizedOptions"
           :key="option.value"

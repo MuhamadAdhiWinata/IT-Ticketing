@@ -4,12 +4,11 @@ import { resolve } from 'path';
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-09-15',
-  srcDir: '.',
-  devtools: { enabled: true },
+  devtools: { enabled: process.env.NODE_ENV !== 'production' },
   modules: ["@nuxtjs/tailwindcss", "@pinia/nuxt"],
   alias: {
     '~': resolve(__dirname, '.'),
-    '@': resolve(__dirname, '.')
+    '@': resolve(__dirname, '.'),
   },
   tailwindcss: {
     cssPath: "~/assets/css/main.css",

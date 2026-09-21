@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { vendors } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
+import { serializeVendor } from '~/server/utils/serialize';
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
@@ -23,8 +24,8 @@ export default defineEventHandler(async (event) => {
 
     await db.update(vendors).set({
       name: body.name ?? existing.name,
-      serviceType: body.serviceType ?? existing.serviceType,
-      contactPerson: body.contactPerson ?? existing.contactPerson,
+      serviceType: body.serviceType ?? body.service_type ?? existing.serviceType,
+      contactPerson: body.contactPerson ?? body.contact_person ?? existing.contactPerson,
       phone: body.phone ?? existing.phone,
     }).where(eq(vendors.id, id)).execute();
 
@@ -32,7 +33,7 @@ export default defineEventHandler(async (event) => {
       where: (v, { eq: e }) => e(v.id, id),
     });
 
-    return successResponse(result);
+    return successResponse(result ? serializeVendor(result) : null);
   }
 
   if (method === 'DELETE') {

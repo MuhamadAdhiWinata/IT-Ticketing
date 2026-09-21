@@ -17,7 +17,6 @@ export interface AppUser {
   role: UserRole;
   department: string;
   avatarUrl?: string;
-  vendorName?: string;
 }
 
 export interface Attachment {
@@ -34,12 +33,12 @@ export interface Attachment {
 
 export interface Worklog {
   id: string;
-  stageKey?: string; // Menambahkan konteks tahap
+  stageKey?: string;
   worker_id: string;
   worker_name: string;
   date: string;
-  start_at: string; // e.g. "09:15"
-  finish_at: string; // e.g. "09:45"
+  start_at: string;
+  finish_at: string;
   duration_minutes: number;
   description: string;
   created_at: string;
@@ -68,25 +67,26 @@ export interface DelegationInfo {
   vendor_name?: string;
   technician_id?: string;
   technician_name?: string;
-  reference_no?: string; // Surat jalan / Resi vendor
+  reference_no?: string;
   notes?: string;
   delegated_at: string;
   returned_at?: string;
   returned_notes?: string;
 }
 
-export interface AuditEntry {
+export interface AuditLog {
   id: string;
-  timestamp: string;
-  actor_id: string;
-  actor_name: string;
-  actor_role: string;
+  ticket_id?: string;
   action: string;
+  performed_at: string;
+  performed_by: string;
+  performed_by_name: string;
   detail?: string;
+  notes?: string;
 }
 
 export interface Ticket {
-  id: string; // Format TCK-YYYYMM-XXX
+  id: string;
   title: string;
   description: string;
   category: string;
@@ -95,39 +95,37 @@ export interface Ticket {
   priority: TicketPriority;
   status: TicketStatus;
 
-  created_by: string; // User ID
+  created_by: string;
   created_by_name: string;
   created_by_dept: string;
-  created_by_admin_id?: string | null;   // Admin ID if created on behalf of
-  created_by_admin_name?: string | null; // Admin name if created on behalf of
-  
-  requestedBy: string; // For compatibility
+  created_by_admin_id?: string | null;
+  created_by_admin_name?: string | null;
+
+  requestedBy: string;
   requestedByName: string;
   requestedByDept: string;
 
-  assignedTo?: string | null; // For compatibility
+  assignedTo?: string | null;
   assignedToName?: string | null;
 
-  supporting_members: string[]; // List of worker names or IDs
+  supporting_members: string[];
   supporting_member_details?: { id: string; name: string }[];
 
   delegation?: DelegationInfo | null;
 
-  referenced_ticket_id?: string | null; // For recalled tickets
+  referenced_ticket_id?: string | null;
 
   attachments: Attachment[];
   worklogs: Worklog[];
   comments: TicketComment[];
   internal_notes: InternalNote[];
-  audit_trail: AuditEntry[];
-  audit_logs: any[]; // For compatibility with TrackingView
+  audit_logs: AuditLog[];
 
   created_at: string;
-  ticket_number?: string; // For compatibility
+  ticket_number?: string;
   issued_at?: string | null;
   process_started_at?: string | null;
   completed_at?: string | null;
-  // sla_hours?: number; removed since SLA is deprecated
   resolution_summary?: string | null;
   confirmed_by_user?: boolean;
 }
@@ -135,7 +133,6 @@ export interface Ticket {
 export interface CategoryItem {
   id: string;
   name: string;
-  subcategories?: string[];
 }
 
 export interface SubcategoryItem {

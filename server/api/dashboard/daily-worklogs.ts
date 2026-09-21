@@ -2,6 +2,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { worklogs, tickets } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
+import { serializeWorklog } from '~/server/utils/serialize';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -25,7 +26,6 @@ export default defineEventHandler(async (event) => {
     orderBy: (wl, { asc }) => [asc(wl.date), asc(wl.startAt)],
   });
 
-  // Fetch ticket titles for the worklogs
   const ticketIds = [...new Set(results.map(wl => wl.ticketId))];
   const ticketMap = new Map();
   if (ticketIds.length > 0) {
@@ -37,9 +37,9 @@ export default defineEventHandler(async (event) => {
 
   const formatted = results.map(wl => ({
     ticketId: wl.ticketId,
-    ticketTitle: ticketMap.get(wl.ticketId)?.title,
-    ticketStatus: ticketMap.get(wl.ticketId)?.status,
-    ...wl,
+    ticketTitle: ticketMap.get(wl.ticketId)?.title || '',
+    ticketStatus: ticketMap.get(wl.ticketId)?.status || '',
+    ...serializeWorklog(wl),
   }));
 
   return successResponse(formatted);

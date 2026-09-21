@@ -10,3 +10,4 @@ coverage/
 .nuxt/
 server/uploads/
 drizzle/
+prompt.md
