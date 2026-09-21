@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { tickets } from '~/server/database/schema';
+import { tickets, attachments } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
+import { getTicketById } from '~/server/utils/tickets';
 
 function now(): string {
   return new Date().toISOString().replace('T', ' ').replace('Z', '').slice(0, 19);
@@ -24,25 +25,22 @@ export default defineEventHandler(async (event) => {
   }
 
   const ts = now();
-  const newAttachment = {
-    id: `ATT-${Date.now()}`,
+  const attachId = `ATT-${Date.now()}`;
+
+  await db.insert(attachments).values({
+    id: attachId,
+    ticketId: id,
     stage: body.stage || 'REQUEST',
     visibility: body.visibility || 'USER_VISIBLE',
-    file_name: body.file_name || '',
-    file_size: body.file_size || '',
-    file_path: body.file_path || null,
-    uploaded_by: userId,
-    uploaded_by_name: userId,
-    uploaded_at: ts,
-  };
+    fileName: body.file_name || '',
+    fileSize: body.file_size || '',
+    filePath: body.file_path || null,
+    uploadedBy: userId,
+    uploadedByName: userId,
+    uploadedAt: ts,
+  }).execute();
 
-  const updatedAttachments = [...(existing.attachments || []), newAttachment];
-
-  await db.update(tickets).set({ attachments: updatedAttachments }).where(eq(tickets.id, id)).execute();
-
-  const result = await db.query.tickets.findFirst({
-    where: (t, { eq: e }) => e(t.id, id),
-  });
+  const result = await getTicketById(id);
 
   return successResponse(result);
 });

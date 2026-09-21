@@ -457,7 +457,7 @@ const resetFilters = () => {
 const getTicketContributors = (t: Ticket): string => {
   const list = new Set<string>();
   if (t.assignedToName) list.add(t.assignedToName);
-  if (t.primary_worker_name) list.add(t.primary_worker_name);
+  if (t.assignedToName) list.add(t.assignedToName);
   (t.supporting_members || []).forEach(m => list.add(m));
   (t.worklogs || []).forEach(wl => {
     if (wl.worker_name) list.add(wl.worker_name);
@@ -482,7 +482,7 @@ const filteredTickets = computed(() => {
       const workerUser = store.allUsers.find(x => x.id === filterWorker.value);
       const workerName = workerUser?.name || '';
 
-      const isAssigned = t.assignedTo === filterWorker.value || t.primary_worker_id === filterWorker.value;
+      const isAssigned = t.assignedTo === filterWorker.value;
       const isSupporting = (t.supporting_members || []).some(m => m === workerName || m === filterWorker.value);
       const hasWorklog = (t.worklogs || []).some(wl => wl.worker_id === filterWorker.value);
 
@@ -542,7 +542,7 @@ const workerRecapData = computed(() => {
   return itWorkers.value.map(user => {
     // Tickets where this user contributed (assigned, supporting, or wrote worklog)
     const contributedTickets = props.tickets.filter(t => {
-      const isAssigned = t.assignedTo === user.id || t.primary_worker_id === user.id;
+      const isAssigned = t.assignedTo === user.id;
       const isSupporting = (t.supporting_members || []).some(m => m === user.name || m === user.id);
       const hasWorklog = (t.worklogs || []).some(wl => wl.worker_id === user.id);
       return isAssigned || isSupporting || hasWorklog;

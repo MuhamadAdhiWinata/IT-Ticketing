@@ -1,34 +1,35 @@
-import { eq } from 'drizzle-orm';
+import { eq, and, or, like, between, sql } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { tickets } from '~/server/database/schema';
+import { worklogs, tickets } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
 
-  let ticketsData = await db.query.tickets.findMany();
-
-  if (query.workerId) {
-    ticketsData = ticketsData.filter(t => t.worklogs?.some(wl => wl.worker_id === query.workerId));
-  }
-
-  if (query.startDate) {
-    ticketsData = ticketsData.filter(t => t.worklogs?.some(wl => wl.date >= query.startDate));
-  }
-  if (query.endDate) {
-    ticketsData = ticketsData.filter(t => t.worklogs?.some(wl => wl.date <= query.endDate));
-  }
-
-  const worklogs: any[] = [];
-  ticketsData.forEach(ticket => {
-    ticket.worklogs?.forEach(wl => {
-      worklogs.push({
-        ticketId: ticket.id,
-        ticketTitle: ticket.title,
-        ...wl,
-      });
-    });
+  const results = await db.query.worklogs.findMany({
+    where: (wl, { eq: e, and: a, between: b }: any) => {
+      const conditions: any[] = [];
+      if (query.workerId) conditions.push(e(wl.workerId, query.workerId as string));
+      if (query.startDate && query.endDate) {
+        conditions.push(b(wl.date, query.startDate as string, query.endDate as string));
+      } else if (query.startDate) {
+        conditions.push(sql`${wl.date} >= ${query.startDate}`);
+      } else if (query.endDate) {
+        conditions.push(sql`${wl.date} <= ${query.endDate}`);
+      }
+      return conditions.length === 0 ? undefined : (conditions.length === 1 ? conditions[0] : a(...conditions));
+    },
+    with: {
+      ticket: true,
+    },
+    orderBy: (wl, { desc }) => [desc(wl.createdAt)],
   });
 
-  return successResponse(worklogs);
+  const formatted = results.map(wl => ({
+    ticketId: wl.ticketId,
+    ticketTitle: wl.ticket?.title,
+    ...wl,
+  }));
+
+  return successResponse(formatted);
 });

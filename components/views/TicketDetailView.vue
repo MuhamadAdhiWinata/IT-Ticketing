@@ -58,7 +58,7 @@
           </div>
           <div class="flex items-center justify-between">
             <span class="text-xs text-gray-500">Worker:</span>
-            <span class="text-xs font-semibold text-gray-800 dark:text-gray-200">{{ ticket.assignedToName || ticket.primary_worker_name || 'Belum ditugaskan' }}</span>
+            <span class="text-xs font-semibold text-gray-800 dark:text-gray-200">{{ ticket.assignedToName || 'Belum ditugaskan' }}</span>
           </div>
         </div>
       </div>
@@ -335,7 +335,7 @@ const stepperStages = computed(() => {
       stageKey: 'ASSIGN',
       completed: isAssignCompleted || t.status === 'SELESAI' || t.status === 'DELEGASI',
       current: !isAssignCompleted && t.status !== 'SELESAI' && t.status !== 'DELEGASI',
-      actorInfo: `Worker: ${t.assignedToName || t.primary_worker_name || 'Belum ditugaskan'}`,
+      actorInfo: `Worker: ${t.assignedToName || 'Belum ditugaskan'}`,
       attachments: atts.filter(a => a.stage === 'ASSIGN'),
     },
     {

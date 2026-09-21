@@ -1,7 +1,8 @@
-import { eq } from 'drizzle-orm';
+import { eq, and, or, like, between, sql } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { tickets } from '~/server/database/schema';
+import { tickets, worklogs } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
+import { getTicketsWithRelations } from '~/server/utils/tickets';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -9,33 +10,50 @@ export default defineEventHandler(async (event) => {
   const startDate = query.startDate || null;
   const endDate = query.endDate || null;
 
-  let ticketsData = await db.query.tickets.findMany();
-
-  if (workerId) {
-    ticketsData = ticketsData.filter(t => {
-      if (t.assignedTo === workerId || t.primaryWorkerId === workerId) return true;
-      return t.worklogs?.some(wl => wl.worker_id === workerId && wl.date >= (startDate || '') && wl.date <= (endDate || ''));
-    });
-  }
+  let worklogsData = await db.query.worklogs.findMany({
+    where: (wl, { eq: e, and: a, between: b, sql: s }: any) => {
+      const conditions: any[] = [];
+      if (workerId) conditions.push(e(wl.workerId, workerId as string));
+      if (startDate && endDate) {
+        conditions.push(a(s`${wl.date} >= ${startDate}`, s`${wl.date} <= ${endDate}`));
+      } else if (startDate) {
+        conditions.push(s`${wl.date} >= ${startDate}`);
+      } else if (endDate) {
+        conditions.push(s`${wl.date} <= ${endDate}`);
+      }
+      return conditions.length === 0 ? undefined : (conditions.length === 1 ? conditions[0] : a(...conditions));
+    },
+  });
 
   let dailyTicketsCount = 0;
   let completedInRangeCount = 0;
   let onProgressCount = 0;
   let totalHoursInRange = 0;
 
-  ticketsData.forEach(t => {
-    const worklogsInRange = t.worklogs?.filter(wl => {
-      const dateOk = (!startDate || wl.date >= startDate) && (!endDate || wl.date <= endDate);
-      return dateOk;
-    }) || [];
+  const uniqueTicketIds = new Set<string>();
 
-    if (worklogsInRange.length > 0) {
-      dailyTicketsCount++;
-      worklogsInRange.forEach(wl => {
-        totalHoursInRange += (wl.duration_minutes || 0) / 60;
-      });
+  worklogsData.forEach(wl => {
+    uniqueTicketIds.add(wl.ticketId);
+    totalHoursInRange += (wl.durationMinutes || 0) / 60;
+  });
+  dailyTicketsCount = uniqueTicketIds.size;
+
+  const relevantTickets = await getTicketsWithRelations((t, { eq: e, or: o, and: a }: any) => {
+    const conditions: any[] = [];
+    if (workerId) conditions.push(e(t.assignedTo, workerId as string));
+
+    if (startDate && endDate) {
+      conditions.push(a(sql`${t.createdAt} >= ${startDate} 00:00:00`, sql`${t.createdAt} <= ${endDate} 23:59:59`));
+    } else if (startDate) {
+      conditions.push(sql`${t.createdAt} >= ${startDate} 00:00:00`);
+    } else if (endDate) {
+      conditions.push(sql`${t.createdAt} <= ${endDate} 23:59:59`);
     }
 
+    return conditions.length === 0 ? undefined : (conditions.length === 1 ? conditions[0] : a(...conditions));
+  });
+
+  relevantTickets.forEach(t => {
     if (t.status === 'SELESAI') completedInRangeCount++;
     if (t.status === 'PROCESS' || t.status === 'DELEGASI') onProgressCount++;
   });

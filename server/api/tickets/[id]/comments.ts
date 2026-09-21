@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { tickets } from '~/server/database/schema';
+import { tickets, comments } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
+import { getTicketById } from '~/server/utils/tickets';
 
 function now(): string {
   return new Date().toISOString().replace('T', ' ').replace('Z', '').slice(0, 19);
@@ -24,22 +25,19 @@ export default defineEventHandler(async (event) => {
   }
 
   const ts = now();
-  const newComment = {
-    id: `CMT-${Date.now()}`,
-    user_id: userId,
-    user_name: userId,
-    user_role: 'USER_NON_IT',
+  const cmtId = `CMT-${Date.now()}`;
+
+  await db.insert(comments).values({
+    id: cmtId,
+    ticketId: id,
+    userId: userId,
+    userName: userId,
+    userRole: 'USER_NON_IT',
     message: body.message,
-    created_at: ts,
-  };
+    createdAt: ts,
+  }).execute();
 
-  const updatedComments = [...(existing.comments || []), newComment];
-
-  await db.update(tickets).set({ comments: updatedComments }).where(eq(tickets.id, id)).execute();
-
-  const result = await db.query.tickets.findFirst({
-    where: (t, { eq: e }) => e(t.id, id),
-  });
+  const result = await getTicketById(id);
 
   return successResponse(result);
 });

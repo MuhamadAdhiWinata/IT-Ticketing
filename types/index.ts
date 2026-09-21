@@ -105,8 +105,6 @@ export interface Ticket {
   requestedByName: string;
   requestedByDept: string;
 
-  primary_worker_id?: string | null;
-  primary_worker_name?: string | null;
   assignedTo?: string | null; // For compatibility
   assignedToName?: string | null;
 

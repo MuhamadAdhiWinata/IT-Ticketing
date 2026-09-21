@@ -1,38 +1,19 @@
-import { eq, sql } from 'drizzle-orm';
+import { eq, and, or, like } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { tickets } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
+import { getTicketsWithRelations } from '~/server/utils/tickets';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
 
-  let results = await db.query.tickets.findMany();
-
-  if (query.status) {
-    results = results.filter(t => t.status === query.status);
-  }
-  if (query.workerId) {
-    results = results.filter(t => {
-      if (t.assignedTo === query.workerId) return true;
-      if (t.primaryWorkerId === query.workerId) return true;
-      if (t.supportingMembers?.includes(query.workerId)) return true;
-      return t.worklogs?.some(wl => wl.worker_id === query.workerId);
-    });
-  }
-  if (query.startDate) {
-    results = results.filter(t => {
-      const wlDate = t.worklogs?.some(wl => wl.date >= query.startDate);
-      const createdDate = (t.createdAt || '').startsWith(query.startDate);
-      return wlDate || createdDate;
-    });
-  }
-  if (query.endDate) {
-    results = results.filter(t => {
-      const wlDate = t.worklogs?.some(wl => wl.date <= query.endDate);
-      const createdDate = (t.createdAt || '').startsWith(query.endDate);
-      return wlDate || createdDate;
-    });
-  }
+  const results = await getTicketsWithRelations((t, { eq: e, or: o, like: l, and: a }: any) => {
+    const conditions: any[] = [];
+    if (query.status) conditions.push(e(t.status, query.status as string));
+    if (query.category) conditions.push(e(t.category, query.category as string));
+    if (query.priority) conditions.push(e(t.priority, query.priority as string));
+    return conditions.length === 0 ? undefined : (conditions.length === 1 ? conditions[0] : a(...conditions));
+  });
 
   let totalTickets = results.length;
   let completedCount = results.filter(t => t.status === 'SELESAI').length;
@@ -40,7 +21,7 @@ export default defineEventHandler(async (event) => {
   let totalWorklogHours = 0;
   results.forEach(t => {
     t.worklogs?.forEach(wl => {
-      totalWorklogHours += (wl.duration_minutes || 0) / 60;
+      totalWorklogHours += (wl.durationMinutes || 0) / 60;
     });
   });
 

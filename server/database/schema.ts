@@ -3,10 +3,12 @@ import {
   varchar,
   text,
   timestamp,
-  json,
   int,
+  json,
   index,
+  foreignKey,
 } from 'drizzle-orm/mysql-core';
+import { relations } from 'drizzle-orm';
 
 export const users = mysqlTable('users', {
   id: varchar('id', { length: 50 }).primaryKey(),
@@ -17,10 +19,21 @@ export const users = mysqlTable('users', {
   avatarUrl: text('avatar_url'),
 });
 
+export const usersRelations = relations(users, ({ one, many }) => ({
+  preferences: one(userPreferences, {
+    fields: [users.id],
+    references: [userPreferences.userId],
+  }),
+}));
+
 export const categories = mysqlTable('categories', {
   id: varchar('id', { length: 50 }).primaryKey(),
   name: varchar('name', { length: 255 }).notNull().unique(),
 });
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  subcategories: many(subcategories),
+}));
 
 export const subcategories = mysqlTable('subcategories', {
   id: varchar('id', { length: 50 }).primaryKey(),
@@ -28,6 +41,13 @@ export const subcategories = mysqlTable('subcategories', {
   name: varchar('name', { length: 255 }).notNull(),
 }, (table) => ({
   idxCategory: index('idx_subcategory_category').on(table.categoryId),
+}));
+
+export const subcategoriesRelations = relations(subcategories, ({ one }) => ({
+  category: one(categories, {
+    fields: [subcategories.categoryId],
+    references: [categories.id],
+  }),
 }));
 
 export const vendors = mysqlTable('vendors', {
@@ -65,8 +85,6 @@ export const tickets = mysqlTable('tickets', {
   requestedByName: varchar('requested_by_name', { length: 255 }).notNull(),
   requestedByDept: varchar('requested_by_dept', { length: 255 }).notNull(),
 
-  primaryWorkerId: varchar('primary_worker_id', { length: 50 }),
-  primaryWorkerName: varchar('primary_worker_name', { length: 255 }),
   assignedTo: varchar('assigned_to', { length: 50 }),
   assignedToName: varchar('assigned_to_name', { length: 255 }),
 
@@ -86,12 +104,6 @@ export const tickets = mysqlTable('tickets', {
 
   referencedTicketId: varchar('referenced_ticket_id', { length: 50 }),
 
-  worklogs: json('worklogs').$type<any[]>(),
-  comments: json('comments').$type<any[]>(),
-  internalNotes: json('internal_notes').$type<any[]>(),
-  auditLogs: json('audit_logs').$type<any[]>(),
-  attachments: json('attachments').$type<any[]>(),
-
   createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
   ticketNumber: varchar('ticket_number', { length: 50 }),
   issuedAt: timestamp('issued_at', { mode: 'string' }),
@@ -105,7 +117,127 @@ export const tickets = mysqlTable('tickets', {
   idxCreatedAt: index('idx_tickets_created_at').on(table.createdAt),
 }));
 
+export const ticketsRelations = relations(tickets, ({ many }) => ({
+  worklogs: many(worklogs),
+  comments: many(comments),
+  internalNotes: many(internalNotes),
+  auditLogs: many(auditLogs),
+  attachments: many(attachments),
+}));
+
+export const worklogs = mysqlTable('worklogs', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  ticketId: varchar('ticket_id', { length: 50 }).notNull().references(() => tickets.id),
+  stageKey: varchar('stage_key', { length: 50 }).notNull(),
+  workerId: varchar('worker_id', { length: 50 }).notNull(),
+  workerName: varchar('worker_name', { length: 255 }).notNull(),
+  date: varchar('date', { length: 10 }).notNull(),
+  startAt: varchar('start_at', { length: 5 }).notNull(),
+  finishAt: varchar('finish_at', { length: 5 }).notNull(),
+  durationMinutes: int('duration_minutes', { unsigned: true }).default(0),
+  description: text('description').notNull(),
+  createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
+}, (table) => ({
+  idxTicket: index('idx_worklogs_ticket').on(table.ticketId),
+  idxWorker: index('idx_worklogs_worker').on(table.workerId),
+  idxDate: index('idx_worklogs_date').on(table.date),
+}));
+
+export const worklogsRelations = relations(worklogs, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [worklogs.ticketId],
+    references: [tickets.id],
+  }),
+}));
+
+export const comments = mysqlTable('comments', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  ticketId: varchar('ticket_id', { length: 50 }).notNull().references(() => tickets.id),
+  userId: varchar('user_id', { length: 50 }).notNull(),
+  userName: varchar('user_name', { length: 255 }).notNull(),
+  userRole: varchar('user_role', { length: 50 }).notNull(),
+  message: text('message').notNull(),
+  createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
+}, (table) => ({
+  idxTicket: index('idx_comments_ticket').on(table.ticketId),
+}));
+
+export const commentsRelations = relations(comments, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [comments.ticketId],
+    references: [tickets.id],
+  }),
+}));
+
+export const internalNotes = mysqlTable('internal_notes', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  ticketId: varchar('ticket_id', { length: 50 }).notNull().references(() => tickets.id),
+  authorId: varchar('author_id', { length: 50 }).notNull(),
+  authorName: varchar('author_name', { length: 255 }).notNull(),
+  note: text('note').notNull(),
+  createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
+}, (table) => ({
+  idxTicket: index('idx_notes_ticket').on(table.ticketId),
+}));
+
+export const internalNotesRelations = relations(internalNotes, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [internalNotes.ticketId],
+    references: [tickets.id],
+  }),
+}));
+
+export const auditLogs = mysqlTable('audit_logs', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  ticketId: varchar('ticket_id', { length: 50 }).notNull().references(() => tickets.id),
+  action: varchar('action', { length: 255 }).notNull(),
+  performedAt: timestamp('performed_at', { mode: 'string' }).notNull(),
+  performedBy: varchar('performed_by', { length: 50 }).notNull(),
+  performedByName: varchar('performed_by_name', { length: 255 }).notNull(),
+  detail: text('detail'),
+  notes: text('notes'),
+}, (table) => ({
+  idxTicket: index('idx_audit_ticket').on(table.ticketId),
+}));
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [auditLogs.ticketId],
+    references: [tickets.id],
+  }),
+}));
+
+export const attachments = mysqlTable('attachments', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  ticketId: varchar('ticket_id', { length: 50 }).notNull().references(() => tickets.id),
+  stage: varchar('stage', { length: 50 }).notNull(),
+  visibility: varchar('visibility', { length: 50 }).notNull(),
+  fileName: varchar('file_name', { length: 255 }).notNull(),
+  fileSize: varchar('file_size', { length: 50 }),
+  filePath: varchar('file_path', { length: 500 }),
+  uploadedBy: varchar('uploaded_by', { length: 50 }).notNull(),
+  uploadedByName: varchar('uploaded_by_name', { length: 255 }).notNull(),
+  uploadedAt: timestamp('uploaded_at', { mode: 'string' }).notNull(),
+}, (table) => ({
+  idxTicket: index('idx_attachments_ticket').on(table.ticketId),
+}));
+
+export const attachmentsRelations = relations(attachments, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [attachments.ticketId],
+    references: [tickets.id],
+  }),
+}));
+
 export const userPreferences = mysqlTable('user_preferences', {
   userId: varchar('user_id', { length: 50 }).primaryKey().references(() => users.id),
   darkMode: int('dark_mode', { unsigned: true }).default(0),
 });
+
+export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [userPreferences.userId],
+    references: [users.id],
+  }),
+}));
+

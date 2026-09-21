@@ -1,8 +1,9 @@
-import { eq } from 'drizzle-orm';
+import { eq, and, or, like } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { tickets } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 import { generateTicketId, generateTicketNumber } from '~/server/utils/ticket-id';
+import { getTicketsWithRelations, getTicketById } from '~/server/utils/tickets';
 
 function now(): string {
   return new Date().toISOString().replace('T', ' ').replace('Z', '').slice(0, 19);
@@ -13,20 +14,13 @@ export default defineEventHandler(async (event) => {
 
   if (method === 'GET') {
     const query = getQuery(event);
-    let results;
 
-    if (query.status || query.search) {
-      results = await db.query.tickets.findMany({
-        where: (t, { eq: e, or: o, like: l, and: a }: any) => {
-          const conditions: any[] = [];
-          if (query.status) conditions.push(e(t.status, query.status as string));
-          if (query.search) conditions.push(o(l(t.id, `%${query.search}%`), l(t.title, `%${query.search}%`)));
-          return conditions.length === 1 ? conditions[0] : a(...conditions);
-        },
-      });
-    } else {
-      results = await db.query.tickets.findMany();
-    }
+    const results = await getTicketsWithRelations((t, { eq: e, or: o, like: l, and: a }: any) => {
+      const conditions: any[] = [];
+      if (query.status) conditions.push(e(t.status, query.status as string));
+      if (query.search) conditions.push(o(l(t.id, `%${query.search}%`), l(t.title, `%${query.search}%`)));
+      return conditions.length === 0 ? undefined : (conditions.length === 1 ? conditions[0] : a(...conditions));
+    });
 
     return successResponse(results);
   }
@@ -48,30 +42,18 @@ export default defineEventHandler(async (event) => {
     let createdByAdminName: string | null = null;
 
     if (body.behalfUserId) {
-      requestedBy = body.behalfUserId;
-      requestedByName = body.requestedByName || body.behalfUserId;
-      requestedByDept = body.requestedByDept || '';
-      createdByAdminId = userId;
-      createdByAdminName = userId;
+      const { db } = await import('~/server/database/client');
+      const behalfUser = await db.query.users.findFirst({
+        where: (u, { eq: e }) => e(u.id, body.behalfUserId),
+      });
+      if (behalfUser) {
+        requestedBy = behalfUser.id;
+        requestedByName = behalfUser.name;
+        requestedByDept = behalfUser.department;
+        createdByAdminId = userId;
+        createdByAdminName = userId;
+      }
     }
-
-    const auditLogs: any[] = [
-      {
-        id: `AUD-${Date.now()}`,
-        action: shouldIssue ? 'TIKET_DITERBITKAN' : 'TIKET_DRAFT_DISIMPAN',
-        performed_at: ts,
-        performed_by: userId,
-        performed_by_name: userId,
-      },
-      ...(body.behalfUserId ? [{
-        id: `AUD-${Date.now() + 1}`,
-        action: 'DIBUAT_ATAS_NAMA',
-        detail: `Dibuat oleh ${userId} atas nama ${requestedByName}`,
-        performed_at: ts,
-        performed_by: userId,
-        performed_by_name: userId,
-      }] : []),
-    ];
 
     await db.insert(tickets).values({
       id: newId,
@@ -90,8 +72,6 @@ export default defineEventHandler(async (event) => {
       requestedBy,
       requestedByName,
       requestedByDept,
-      primaryWorkerId: null,
-      primaryWorkerName: null,
       assignedTo: null,
       assignedToName: null,
       supportingMembers: [],
@@ -107,10 +87,6 @@ export default defineEventHandler(async (event) => {
       returnedAt: null,
       returnedNotes: null,
       referencedTicketId: null,
-      worklogs: [],
-      comments: [],
-      internalNotes: [],
-      auditLogs,
       createdAt: ts,
       ticketNumber,
       issuedAt: shouldIssue ? ts : null,
@@ -120,9 +96,30 @@ export default defineEventHandler(async (event) => {
       confirmedByUser: 0,
     }).execute();
 
-    const result = await db.query.tickets.findFirst({
-      where: (t, { eq: e }) => e(t.id, newId),
-    });
+    // Insert initial audit log
+    const { auditLogs } = await import('~/server/database/schema');
+    await db.insert(auditLogs).values({
+      id: `AUD-${Date.now()}`,
+      ticketId: newId,
+      action: shouldIssue ? 'TIKET_DITERBITKAN' : 'TIKET_DRAFT_DISIMPAN',
+      performedAt: ts,
+      performedBy: userId,
+      performedByName: userId,
+    }).execute();
+
+    if (body.behalfUserId) {
+      await db.insert(auditLogs).values({
+        id: `AUD-${Date.now() + 1}`,
+        ticketId: newId,
+        action: 'DIBUAT_ATAS_NAMA',
+        detail: `Dibuat oleh ${userId} atas nama ${requestedByName}`,
+        performedAt: ts,
+        performedBy: userId,
+        performedByName: userId,
+      }).execute();
+    }
+
+    const result = await getTicketById(newId);
 
     return successResponse(result);
   }

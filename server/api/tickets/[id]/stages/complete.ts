@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { tickets } from '~/server/database/schema';
+import { tickets, worklogs, auditLogs, attachments } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
+import { getTicketById } from '~/server/utils/tickets';
 
 function now(): string {
   return new Date().toISOString().replace('T', ' ').replace('Z', '').slice(0, 19);
@@ -48,74 +49,66 @@ export default defineEventHandler(async (event) => {
     newStatus = targetStatus || 'DELEGASI';
   }
 
-  const newAuditLog = {
-    id: `AUD-${Date.now()}`,
-    action: `TAHAP_${stageKey}_SELESAI`,
-    performed_at: ts,
-    performed_by: userId,
-    performed_by_name: userId,
-    notes: body.notes || '',
-  };
-
-  const updatedAuditLogs = [...(existing.auditLogs || []), newAuditLog];
-
-  const attachments = existing.attachments || [];
-  if (body.attachment) {
-    attachments.push({
-      id: `ATT-${Date.now()}`,
-      stage: body.attachment.stage || 'COMPLETION',
-      visibility: body.attachment.visibility || 'USER_VISIBLE',
-      file_name: body.attachment.file_name || '',
-      file_size: body.attachment.file_size || '',
-      uploaded_by: userId,
-      uploaded_by_name: userId,
-      uploaded_at: ts,
-    });
-  }
-
-  let delegation = existing.delegation;
-  if (body.delegation) {
-    delegation = {
-      type: body.delegation.type,
-      vendor_id: body.delegation.vendor_id,
-      vendor_name: body.delegation.vendor_name,
-      technician_id: body.delegation.technician_id,
-      technician_name: body.delegation.technician_name,
-      reference_no: body.delegation.reference_no,
-      notes: body.delegation.notes,
-      delegated_at: ts,
-    };
-  }
-
-  const newWorklogs = body.notes
-    ? [...(existing.worklogs || []), {
-        id: `WL-${Date.now()}`,
-        stageKey,
-        worker_id: userId,
-        worker_name: userId,
-        date: new Date().toISOString().split('T')[0],
-        start_at: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }),
-        finish_at: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }),
-        duration_minutes: 0,
-        description: body.notes,
-        created_at: ts,
-      }]
-    : existing.worklogs || [];
-
+  // Update Ticket
   await db.update(tickets).set({
     status: newStatus,
     assignedTo,
     assignedToName,
     completedAt,
-    auditLogs: updatedAuditLogs,
-    attachments,
-    worklogs: newWorklogs,
-    delegation,
+    delegationType: body.delegation?.type || existing.delegationType,
+    vendorId: body.delegation?.vendor_id || existing.vendorId,
+    vendorName: body.delegation?.vendor_name || existing.vendorName,
+    technicianId: body.delegation?.technician_id || existing.technicianId,
+    technicianName: body.delegation?.technician_name || existing.technicianName,
+    referenceNo: body.delegation?.reference_no || existing.referenceNo,
+    delegationNotes: body.delegation?.notes || existing.delegationNotes,
+    delegatedAt: body.delegation ? ts : existing.delegatedAt,
   }).where(eq(tickets.id, id)).execute();
 
-  const result = await db.query.tickets.findFirst({
-    where: (t, { eq: e }) => e(t.id, id),
-  });
+  // Insert Audit Log
+  await db.insert(auditLogs).values({
+    id: `AUD-${Date.now()}`,
+    ticketId: id,
+    action: `TAHAP_${stageKey}_SELESAI`,
+    performedAt: ts,
+    performedBy: userId,
+    performedByName: userId,
+    notes: body.notes || '',
+  }).execute();
+
+  // Insert Attachment if exists
+  if (body.attachment) {
+    await db.insert(attachments).values({
+      id: `ATT-${Date.now()}`,
+      ticketId: id,
+      stage: body.attachment.stage || 'COMPLETION',
+      visibility: body.attachment.visibility || 'USER_VISIBLE',
+      fileName: body.attachment.file_name || '',
+      fileSize: body.attachment.file_size || '',
+      uploadedBy: userId,
+      uploadedByName: userId,
+      uploadedAt: ts,
+    }).execute();
+  }
+
+  // Insert Worklog if notes exists
+  if (body.notes) {
+    await db.insert(worklogs).values({
+      id: `WL-${Date.now()}`,
+      ticketId: id,
+      stageKey,
+      workerId: userId,
+      workerName: userId,
+      date: new Date().toISOString().split('T')[0],
+      startAt: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      finishAt: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      durationMinutes: 0,
+      description: body.notes,
+      createdAt: ts,
+    }).execute();
+  }
+
+  const result = await getTicketById(id);
 
   return successResponse(result);
 });

@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { tickets } from '~/server/database/schema';
+import { tickets, worklogs } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
+import { getTicketById } from '~/server/utils/tickets';
 
 function now(): string {
   return new Date().toISOString().replace('T', ' ').replace('Z', '').slice(0, 19);
@@ -24,26 +25,23 @@ export default defineEventHandler(async (event) => {
   }
 
   const ts = now();
-  const newWorklog = {
-    id: `WL-${Date.now()}`,
+  const wlId = `WL-${Date.now()}`;
+
+  await db.insert(worklogs).values({
+    id: wlId,
+    ticketId: id,
     stageKey: body.stageKey || 'IN_PROGRESS',
-    worker_id: userId,
-    worker_name: userId,
+    workerId: userId,
+    workerName: userId,
     date: new Date().toISOString().split('T')[0],
-    start_at: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }),
-    finish_at: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }),
-    duration_minutes: 0,
+    startAt: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }),
+    finishAt: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }),
+    durationMinutes: 0,
     description: body.description || '',
-    created_at: ts,
-  };
+    createdAt: ts,
+  }).execute();
 
-  const updatedWorklogs = [...(existing.worklogs || []), newWorklog];
-
-  await db.update(tickets).set({ worklogs: updatedWorklogs }).where(eq(tickets.id, id)).execute();
-
-  const result = await db.query.tickets.findFirst({
-    where: (t, { eq: e }) => e(t.id, id),
-  });
+  const result = await getTicketById(id);
 
   return successResponse(result);
 });
