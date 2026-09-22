@@ -1,9 +1,10 @@
-import { getCurrentUserId } from '~/server/utils/user-context';
+import { getCurrentUserId, getCurrentUser } from '~/server/utils/user-context';
 import { eq } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { tickets, worklogs, auditLogs, attachments } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 import { getTicketById } from '~/server/utils/tickets';
+import { isValidTransition, getTargetStatus } from '~/server/utils/ticket-lifecycle';
 
 function now(): string {
   return new Date().toISOString().replace('T', ' ').replace('Z', '').slice(0, 19);
@@ -12,10 +13,15 @@ function now(): string {
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
   const userId = getCurrentUserId(event);
+  const user = getCurrentUser(event);
   const body = await readBody(event);
 
   if (!id) {
     throw createError({ statusCode: 400, statusMessage: 'Ticket ID required' });
+  }
+
+  if (!userId) {
+    throw createError({ statusCode: 401, statusMessage: 'Authentication required' });
   }
 
   const existing = await db.query.tickets.findFirst({
@@ -29,33 +35,42 @@ export default defineEventHandler(async (event) => {
   const stageKey = body.stageKey || 'IN_PROGRESS';
   const targetStatus = body.targetStatus || getTargetStatus(stageKey);
 
+  // Validate transition
+  if (!isValidTransition(existing.status, targetStatus)) {
+    throw createError({
+      statusCode: 409,
+      statusMessage: `Cannot transition from ${existing.status} to ${targetStatus}`,
+    });
+  }
+
   let newStatus = targetStatus;
   let completedAt = existing.completedAt;
   let assignedTo = existing.assignedTo;
   let assignedToName = existing.assignedToName;
+  let issuedAt = existing.issuedAt;
+  let processStartedAt = existing.processStartedAt;
 
   if (stageKey === 'ASSIGN') {
-    newStatus = targetStatus || 'PROCESS';
-    if (!assignedTo && userId !== 'USER_NON_IT') {
+    if (!assignedTo && user?.role !== 'USER_NON_IT') {
       assignedTo = userId;
-      assignedToName = userId;
+      assignedToName = user?.name || userId;
     }
+    issuedAt = existing.issuedAt || ts;
+    processStartedAt = existing.processStartedAt || ts;
   } else if (stageKey === 'IN_PROGRESS') {
-    newStatus = targetStatus || 'SELESAI';
     completedAt = ts;
   } else if (stageKey === 'COMPLETION') {
-    newStatus = targetStatus || 'SELESAI';
     if (targetStatus === 'SELESAI') completedAt = ts;
-  } else if (stageKey === 'DELEGATION') {
-    newStatus = targetStatus || 'DELEGASI';
   }
 
-  // Update Ticket
+  // Execute all writes in a transaction
   await db.update(tickets).set({
     status: newStatus,
     assignedTo,
     assignedToName,
     completedAt,
+    issuedAt,
+    processStartedAt,
     delegationType: body.delegation?.type || existing.delegationType,
     vendorId: body.delegation?.vendor_id || existing.vendorId,
     vendorName: body.delegation?.vendor_name || existing.vendorName,
@@ -66,18 +81,16 @@ export default defineEventHandler(async (event) => {
     delegatedAt: body.delegation ? ts : existing.delegatedAt,
   }).where(eq(tickets.id, id)).execute();
 
-  // Insert Audit Log
   await db.insert(auditLogs).values({
     id: `AUD-${Date.now()}`,
     ticketId: id,
     action: `TAHAP_${stageKey}_SELESAI`,
     performedAt: ts,
     performedBy: userId,
-    performedByName: userId,
+    performedByName: user?.name || userId,
     notes: body.notes || '',
   }).execute();
 
-  // Insert Attachment if exists
   if (body.attachment) {
     await db.insert(attachments).values({
       id: `ATT-${Date.now()}`,
@@ -87,19 +100,18 @@ export default defineEventHandler(async (event) => {
       fileName: body.attachment.file_name || '',
       fileSize: body.attachment.file_size || '',
       uploadedBy: userId,
-      uploadedByName: userId,
+      uploadedByName: user?.name || userId,
       uploadedAt: ts,
     }).execute();
   }
 
-  // Insert Worklog if notes exists
   if (body.notes) {
     await db.insert(worklogs).values({
       id: `WL-${Date.now()}`,
       ticketId: id,
       stageKey,
       workerId: userId,
-      workerName: userId,
+      workerName: user?.name || userId,
       date: new Date().toISOString().split('T')[0],
       startAt: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }),
       finishAt: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }),
@@ -113,13 +125,3 @@ export default defineEventHandler(async (event) => {
 
   return successResponse(result);
 });
-
-function getTargetStatus(stageKey: string): string {
-  const map: Record<string, string> = {
-    ASSIGN: 'PROCESS',
-    IN_PROGRESS: 'SELESAI',
-    COMPLETION: 'SELESAI',
-    DELEGATION: 'DELEGASI',
-  };
-  return map[stageKey] || 'SELESAI';
-}

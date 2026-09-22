@@ -2,10 +2,9 @@ import type { H3Event } from 'h3';
 
 /**
  * Get current user ID from JWT context or X-User-Id header (migration fallback).
- * Once frontend fully uses JWT, the X-User-Id fallback can be removed.
+ * User must be populated by middleware (auth.ts) before calling this.
  */
 export function getCurrentUserId(event: H3Event): string {
-  // Prefer JWT-authenticated user
   const ctxUser = (event as any).context?.user;
   if (ctxUser?.id) return ctxUser.id;
 
@@ -17,8 +16,8 @@ export function getCurrentUserId(event: H3Event): string {
 }
 
 /**
- * Get current user object from JWT context.
- * Returns null if not authenticated via JWT.
+ * Get current user object from event context.
+ * Must be populated by auth middleware before calling this.
  */
 export function getCurrentUser(event: H3Event) {
   return (event as any).context?.user || null;

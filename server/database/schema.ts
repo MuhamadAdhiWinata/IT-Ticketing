@@ -4,9 +4,7 @@ import {
   text,
   timestamp,
   int,
-  json,
   index,
-  foreignKey,
 } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 
@@ -89,9 +87,6 @@ export const tickets = mysqlTable('tickets', {
   assignedTo: varchar('assigned_to', { length: 50 }),
   assignedToName: varchar('assigned_to_name', { length: 255 }),
 
-  supportingMembers: json('supporting_members').$type<string[]>(),
-  supportingMemberDetails: json('supporting_member_details').$type<{ id: string; name: string }[]>(),
-
   delegationType: varchar('delegation_type', { length: 50 }),
   vendorId: varchar('vendor_id', { length: 50 }),
   vendorName: varchar('vendor_name', { length: 255 }),
@@ -124,6 +119,25 @@ export const ticketsRelations = relations(tickets, ({ many }) => ({
   internalNotes: many(internalNotes),
   auditLogs: many(auditLogs),
   attachments: many(attachments),
+  members: many(ticketMembers),
+}));
+
+export const ticketMembers = mysqlTable('ticket_members', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  ticketId: varchar('ticket_id', { length: 50 }).notNull().references(() => tickets.id),
+  userId: varchar('user_id', { length: 50 }).notNull(),
+  userName: varchar('user_name', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
+}, (table) => ({
+  idxTicket: index('idx_tm_ticket').on(table.ticketId),
+  idxUser: index('idx_tm_user').on(table.userId),
+}));
+
+export const ticketMembersRelations = relations(ticketMembers, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [ticketMembers.ticketId],
+    references: [tickets.id],
+  }),
 }));
 
 export const worklogs = mysqlTable('worklogs', {

@@ -1,4 +1,4 @@
-import { getCurrentUser } from '~/server/utils/auth';
+import { getUserFromToken } from '~/server/utils/auth';
 
 const PUBLIC_PATHS = [
   '/api/auth/login',
@@ -14,7 +14,8 @@ export default defineEventHandler(async (event) => {
     return;
   }
 
-  const user = await getCurrentUser(event);
+  // Verify JWT and load user from DB
+  const user = await getUserFromToken(event);
 
   // Attach user to event context (null if not authenticated)
   (event as any).context.user = user;

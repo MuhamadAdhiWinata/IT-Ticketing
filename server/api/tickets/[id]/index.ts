@@ -39,22 +39,6 @@ export default defineEventHandler(async (event) => {
       subcategory: body.subcategory ?? existing.subcategory,
       location: body.location ?? existing.location,
       priority: body.priority ?? existing.priority,
-      status: body.status ?? existing.status,
-      assignedTo: body.assignedTo ?? existing.assignedTo,
-      assignedToName: body.assignedToName ?? existing.assignedToName,
-      delegationType: body.delegationType ?? existing.delegationType,
-      vendorId: body.vendorId ?? existing.vendorId,
-      vendorName: body.vendorName ?? existing.vendorName,
-      technicianId: body.technicianId ?? existing.technicianId,
-      technicianName: body.technicianName ?? existing.technicianName,
-      referenceNo: body.referenceNo ?? existing.referenceNo,
-      delegationNotes: body.delegationNotes ?? existing.delegationNotes,
-      delegatedAt: body.delegatedAt ?? existing.delegatedAt,
-      returnedAt: body.returnedAt ?? existing.returnedAt,
-      returnedNotes: body.returnedNotes ?? existing.returnedNotes,
-      referencedTicketId: body.referencedTicketId ?? existing.referencedTicketId,
-      resolutionSummary: body.resolutionSummary ?? existing.resolutionSummary,
-      confirmedByUser: body.confirmedByUser ?? existing.confirmedByUser,
     }).where(eq(tickets.id, id)).execute();
 
     const result = await getTicketById(id);

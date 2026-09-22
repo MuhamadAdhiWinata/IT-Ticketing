@@ -288,22 +288,22 @@ const handleStageFile = (e: Event) => {
   }
 };
 
-const handleSubmitCurrentStage = (targetStatus?: TicketStatus) => {
+const handleSubmitCurrentStage = async (targetStatus?: TicketStatus) => {
   if (!ticket.value) return;
   const currentStage = stepperStages.value[selectedStepIndex.value];
   if (!currentStage) return;
 
-  store.completeStage(ticket.value.id, currentStage.stageKey, stageNotes.value, stageFile.value || undefined, targetStatus);
+  await store.completeStage(ticket.value.id, currentStage.stageKey, stageNotes.value, stageFile.value || undefined, targetStatus);
   stageNotes.value = '';
   stageFile.value = null;
 };
 
-const handleSaveNote = () => {
+const handleSaveNote = async () => {
   if (!ticket.value || !stageNotes.value.trim()) return;
   const currentStage = stepperStages.value[selectedStepIndex.value];
   if (!currentStage) return;
 
-  store.saveWorklogNote(ticket.value.id, currentStage.stageKey, stageNotes.value, stageFile.value || undefined);
+  await store.saveWorklogNote(ticket.value.id, currentStage.stageKey, stageNotes.value, stageFile.value || undefined);
   stageNotes.value = '';
   stageFile.value = null;
 };

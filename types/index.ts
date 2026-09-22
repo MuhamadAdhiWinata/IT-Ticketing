@@ -108,8 +108,7 @@ export interface Ticket {
   assignedTo?: string | null;
   assignedToName?: string | null;
 
-  supporting_members: string[];
-  supporting_member_details?: { id: string; name: string }[];
+  members: { id: string; user_id: string; user_name: string; created_at: string }[];
 
   delegation?: DelegationInfo | null;
 

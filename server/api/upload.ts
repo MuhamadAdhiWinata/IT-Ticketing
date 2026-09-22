@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileStorage } from '~/server/services/storage';
 import { successResponse } from '~/server/utils/response';
+import { getCurrentUserId } from '~/server/utils/user-context';
 
 export default defineEventHandler(async (event) => {
   const uploadBase = process.env.UPLOAD_DIR || './server/uploads';
@@ -27,10 +28,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'No file uploaded' });
   }
 
-  const targetDir = path.join('tickets', 'TCK-placeholder');
+  const ticketId = Array.isArray(fields.ticketId) ? fields.ticketId[0] : fields.ticketId || 'general';
+  const stage = Array.isArray(fields.stage) ? fields.stage[0] : fields.stage || 'REQUEST';
+  const visibility = Array.isArray(fields.visibility) ? fields.visibility[0] : fields.visibility || 'USER_VISIBLE';
+  const userId = getCurrentUserId(event);
+
   const ext = path.extname(file.originalFilename || 'file');
   const fileName = path.basename(file.originalFilename || 'file', ext) + ext;
-  const filePath = path.join(targetDir, fileName);
+  const safeId = ticketId.replace(/[^a-zA-Z0-9-_]/g, '_');
+  const filePath = path.join('uploads', safeId, fileName);
 
   const fileData = await fs.readFile(file.filepath);
   const result = await fileStorage.upload(
@@ -40,5 +46,10 @@ export default defineEventHandler(async (event) => {
 
   await fs.rm(file.filepath, { force: true }).catch(() => {});
 
-  return successResponse(result);
+  return successResponse({
+    ...result,
+    stage,
+    visibility,
+    uploaded_by: userId,
+  });
 });

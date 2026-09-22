@@ -574,12 +574,12 @@ const candidateTicketOptions = computed(() => {
   }));
 });
 
-const submitWorklog = () => {
+const submitWorklog = async () => {
   if (!newWlTicketId.value || !newWlDesc.value.trim()) return;
 
   const currentWorker = store.allUsers.find(u => u.id === selectedWorkerId.value) || store.currentUser;
 
-  store.addCustomWorklog(newWlTicketId.value, {
+  await store.addCustomWorklog(newWlTicketId.value, {
     date: newWlDate.value || getTodayIso(),
     start_at: newWlStart.value,
     finish_at: newWlFinish.value,

@@ -2,14 +2,17 @@ import bcrypt from 'bcryptjs';
 import { db } from '~/server/database/client';
 import { signToken } from '~/server/utils/auth';
 import { successResponse } from '~/server/utils/response';
+import { LoginSchema, validate } from '~/server/utils/validate';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
 
-  const { email, password } = body;
-  if (!email || !password) {
-    throw createError({ statusCode: 400, statusMessage: 'Email and password are required' });
+  const v = validate(LoginSchema, body);
+  if (!v.success) {
+    throw createError({ statusCode: 400, statusMessage: v.error });
   }
+
+  const { email, password } = v.data;
 
   const user = await db.query.users.findFirst({
     where: (u, { eq: e }) => e(u.email, email),

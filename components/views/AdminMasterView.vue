@@ -491,22 +491,22 @@ const editCategory = (cat: CategoryItem) => {
   isCategoryModalOpen.value = true;
 };
 
-const saveCategoryForm = () => {
+const saveCategoryForm = async () => {
   const payload: CategoryItem = {
     id: catForm.value.id,
     name: catForm.value.name,
   };
   if (editingCatId.value) {
-    store.updateCategory(payload);
+    await store.updateCategory(payload);
   } else {
-    store.addCategory(payload);
+    await store.addCategory(payload);
   }
   isCategoryModalOpen.value = false;
 };
 
-const deleteCategory = (id: string) => {
+const deleteCategory = async (id: string) => {
   if (confirm(`Hapus kategori ${id}? Semua subkategori terkait juga akan terhapus.`)) {
-    store.deleteCategory(id);
+    await store.deleteCategory(id);
   }
 };
 
@@ -543,23 +543,23 @@ const editSubcategory = (sub: SubcategoryItem) => {
   isSubcategoryModalOpen.value = true;
 };
 
-const saveSubcategoryForm = () => {
+const saveSubcategoryForm = async () => {
   const payload: SubcategoryItem = {
     id: subForm.value.id,
     category_id: subForm.value.category_id,
     name: subForm.value.name.trim(),
   };
   if (editingSubId.value) {
-    store.updateSubcategory(payload);
+    await store.updateSubcategory(payload);
   } else {
-    store.addSubcategory(payload);
+    await store.addSubcategory(payload);
   }
   isSubcategoryModalOpen.value = false;
 };
 
-const deleteSubcategory = (id: string) => {
+const deleteSubcategory = async (id: string) => {
   if (confirm(`Hapus subkategori ${id}?`)) {
-    store.deleteSubcategory(id);
+    await store.deleteSubcategory(id);
   }
 };
 
@@ -575,8 +575,8 @@ const openAddUserModal = () => {
   isUserModalOpen.value = true;
 };
 
-const saveUserForm = () => {
-  store.addUser({ ...userForm.value });
+const saveUserForm = async () => {
+  await store.addUser({ ...userForm.value });
   isUserModalOpen.value = false;
 };
 </script>

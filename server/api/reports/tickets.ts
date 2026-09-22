@@ -13,13 +13,13 @@ export default defineEventHandler(async (event) => {
   if (query.category) conditions.push(eq(tickets.category, query.category as string));
   if (query.priority) conditions.push(eq(tickets.priority, query.priority as string));
 
-  if (query.workerId) {
-    conditions.push(or(
-      eq(tickets.assignedTo, query.workerId as string),
-      sql`${tickets.supportingMembers} LIKE '%"${query.workerId}"%'`, // Assuming supportingMembers is JSON array of IDs
-      sql`${worklogs.workerId} = ${query.workerId}` // Join with worklogs to filter by worker
-    ));
-  }
+    if (query.workerId) {
+      const workerTickets = await db.query.ticketMembers.findMany({
+        where: (m, { eq: e }) => e(m.userId, query.workerId as string),
+      });
+      const workerTicketIds = new Set(workerTickets.map(m => m.ticketId));
+      results = results.filter(t => t.assignedTo === query.workerId || workerTicketIds.has(t.id));
+    }
 
   if (query.startDate && query.endDate) {
     conditions.push(between(tickets.createdAt, `${query.startDate} 00:00:00`, `${query.endDate} 23:59:59`));
@@ -38,12 +38,7 @@ export default defineEventHandler(async (event) => {
       if (query.priority) resolvedConditions.push(e(t.priority, query.priority as string));
 
       if (query.workerId) {
-        resolvedConditions.push(o(
-          e(t.assignedTo, query.workerId as string),
-          sql`${t.supportingMembers} LIKE '%"${query.workerId}"%'`, // Assuming supportingMembers is JSON array of IDs
-          // For worklogs, we need a subquery or join, which is more complex in findMany where clause directly.
-          // For simplicity, we filter worklogs data client-side if workerId is present.
-        ));
+        resolvedConditions.push(e(t.assignedTo, query.workerId as string));
       }
 
       if (query.startDate && query.endDate) {

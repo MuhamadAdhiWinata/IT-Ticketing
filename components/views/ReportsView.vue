@@ -458,7 +458,7 @@ const getTicketContributors = (t: Ticket): string => {
   const list = new Set<string>();
   if (t.assignedToName) list.add(t.assignedToName);
   if (t.assignedToName) list.add(t.assignedToName);
-  (t.supporting_members || []).forEach(m => list.add(m));
+  (t.members || []).forEach(m => list.add(m.user_name));
   (t.worklogs || []).forEach(wl => {
     if (wl.worker_name) list.add(wl.worker_name);
   });
@@ -477,13 +477,13 @@ const filteredTickets = computed(() => {
     // Priority Filter
     if (filterPriority.value !== 'ALL' && t.priority !== filterPriority.value) return false;
 
-    // Worker Filter (check assignedTo, supporting, or worklog worker)
+      // Worker Filter (check assignedTo, members, or worklog worker)
     if (filterWorker.value !== 'ALL') {
       const workerUser = store.allUsers.find(x => x.id === filterWorker.value);
       const workerName = workerUser?.name || '';
 
       const isAssigned = t.assignedTo === filterWorker.value;
-      const isSupporting = (t.supporting_members || []).some(m => m === workerName || m === filterWorker.value);
+      const isSupporting = (t.members || []).some(m => m.user_id === filterWorker.value);
       const hasWorklog = (t.worklogs || []).some(wl => wl.worker_id === filterWorker.value);
 
       if (!isAssigned && !isSupporting && !hasWorklog) return false;
@@ -540,10 +540,10 @@ const totalFilteredHours = computed(() => {
 // Worker recap calculations (contributor-centric)
 const workerRecapData = computed(() => {
   return itWorkers.value.map(user => {
-    // Tickets where this user contributed (assigned, supporting, or wrote worklog)
+    // Tickets where this user contributed (assigned, member, or wrote worklog)
     const contributedTickets = props.tickets.filter(t => {
       const isAssigned = t.assignedTo === user.id;
-      const isSupporting = (t.supporting_members || []).some(m => m === user.name || m === user.id);
+      const isSupporting = (t.members || []).some(m => m.user_id === user.id);
       const hasWorklog = (t.worklogs || []).some(wl => wl.worker_id === user.id);
       return isAssigned || isSupporting || hasWorklog;
     });

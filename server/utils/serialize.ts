@@ -1,13 +1,4 @@
-// Serializer functions: Drizzle camelCase → Frontend snake_case
-// Sesuai types/index.ts
-
-function snake(s: string): string {
-  return s.replace(/[A-Z]/g, (m) => '_' + m.toLowerCase());
-}
-
-function camelize(s: string): string {
-  return s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
-}
+// Serializer: Drizzle camelCase → Frontend snake_case (types/index.ts)
 
 export function serializeUser(u: any) {
   return {
@@ -40,6 +31,15 @@ export function serializeVendor(v: any) {
 
 export function serializeTechnician(t: any) {
   return { id: t.id, name: t.name, specialty: t.specialty, phone: t.phone };
+}
+
+export function serializeTicketMember(m: any) {
+  return {
+    id: m.id,
+    user_id: m.userId,
+    user_name: m.userName,
+    created_at: m.createdAt,
+  };
 }
 
 export function serializeWorklog(w: any) {
@@ -109,7 +109,6 @@ export function serializeAttachment(a: any) {
 }
 
 export function serializeTicket(t: any) {
-  // Build delegation object from flat columns
   let delegation = null;
   if (t.delegationType) {
     delegation = {
@@ -124,16 +123,6 @@ export function serializeTicket(t: any) {
       returned_at: t.returnedAt ?? null,
       returned_notes: t.returnedNotes ?? null,
     };
-  }
-
-  // Reconstruct supporting_member_details from JSON
-  let supporting_member_details = t.supportingMemberDetails;
-  if (typeof supporting_member_details === 'string') {
-    try { supporting_member_details = JSON.parse(supporting_member_details); } catch { supporting_member_details = []; }
-  }
-  let supporting_members = t.supportingMembers;
-  if (typeof supporting_members === 'string') {
-    try { supporting_members = JSON.parse(supporting_members); } catch { supporting_members = []; }
   }
 
   return {
@@ -159,18 +148,17 @@ export function serializeTicket(t: any) {
     assignedTo: t.assignedTo ?? null,
     assignedToName: t.assignedToName ?? null,
 
-    supporting_members: supporting_members ?? [],
-    supporting_member_details: supporting_member_details ?? [],
+    members: (t.members || []).map(serializeTicketMember),
 
     delegation,
 
     referenced_ticket_id: t.referencedTicketId ?? null,
 
-    attachments: t.attachments ?? [],
-    worklogs: t.worklogs ?? [],
-    comments: t.comments ?? [],
-    internal_notes: t.internal_notes ?? [],
-    audit_logs: t.audit_logs ?? [],
+    attachments: (t.attachments || []).map(serializeAttachment),
+    worklogs: (t.worklogs || []).map(serializeWorklog),
+    comments: (t.comments || []).map(serializeComment),
+    internal_notes: (t.internal_notes || []).map(serializeNote),
+    audit_logs: (t.auditLogs || []).map(serializeAuditLog),
 
     created_at: t.createdAt,
     ticket_number: t.ticketNumber ?? null,

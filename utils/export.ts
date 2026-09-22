@@ -60,7 +60,7 @@ export function exportTicketsToExcel(tickets: Ticket[]) {
     t.created_by_name,
     t.created_by_dept,
     t.assignedToName || 'Belum Ditugaskan',
-    t.supporting_members.join('; ') || '-',
+    (t.members || []).map(m => m.user_name).join('; ') || '-',
     t.delegation ? `${t.delegation.type} (${t.delegation.vendor_name || t.delegation.technician_name})` : '-',
     t.referenced_ticket_id || '-',
     t.worklogs.length,

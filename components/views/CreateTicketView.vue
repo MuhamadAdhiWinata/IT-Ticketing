@@ -251,12 +251,12 @@
 import { ref, computed, watch } from 'vue';
 import { ArrowLeft, Upload, Check, CheckCircle2, Eye, X, Shield } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
-import { useToast } from '~/composables/useToast';
+import { useModal } from '~/composables/useModal';
 import { TicketPriority, Ticket } from '~/types';
 import AppSelect from '~/components/common/AppSelect.vue';
 
 const store = useAppStore();
-const { toast } = useToast();
+const { showError, showSuccess } = useModal();
 const isOpen = computed(() => store.activeView === 'create-ticket');
 
 const serviceView = ref<'SUPPORT_IT' | 'IT_PROGRAMMER'>('SUPPORT_IT');
@@ -333,9 +333,9 @@ const handleFileDrop = (e: Event) => {
   }
 };
 
-const handleSubmit = (shouldIssue: boolean) => {
+const handleSubmit = async (shouldIssue: boolean) => {
   if (!title.value.trim() || !description.value.trim()) {
-    toast('Mohon isi Judul Tiket dan Deskripsi Masalah.', 'error');
+    showError('Formulir Tidak Lengkap', 'Mohon isi Judul Tiket dan Deskripsi Masalah.');
     return;
   }
 
@@ -362,14 +362,13 @@ const handleSubmit = (shouldIssue: boolean) => {
     priority: priority.value,
     description: description.value.trim(),
     attachments,
-    ticket_number: `${ticketPrefix.value}-${Math.floor(100000 + Math.random() * 900000)}`,
   };
 
-  const newTicket = store.addTicket(ticketPayload, shouldIssue, behalfUserId.value || null);
+  const newTicket = await store.addTicket(ticketPayload, shouldIssue, behalfUserId.value || null);
   if (newTicket) {
     createdTicketSuccess.value = newTicket;
   } else {
-    store.backToMainView();
+    showError('Gagal Membuat Tiket', 'Terjadi kesalahan saat membuat tiket. Pastikan semua field terisi dengan benar dan coba lagi.');
   }
 };
 

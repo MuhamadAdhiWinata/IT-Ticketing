@@ -21,7 +21,8 @@
     "jsonwebtoken": "^9.0.3",
     "lucide-vue-next": "^1.0.0",
     "nuxt": "^4.5.2",
-    "pinia": "^4.0.3"
+    "pinia": "^4.0.3",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
@@ -37,6 +38,7 @@
     "postcss": "^8.5.28",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.21.0",
-    "typescript": "~5.8.2"
+    "typescript": "~5.8.2",
+    "vitest": "^5.0.1"
   }
 }

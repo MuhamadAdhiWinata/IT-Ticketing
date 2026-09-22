@@ -1,5 +1,11 @@
 import { defineStore } from 'pinia';
 import type { AppUser, Ticket, CategoryItem, SubcategoryItem, VendorItem, TechnicianItem } from '~/types';
+import { useAuthStore } from '~/stores/auth';
+
+// Wrapper that ensures cookies are sent with all requests
+function apiFetch<T>(url: string, opts?: any): Promise<T> {
+  return $fetch<T>(url, { ...opts, credentials: 'include' });
+}
 
 export const useAppStore = defineStore('app', {
   state: () => ({
@@ -34,17 +40,18 @@ export const useAppStore = defineStore('app', {
       }
     },
 
-    async initApp(user: AppUser) {
-      this.currentUser = user;
+    async initApp() {
+      const authStore = useAuthStore();
+      this.currentUser = authStore.user;
 
       const [usersRes, ticketsRes, catsRes, subcatsRes, vendorsRes, techsRes, prefsRes] = await Promise.all([
-        $fetch<{ success: boolean; data: AppUser[] }>('/api/users').catch(() => null),
-        $fetch<{ success: boolean; data: Ticket[] }>('/api/tickets').catch(() => null),
-        $fetch<{ success: boolean; data: CategoryItem[] }>('/api/categories').catch(() => null),
-        $fetch<{ success: boolean; data: SubcategoryItem[] }>('/api/subcategories').catch(() => null),
-        $fetch<{ success: boolean; data: VendorItem[] }>('/api/vendors').catch(() => null),
-        $fetch<{ success: boolean; data: TechnicianItem[] }>('/api/technicians').catch(() => null),
-        $fetch<{ success: boolean; data: { darkMode: boolean } }>('/api/user/preferences').catch(() => null),
+        apiFetch<{ success: boolean; data: AppUser[] }>('/api/users').catch(() => null),
+        apiFetch<{ success: boolean; data: Ticket[] }>('/api/tickets').catch(() => null),
+        apiFetch<{ success: boolean; data: CategoryItem[] }>('/api/categories').catch(() => null),
+        apiFetch<{ success: boolean; data: SubcategoryItem[] }>('/api/subcategories').catch(() => null),
+        apiFetch<{ success: boolean; data: VendorItem[] }>('/api/vendors').catch(() => null),
+        apiFetch<{ success: boolean; data: TechnicianItem[] }>('/api/technicians').catch(() => null),
+        apiFetch<{ success: boolean; data: { darkMode: boolean } }>('/api/user/preferences').catch(() => null),
       ]);
 
       if (usersRes) this.allUsers = usersRes.data;
@@ -59,11 +66,32 @@ export const useAppStore = defineStore('app', {
       this.isLoaded = true;
     },
 
+    async refreshData() {
+      try {
+        const [ticketsRes, catsRes, subcatsRes, vendorsRes, techsRes, allUsersRes] = await Promise.all([
+          apiFetch<{ success: boolean; data: Ticket[] }>('/api/tickets'),
+          apiFetch<{ success: boolean; data: CategoryItem[] }>('/api/categories'),
+          apiFetch<{ success: boolean; data: SubcategoryItem[] }>('/api/subcategories'),
+          apiFetch<{ success: boolean; data: VendorItem[] }>('/api/vendors'),
+          apiFetch<{ success: boolean; data: TechnicianItem[] }>('/api/technicians'),
+          apiFetch<{ success: boolean; data: AppUser[] }>('/api/users'),
+        ]);
+        this.tickets = ticketsRes.data;
+        this.categories = catsRes.data;
+        this.subcategories = subcatsRes.data;
+        this.vendors = vendorsRes.data;
+        this.technicians = techsRes.data;
+        this.allUsers = allUsersRes.data;
+      } catch (e) {
+        console.error('Failed to refresh data:', e);
+      }
+    },
+
     async toggleDarkMode() {
       this.darkMode = !this.darkMode;
       document.documentElement.classList.toggle('dark', this.darkMode);
       try {
-        await $fetch('/api/user/preferences', {
+        await apiFetch('/api/user/preferences', {
           method: 'PUT',
           body: { darkMode: this.darkMode },
         });
@@ -101,7 +129,7 @@ export const useAppStore = defineStore('app', {
     async openTicketDetail(ticketId: string) {
       this.selectedTicketId = ticketId;
       try {
-        const res = await $fetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}`);
+        const res = await apiFetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}`);
         this.selectedTicket = res.data;
         this.activeView = 'ticket-detail';
         this.pushHistoryState();
@@ -160,7 +188,7 @@ export const useAppStore = defineStore('app', {
       if (!this.currentUser) return null;
 
       try {
-        const res = await $fetch<{ success: boolean; data: Ticket }>('/api/tickets', {
+        const res = await apiFetch<{ success: boolean; data: Ticket }>('/api/tickets', {
           method: 'POST',
           body: {
             title: ticketPayload.title,
@@ -185,7 +213,7 @@ export const useAppStore = defineStore('app', {
 
     async updateTicket(updatedTicket: Ticket) {
       try {
-        await $fetch(`/api/tickets/${updatedTicket.id}`, {
+        await apiFetch(`/api/tickets/${updatedTicket.id}`, {
           method: 'PUT',
           body: updatedTicket,
         });
@@ -200,7 +228,7 @@ export const useAppStore = defineStore('app', {
 
     async updateTicketStatus(ticketId: string, status: Ticket['status']) {
       try {
-        await $fetch(`/api/tickets/${ticketId}/status`, {
+        await apiFetch(`/api/tickets/${ticketId}/status`, {
           method: 'PATCH',
           body: { status },
         });
@@ -216,7 +244,7 @@ export const useAppStore = defineStore('app', {
     async updateTicketAssignee(ticketId: string, userId: string) {
       const user = this.allUsers.find(u => u.id === userId);
       try {
-        await $fetch(`/api/tickets/${ticketId}/assignee`, {
+        await apiFetch(`/api/tickets/${ticketId}/assignee`, {
           method: 'PATCH',
           body: { userId, userName: user?.name },
         });
@@ -232,7 +260,7 @@ export const useAppStore = defineStore('app', {
     async saveWorklogNote(ticketId: string, stageKey: string, notes: string, filePayload?: { file_name: string; file_size: string; stage: string; visibility: string }) {
       if (!this.currentUser) return;
       try {
-        const res = await $fetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}/worklogs`, {
+        const res = await apiFetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}/worklogs`, {
           method: 'POST',
           body: { stageKey, description: notes, attachment: filePayload },
         });
@@ -249,7 +277,7 @@ export const useAppStore = defineStore('app', {
       if (!this.currentUser) return;
 
       try {
-        const res = await $fetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}/stages/complete`, {
+        const res = await apiFetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}/stages/complete`, {
           method: 'POST',
           body: { stageKey, notes, targetStatus, attachment: filePayload },
         });
@@ -265,7 +293,7 @@ export const useAppStore = defineStore('app', {
     async addCustomWorklog(ticketId: string, wlData: { date: string; start_at: string; finish_at: string; duration_minutes: number; description: string; stageKey: string; worker_id?: string; worker_name?: string }) {
       if (!this.currentUser) return;
       try {
-        const res = await $fetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}/worklogs/custom`, {
+        const res = await apiFetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}/worklogs/custom`, {
           method: 'POST',
           body: wlData,
         });
@@ -280,7 +308,7 @@ export const useAppStore = defineStore('app', {
 
     async addCategory(cat: CategoryItem) {
       try {
-        const res = await $fetch<{ success: boolean; data: CategoryItem }>('/api/categories', {
+        const res = await apiFetch<{ success: boolean; data: CategoryItem }>('/api/categories', {
           method: 'POST',
           body: cat,
         });
@@ -292,7 +320,7 @@ export const useAppStore = defineStore('app', {
 
     async updateCategory(cat: CategoryItem) {
       try {
-        const res = await $fetch<{ success: boolean; data: CategoryItem }>(`/api/categories/${cat.id}`, { method: 'PUT', body: cat });
+        const res = await apiFetch<{ success: boolean; data: CategoryItem }>(`/api/categories/${cat.id}`, { method: 'PUT', body: cat });
         this.categories = this.categories.map(c => c.id === cat.id ? res.data : c);
       } catch (e) {
         console.error('Failed to update category:', e);
@@ -301,7 +329,7 @@ export const useAppStore = defineStore('app', {
 
     async deleteCategory(catId: string) {
       try {
-        await $fetch(`/api/categories/${catId}`, { method: 'DELETE' });
+        await apiFetch(`/api/categories/${catId}`, { method: 'DELETE' });
         this.categories = this.categories.filter(c => c.id !== catId);
         this.subcategories = this.subcategories.filter(s => s.category_id !== catId);
       } catch (e) {
@@ -311,7 +339,7 @@ export const useAppStore = defineStore('app', {
 
     async addSubcategory(sub: SubcategoryItem) {
       try {
-        const res = await $fetch<{ success: boolean; data: SubcategoryItem }>('/api/subcategories', { method: 'POST', body: sub });
+        const res = await apiFetch<{ success: boolean; data: SubcategoryItem }>('/api/subcategories', { method: 'POST', body: sub });
         this.subcategories = [...this.subcategories, res.data];
       } catch (e) {
         console.error('Failed to add subcategory:', e);
@@ -320,7 +348,7 @@ export const useAppStore = defineStore('app', {
 
     async updateSubcategory(sub: SubcategoryItem) {
       try {
-        const res = await $fetch<{ success: boolean; data: SubcategoryItem }>(`/api/subcategories/${sub.id}`, { method: 'PUT', body: sub });
+        const res = await apiFetch<{ success: boolean; data: SubcategoryItem }>(`/api/subcategories/${sub.id}`, { method: 'PUT', body: sub });
         this.subcategories = this.subcategories.map(s => s.id === sub.id ? res.data : s);
       } catch (e) {
         console.error('Failed to update subcategory:', e);
@@ -329,7 +357,7 @@ export const useAppStore = defineStore('app', {
 
     async deleteSubcategory(subId: string) {
       try {
-        await $fetch(`/api/subcategories/${subId}`, { method: 'DELETE' });
+        await apiFetch(`/api/subcategories/${subId}`, { method: 'DELETE' });
         this.subcategories = this.subcategories.filter(s => s.id !== subId);
       } catch (e) {
         console.error('Failed to delete subcategory:', e);
@@ -338,7 +366,7 @@ export const useAppStore = defineStore('app', {
 
     async addUser(user: AppUser) {
       try {
-        const res = await $fetch<{ success: boolean; data: AppUser }>('/api/users', { method: 'POST', body: user });
+        const res = await apiFetch<{ success: boolean; data: AppUser }>('/api/users', { method: 'POST', body: user });
         this.allUsers = [...this.allUsers, res.data];
       } catch (e) {
         console.error('Failed to add user:', e);
@@ -347,7 +375,7 @@ export const useAppStore = defineStore('app', {
 
     async refreshTicket(ticketId: string) {
       try {
-        const res = await $fetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}`);
+        const res = await apiFetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}`);
         this.tickets = this.tickets.map(t => t.id === res.data.id ? res.data : t);
         if (this.selectedTicket?.id === res.data.id) {
           this.selectedTicket = res.data;

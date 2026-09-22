@@ -1,6 +1,6 @@
 import { db } from '~/server/database/client';
 import { successResponse } from '~/server/utils/response';
-import { getCurrentUser } from '~/server/utils/auth';
+import { getCurrentUser } from '~/server/utils/user-context';
 
 export default defineEventHandler(async (event) => {
   const user = await getCurrentUser(event);

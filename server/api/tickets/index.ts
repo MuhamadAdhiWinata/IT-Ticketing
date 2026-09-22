@@ -5,6 +5,7 @@ import { successResponse } from '~/server/utils/response';
 import { generateTicketId, generateTicketNumber } from '~/server/utils/ticket-id';
 import { getTicketsWithRelations, getTicketById } from '~/server/utils/tickets';
 import { getCurrentUserId, getCurrentUser } from '~/server/utils/user-context';
+import { CreateTicketSchema, validate } from '~/server/utils/validate';
 
 function now(): string {
   return new Date().toISOString().replace('T', ' ').replace('Z', '').slice(0, 19);
@@ -30,6 +31,12 @@ export default defineEventHandler(async (event) => {
     const user = getCurrentUser(event);
     const userId = getCurrentUserId(event);
     const body = await readBody(event);
+
+    const v = validate(CreateTicketSchema, body);
+    if (!v.success) {
+      throw createError({ statusCode: 400, statusMessage: v.error });
+    }
+
     const ts = now();
 
     const newId = generateTicketId();
@@ -75,8 +82,6 @@ export default defineEventHandler(async (event) => {
       requestedByDept,
       assignedTo: null,
       assignedToName: null,
-      supportingMembers: [],
-      supportingMemberDetails: [],
       delegationType: null,
       vendorId: null,
       vendorName: null,

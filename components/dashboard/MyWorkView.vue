@@ -111,7 +111,7 @@ const myAssignedTickets = computed(() => {
   return props.tickets.filter(t =>
     (t.assignedTo && t.assignedTo === currentUserId) ||
     (t.requestedBy && t.requestedBy === currentUserId) ||
-    (t.supporting_member_details?.some(m => m.id === currentUserId)) ||
+    (t.members?.some(m => m.user_id === currentUserId)) ||
     (t.worklogs?.some(wl => wl.worker_id === currentUserId))
   );
 });
