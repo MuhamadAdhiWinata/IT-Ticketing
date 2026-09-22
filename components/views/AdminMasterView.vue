@@ -15,14 +15,16 @@
         </p>
       </div>
 
-      <!-- Current Active User Info -->
-      <div class="flex items-center gap-3 bg-gray-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-gray-200 dark:border-slate-700">
-        <div class="w-8 h-8 rounded-full bg-[#026bb1] text-white flex items-center justify-center font-bold text-xs">
-          {{ store.currentUser?.name.charAt(0) }}
-        </div>
-        <div class="text-xs">
-          <span class="text-[10px] text-gray-400 block font-semibold uppercase">User Aktif Saat Ini:</span>
-          <span class="font-bold text-gray-900 dark:text-white">{{ store.currentUser?.name }} ({{ store.currentUser?.role }})</span>
+      <!-- User Info + Refresh -->
+      <div class="flex items-center gap-3">
+        <RefreshButton mode="master" />
+        <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/60">
+          <div class="w-7 h-7 rounded-full bg-[#026bb1] text-white flex items-center justify-center font-bold text-[10px]">
+            {{ store.currentUser?.name.charAt(0) }}
+          </div>
+          <div class="text-xs">
+            <span class="font-bold text-gray-900 dark:text-white">{{ store.currentUser?.name.split(' ')[0] }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -431,6 +433,7 @@ import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/tic
 import AppSelect from '~/components/common/AppSelect.vue';
 
 const store = useAppStore();
+const { confirm: confirmModal } = useConfirmModal();
 
 const activeTab = ref<'CATEGORIES' | 'PRIORITIES' | 'USERS'>('CATEGORIES');
 const selectedCategoryFilter = ref('ALL');
@@ -505,7 +508,8 @@ const saveCategoryForm = async () => {
 };
 
 const deleteCategory = async (id: string) => {
-  if (confirm(`Hapus kategori ${id}? Semua subkategori terkait juga akan terhapus.`)) {
+  const ok = await confirmModal.confirm('Hapus Kategori', `Hapus kategori ${id}? Semua subkategori terkait juga akan terhapus.`);
+  if (ok) {
     await store.deleteCategory(id);
   }
 };
@@ -558,7 +562,8 @@ const saveSubcategoryForm = async () => {
 };
 
 const deleteSubcategory = async (id: string) => {
-  if (confirm(`Hapus subkategori ${id}?`)) {
+  const ok = await confirmModal.confirm('Hapus Subkategori', `Hapus subkategori ${id}?`);
+  if (ok) {
     await store.deleteSubcategory(id);
   }
 };

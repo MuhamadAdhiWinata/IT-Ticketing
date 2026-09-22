@@ -15,8 +15,9 @@
         </p>
       </div>
 
-      <!-- Quick KPI counters -->
+      <!-- Quick KPI counters + Refresh -->
       <div class="flex items-center gap-3">
+        <RefreshButton mode="tickets" />
         <div class="px-4 py-2 bg-[#e6f1f8] dark:bg-[#026bb1]/20 border border-[#026bb1]/30 rounded-xl text-center">
           <span class="text-[11px] text-[#026bb1] dark:text-[#52b5f2] font-bold block">Sedang Proses</span>
           <span class="text-lg font-bold text-[#024675] dark:text-white font-mono">{{ activeCount }}</span>

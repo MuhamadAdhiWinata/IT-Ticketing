@@ -15,8 +15,9 @@
         </p>
       </div>
 
-      <!-- Action Buttons -->
+      <!-- Action Buttons + Refresh -->
       <div class="flex flex-wrap items-center gap-2.5">
+        <RefreshButton mode="tickets" />
         <button
           @click="isAddModalOpen = true"
           class="px-3.5 py-2 bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all"

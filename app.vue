@@ -4,5 +4,6 @@
       <NuxtPage />
     </NuxtLayout>
     <ErrorModal />
+    <ConfirmModal />
   </div>
 </template>

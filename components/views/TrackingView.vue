@@ -11,13 +11,16 @@
             </span>
             <span class="truncate">Tracking Tiket IT Percetakan Integral Offset</span>
           </div>
-          <button
-            v-if="onCreateTicketClick"
-            @click="onCreateTicketClick"
-            class="w-full sm:w-auto px-4 py-2.5 bg-white text-[#026bb1] hover:bg-blue-50 font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg transition-all shrink-0"
-          >
-            <PlusCircle class="w-4 h-4" /> Buat Tiket Baru
-          </button>
+          <div class="flex items-center gap-2">
+            <RefreshButton mode="tickets" />
+            <button
+              v-if="onCreateTicketClick"
+              @click="onCreateTicketClick"
+              class="w-full sm:w-auto px-4 py-2.5 bg-white text-[#026bb1] hover:bg-blue-50 font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg transition-all shrink-0"
+            >
+              <PlusCircle class="w-4 h-4" /> Buat Tiket Baru
+            </button>
+          </div>
         </div>
 
         <div class="space-y-1">

@@ -11,22 +11,25 @@
           <p class="text-xs text-gray-500 dark:text-gray-400">Monitoring & Distribusi Penanganan Tiket IT</p>
         </div>
 
-        <!-- View Mode Switcher -->
-        <div class="flex items-center gap-1 bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
-          <button
-            v-for="mode in viewModes"
-            :key="mode.id"
-            @click="viewMode = mode.id"
-            :class="[
-              'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5',
-              viewMode === mode.id
-                ? 'bg-white dark:bg-slate-700 text-[#026bb1] dark:text-[#52b5f2] shadow-xs'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'
-            ]"
-          >
-            <component :is="mode.icon" class="w-4 h-4" />
-            <span>{{ mode.label }}</span>
-          </button>
+        <!-- View Mode Switcher + Refresh -->
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1 bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
+            <button
+              v-for="mode in viewModes"
+              :key="mode.id"
+              @click="viewMode = mode.id"
+              :class="[
+                'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5',
+                viewMode === mode.id
+                  ? 'bg-white dark:bg-slate-900 shadow-sm text-[#026bb1] dark:text-[#52b5f2]'
+                  : 'text-gray-500 hover:text-gray-700',
+              ]"
+            >
+              <component :is="mode.icon" class="w-3.5 h-3.5" />
+              <span>{{ mode.label }}</span>
+            </button>
+          </div>
+          <RefreshButton mode="tickets" />
         </div>
       </div>
 

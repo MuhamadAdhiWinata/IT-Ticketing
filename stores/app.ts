@@ -66,25 +66,36 @@ export const useAppStore = defineStore('app', {
       this.isLoaded = true;
     },
 
-    async refreshData() {
+    async refetchTickets() {
       try {
-        const [ticketsRes, catsRes, subcatsRes, vendorsRes, techsRes, allUsersRes] = await Promise.all([
-          apiFetch<{ success: boolean; data: Ticket[] }>('/api/tickets'),
+        const res = await apiFetch<{ success: boolean; data: Ticket[] }>('/api/tickets');
+        this.tickets = res.data;
+      } catch (e) {
+        console.error('Failed to refetch tickets:', e);
+      }
+    },
+
+    async refetchMasterData() {
+      try {
+        const [catsRes, subcatsRes, vendorsRes, techsRes, allUsersRes] = await Promise.all([
           apiFetch<{ success: boolean; data: CategoryItem[] }>('/api/categories'),
           apiFetch<{ success: boolean; data: SubcategoryItem[] }>('/api/subcategories'),
           apiFetch<{ success: boolean; data: VendorItem[] }>('/api/vendors'),
           apiFetch<{ success: boolean; data: TechnicianItem[] }>('/api/technicians'),
           apiFetch<{ success: boolean; data: AppUser[] }>('/api/users'),
         ]);
-        this.tickets = ticketsRes.data;
         this.categories = catsRes.data;
         this.subcategories = subcatsRes.data;
         this.vendors = vendorsRes.data;
         this.technicians = techsRes.data;
         this.allUsers = allUsersRes.data;
       } catch (e) {
-        console.error('Failed to refresh data:', e);
+        console.error('Failed to refetch master data:', e);
       }
+    },
+
+    async refetchAll() {
+      await Promise.all([this.refetchTickets(), this.refetchMasterData()]);
     },
 
     async toggleDarkMode() {
@@ -150,12 +161,17 @@ export const useAppStore = defineStore('app', {
     pushHistoryState() {
       if (typeof window !== 'undefined') {
         const url = new URL(window.location.href);
-        url.searchParams.set('tab', this.activeTab);
-        url.searchParams.set('view', this.activeView);
-        if (this.selectedTicketId) {
-          url.searchParams.set('ticketId', this.selectedTicketId);
+        // Only add query params if not default state
+        const isDefault = this.activeTab === 'tracking' && this.activeView === 'main' && !this.selectedTicketId;
+
+        if (isDefault) {
+          url.search = '';
         } else {
-          url.searchParams.delete('ticketId');
+          url.searchParams.set('tab', this.activeTab);
+          url.searchParams.set('view', this.activeView);
+          if (this.selectedTicketId) {
+            url.searchParams.set('ticketId', this.selectedTicketId);
+          }
         }
         window.history.pushState({ view: this.activeView, tab: this.activeTab, ticketId: this.selectedTicketId }, '', url.toString());
       }
