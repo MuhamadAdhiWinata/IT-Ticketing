@@ -4,6 +4,7 @@ import { tickets } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 import { generateTicketId, generateTicketNumber } from '~/server/utils/ticket-id';
 import { getTicketsWithRelations, getTicketById } from '~/server/utils/tickets';
+import { getCurrentUserId, getCurrentUser } from '~/server/utils/user-context';
 
 function now(): string {
   return new Date().toISOString().replace('T', ' ').replace('Z', '').slice(0, 19);
@@ -26,7 +27,8 @@ export default defineEventHandler(async (event) => {
   }
 
   if (method === 'POST') {
-    const userId = getHeader(event, 'X-User-Id') || 'UNKNOWN';
+    const user = getCurrentUser(event);
+    const userId = getCurrentUserId(event);
     const body = await readBody(event);
     const ts = now();
 
@@ -36,13 +38,12 @@ export default defineEventHandler(async (event) => {
     const shouldIssue = body.shouldIssue !== false;
 
     let requestedBy = userId;
-    let requestedByName = body.requestedByName || userId;
-    let requestedByDept = body.requestedByDept || '';
+    let requestedByName = user?.name || body.requestedByName || userId;
+    let requestedByDept = user?.department || body.requestedByDept || '';
     let createdByAdminId: string | null = null;
     let createdByAdminName: string | null = null;
 
-    if (body.behalfUserId) {
-      const { db } = await import('~/server/database/client');
+    if (body.behalfUserId && user?.role === 'SYSTEM_ADMIN') {
       const behalfUser = await db.query.users.findFirst({
         where: (u, { eq: e }) => e(u.id, body.behalfUserId),
       });
@@ -51,7 +52,7 @@ export default defineEventHandler(async (event) => {
         requestedByName = behalfUser.name;
         requestedByDept = behalfUser.department;
         createdByAdminId = userId;
-        createdByAdminName = userId;
+        createdByAdminName = user?.name || userId;
       }
     }
 
@@ -65,8 +66,8 @@ export default defineEventHandler(async (event) => {
       priority: body.priority || 'MEDIUM',
       status: shouldIssue ? 'PROCESS' : 'DRAFT',
       createdBy: userId,
-      createdByName: userId,
-      createdByDept: '',
+      createdByName: requestedByName,
+      createdByDept: requestedByDept,
       createdByAdminId,
       createdByAdminName,
       requestedBy,
@@ -96,7 +97,6 @@ export default defineEventHandler(async (event) => {
       confirmedByUser: 0,
     }).execute();
 
-    // Insert initial audit log
     const { auditLogs } = await import('~/server/database/schema');
     await db.insert(auditLogs).values({
       id: `AUD-${Date.now()}`,
@@ -104,18 +104,18 @@ export default defineEventHandler(async (event) => {
       action: shouldIssue ? 'TIKET_DITERBITKAN' : 'TIKET_DRAFT_DISIMPAN',
       performedAt: ts,
       performedBy: userId,
-      performedByName: userId,
+      performedByName: requestedByName,
     }).execute();
 
-    if (body.behalfUserId) {
+    if (body.behalfUserId && user?.role === 'SYSTEM_ADMIN') {
       await db.insert(auditLogs).values({
         id: `AUD-${Date.now() + 1}`,
         ticketId: newId,
         action: 'DIBUAT_ATAS_NAMA',
-        detail: `Dibuat oleh ${userId} atas nama ${requestedByName}`,
+        detail: `Dibuat oleh ${user?.name || userId} atas nama ${requestedByName}`,
         performedAt: ts,
         performedBy: userId,
-        performedByName: userId,
+        performedByName: user?.name || userId,
       }).execute();
     }
 

@@ -12,7 +12,6 @@ import { useAppStore } from '~/stores/app';
 
 const store = useAppStore();
 
-onMounted(async () => {
-  await store.initApp();
-});
+// Note: initApp is now called from pages/index.vue after auth check
+// This file is kept minimal for the layout wrapper
 </script>

@@ -1,3 +1,4 @@
+import { getCurrentUserId } from '~/server/utils/user-context';
 import { eq } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { tickets } from '~/server/database/schema';
@@ -9,7 +10,7 @@ function now(): string {
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
-  const userId = getHeader(event, 'X-User-Id') || 'UNKNOWN';
+  const userId = getCurrentUserId(event);
   const body = await readBody(event);
 
   if (!id) {

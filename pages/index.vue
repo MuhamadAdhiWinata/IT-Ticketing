@@ -45,13 +45,15 @@
   </div>
 
   <div v-else class="py-12 text-center text-xs font-semibold text-gray-500">
-    Memuat data aplikasi...
+    <p v-if="!authStore.isAuthenticated">Mengalihkan ke halaman login...</p>
+    <p v-else>Memuat data aplikasi...</p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted, watch } from 'vue';
 import { useAppStore } from '~/stores/app';
+import { useAuthStore } from '~/stores/auth';
 import TrackingView from '~/components/views/TrackingView.vue';
 import ITDashboard from '~/components/dashboard/ITDashboard.vue';
 import MyWorkView from '~/components/dashboard/MyWorkView.vue';
@@ -62,6 +64,24 @@ import CreateTicketView from '~/components/views/CreateTicketView.vue';
 import TicketDetailView from '~/components/views/TicketDetailView.vue';
 
 const store = useAppStore();
+const authStore = useAuthStore();
+
+// Check authentication on mount
+onMounted(async () => {
+  await authStore.restoreSession();
+
+  if (!authStore.isAuthenticated) {
+    navigateTo('/login');
+    return;
+  }
+
+  await store.initApp();
+  window.addEventListener('popstate', handlePopState);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('popstate', handlePopState);
+});
 
 const handlePopState = (event: PopStateEvent) => {
   if (event.state) {
@@ -75,12 +95,4 @@ const handlePopState = (event: PopStateEvent) => {
     store.activeView = 'main';
   }
 };
-
-onMounted(() => {
-  window.addEventListener('popstate', handlePopState);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('popstate', handlePopState);
-});
 </script>

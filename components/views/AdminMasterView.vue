@@ -303,15 +303,12 @@
                 </td>
                 <td class="p-3 text-right">
                   <button
-                    v-if="store.currentUser?.id !== u.id"
-                    @click="store.switchUser(u.id)"
-                    class="px-3 py-1 bg-white dark:bg-slate-800 border border-[#026bb1] text-[#026bb1] hover:bg-blue-50 text-xs font-bold rounded-lg transition-all shadow-xs"
+                    v-if="store.currentUser?.id === u.id"
+                    class="px-3 py-1 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded-lg"
                   >
-                    Login Sebagai {{ u.name.split(' ')[0] }}
+                    Akun Aktif
                   </button>
-                  <span v-else class="text-xs font-bold text-emerald-600">
-                    Akun Sedang Digunakan
-                  </span>
+                  <span v-else class="text-xs text-gray-400">-</span>
                 </td>
               </tr>
             </tbody>

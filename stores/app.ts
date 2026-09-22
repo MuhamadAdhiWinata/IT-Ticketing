@@ -34,40 +34,26 @@ export const useAppStore = defineStore('app', {
       }
     },
 
-    async initApp() {
-      // Step 1: Load users first to determine currentUser
-      const usersRes = await $fetch<{ success: boolean; data: AppUser[] }>('/api/users').catch(() => null);
+    async initApp(user: AppUser) {
+      this.currentUser = user;
 
-      if (usersRes) {
-        this.allUsers = usersRes.data;
-        this.currentUser = this.allUsers[1] || this.allUsers[0] || null;
-      } else {
-        this.allUsers = [];
-        this.currentUser = null;
-      }
-
-      // Step 2: Fetch remaining data in parallel using currentUser
-      const userId = this.currentUser?.id || '';
-      const [prefsRes, ticketsRes, catsRes, subcatsRes, vendorsRes, techsRes] = await Promise.all([
-        $fetch<{ success: boolean; data: { darkMode: boolean } }>('/api/user/preferences', {
-          headers: { 'X-User-Id': userId },
-        }).catch(() => null),
+      const [usersRes, ticketsRes, catsRes, subcatsRes, vendorsRes, techsRes, prefsRes] = await Promise.all([
+        $fetch<{ success: boolean; data: AppUser[] }>('/api/users').catch(() => null),
         $fetch<{ success: boolean; data: Ticket[] }>('/api/tickets').catch(() => null),
         $fetch<{ success: boolean; data: CategoryItem[] }>('/api/categories').catch(() => null),
         $fetch<{ success: boolean; data: SubcategoryItem[] }>('/api/subcategories').catch(() => null),
         $fetch<{ success: boolean; data: VendorItem[] }>('/api/vendors').catch(() => null),
         $fetch<{ success: boolean; data: TechnicianItem[] }>('/api/technicians').catch(() => null),
+        $fetch<{ success: boolean; data: { darkMode: boolean } }>('/api/user/preferences').catch(() => null),
       ]);
 
-      if (prefsRes) {
-        this.darkMode = prefsRes.data.darkMode;
-      }
-
+      if (usersRes) this.allUsers = usersRes.data;
       if (ticketsRes) this.tickets = ticketsRes.data;
       if (catsRes) this.categories = catsRes.data;
       if (subcatsRes) this.subcategories = subcatsRes.data;
       if (vendorsRes) this.vendors = vendorsRes.data;
       if (techsRes) this.technicians = techsRes.data;
+      if (prefsRes) this.darkMode = prefsRes.data.darkMode;
 
       this.loadStateFromUrl();
       this.isLoaded = true;
@@ -79,7 +65,6 @@ export const useAppStore = defineStore('app', {
       try {
         await $fetch('/api/user/preferences', {
           method: 'PUT',
-          headers: { 'X-User-Id': this.currentUser?.id || '' },
           body: { darkMode: this.darkMode },
         });
       } catch (e) {
@@ -116,9 +101,7 @@ export const useAppStore = defineStore('app', {
     async openTicketDetail(ticketId: string) {
       this.selectedTicketId = ticketId;
       try {
-        const res = await $fetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}`, {
-          headers: { 'X-User-Id': this.currentUser?.id || '' },
-        });
+        const res = await $fetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}`);
         this.selectedTicket = res.data;
         this.activeView = 'ticket-detail';
         this.pushHistoryState();
@@ -161,7 +144,6 @@ export const useAppStore = defineStore('app', {
         if (view) this.activeView = view as 'main' | 'create-ticket' | 'ticket-detail';
         if (ticketId) {
           this.selectedTicketId = ticketId;
-          // No need to fetch here, initApp or openTicketDetail will handle it
         }
       }
     },
@@ -180,7 +162,6 @@ export const useAppStore = defineStore('app', {
       try {
         const res = await $fetch<{ success: boolean; data: Ticket }>('/api/tickets', {
           method: 'POST',
-          headers: { 'X-User-Id': this.currentUser.id },
           body: {
             title: ticketPayload.title,
             category: ticketPayload.category,
@@ -190,13 +171,11 @@ export const useAppStore = defineStore('app', {
             description: ticketPayload.description,
             shouldIssue,
             behalfUserId,
-            requestedByName: ticketPayload.requestedByName || this.currentUser.name,
-            requestedByDept: ticketPayload.requestedByDept || this.currentUser.department,
           },
         });
 
         const newTicket = res.data;
-        this.tickets = [newTicket, ...this.tickets]; // Optimistic update
+        this.tickets = [newTicket, ...this.tickets];
         return newTicket;
       } catch (e) {
         console.error('Failed to create ticket:', e);
@@ -208,7 +187,6 @@ export const useAppStore = defineStore('app', {
       try {
         await $fetch(`/api/tickets/${updatedTicket.id}`, {
           method: 'PUT',
-          headers: { 'X-User-Id': this.currentUser?.id || '' },
           body: updatedTicket,
         });
         this.tickets = this.tickets.map(t => t.id === updatedTicket.id ? updatedTicket : t);
@@ -224,7 +202,6 @@ export const useAppStore = defineStore('app', {
       try {
         await $fetch(`/api/tickets/${ticketId}/status`, {
           method: 'PATCH',
-          headers: { 'X-User-Id': this.currentUser?.id || '' },
           body: { status },
         });
         this.tickets = this.tickets.map(t => t.id === ticketId ? { ...t, status } : t);
@@ -241,7 +218,6 @@ export const useAppStore = defineStore('app', {
       try {
         await $fetch(`/api/tickets/${ticketId}/assignee`, {
           method: 'PATCH',
-          headers: { 'X-User-Id': this.currentUser?.id || '' },
           body: { userId, userName: user?.name },
         });
         this.tickets = this.tickets.map(t => t.id === ticketId ? { ...t, assignedTo: userId, assignedToName: user?.name } : t);
@@ -253,39 +229,13 @@ export const useAppStore = defineStore('app', {
       }
     },
 
-    async switchUser(userId: string) {
-      try {
-        const res = await $fetch<{ success: boolean; data: AppUser }>('/api/auth/switch-user', {
-          method: 'POST',
-          body: { userId },
-        });
-        const user = res.data;
-        this.currentUser = user;
-        const roleTabs: Record<string, string[]> = {
-          'USER_NON_IT': ['tracking'],
-          'IT_WORKER': ['tracking', 'dashboard', 'my-work', 'daily-work'],
-          'SYSTEM_ADMIN': ['tracking', 'dashboard', 'my-work', 'daily-work', 'reports', 'admin'],
-        };
-        const allowed = roleTabs[user.role] || ['tracking'];
-        if (!allowed.includes(this.activeTab)) {
-          this.setActiveTab(allowed[0]);
-        }
-        // Re-fetch tickets for new user context
-        await this.initApp();
-      } catch (e) {
-        console.error('Failed to switch user:', e);
-      }
-    },
-
     async saveWorklogNote(ticketId: string, stageKey: string, notes: string, filePayload?: { file_name: string; file_size: string; stage: string; visibility: string }) {
       if (!this.currentUser) return;
       try {
         const res = await $fetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}/worklogs`, {
           method: 'POST',
-          headers: { 'X-User-Id': this.currentUser.id },
           body: { stageKey, description: notes, attachment: filePayload },
         });
-        // Update local ticket with fresh data
         this.tickets = this.tickets.map(t => t.id === res.data.id ? res.data : t);
         if (this.selectedTicket?.id === res.data.id) {
           this.selectedTicket = res.data;
@@ -301,10 +251,8 @@ export const useAppStore = defineStore('app', {
       try {
         const res = await $fetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}/stages/complete`, {
           method: 'POST',
-          headers: { 'X-User-Id': this.currentUser.id },
           body: { stageKey, notes, targetStatus, attachment: filePayload },
         });
-        // Update local ticket with fresh data
         this.tickets = this.tickets.map(t => t.id === res.data.id ? res.data : t);
         if (this.selectedTicket?.id === res.data.id) {
           this.selectedTicket = res.data;
@@ -319,10 +267,8 @@ export const useAppStore = defineStore('app', {
       try {
         const res = await $fetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}/worklogs/custom`, {
           method: 'POST',
-          headers: { 'X-User-Id': this.currentUser.id },
           body: wlData,
         });
-        // Update local ticket with fresh data
         this.tickets = this.tickets.map(t => t.id === res.data.id ? res.data : t);
         if (this.selectedTicket?.id === res.data.id) {
           this.selectedTicket = res.data;
@@ -399,12 +345,9 @@ export const useAppStore = defineStore('app', {
       }
     },
 
-    // Method to refresh a single ticket (used after updates)
     async refreshTicket(ticketId: string) {
       try {
-        const res = await $fetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}`, {
-          headers: { 'X-User-Id': this.currentUser?.id || '' },
-        });
+        const res = await $fetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}`);
         this.tickets = this.tickets.map(t => t.id === res.data.id ? res.data : t);
         if (this.selectedTicket?.id === res.data.id) {
           this.selectedTicket = res.data;

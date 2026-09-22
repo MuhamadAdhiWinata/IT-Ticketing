@@ -1,3 +1,4 @@
+import { getCurrentUserId } from '~/server/utils/user-context';
 import { eq } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { users, userPreferences } from '~/server/database/schema';
@@ -5,7 +6,7 @@ import { successResponse } from '~/server/utils/response';
 
 export default defineEventHandler(async (event) => {
   const method = event.method;
-  const userId = getHeader(event, 'X-User-Id') || '';
+  const userId = getCurrentUserId(event);
 
   if (!userId) {
     throw createError({ statusCode: 401, statusMessage: 'User ID required' });

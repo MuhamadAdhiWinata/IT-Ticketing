@@ -1,20 +1,19 @@
-import { eq } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { users } from '~/server/database/schema';
-import { successResponse, errorResponse } from '~/server/utils/response';
+import { successResponse } from '~/server/utils/response';
+import { getCurrentUser } from '~/server/utils/auth';
 
 export default defineEventHandler(async (event) => {
-  const userId = getHeader(event, 'X-User-Id');
-  if (!userId) {
-    throw createError({ statusCode: 401, statusMessage: 'User ID header missing' });
-  }
-
-  const user = await db.query.users.findFirst({
-    where: (u, { eq: e }) => e(u.id, userId),
-  });
+  const user = await getCurrentUser(event);
   if (!user) {
-    throw createError({ statusCode: 404, statusMessage: 'User not found' });
+    throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
   }
 
-  return successResponse(user);
+  return successResponse({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    department: user.department,
+    avatarUrl: user.avatarUrl,
+  });
 });
