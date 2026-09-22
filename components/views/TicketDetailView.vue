@@ -76,7 +76,7 @@
             <template v-for="(step, i) in stepperStages" :key="i">
               <!-- Stepper Card -->
               <div
-                :ref="el => { if (step.current) activeStepEl = el as HTMLElement }"
+                :ref="(el: any) => { if (step.current) activeStepEl = el as HTMLElement }"
                 @click="selectedStepIndex = i"
                 :class="[
                   'min-w-[130px] sm:min-w-[150px] shrink-0 p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 shadow-xs relative bg-white dark:bg-slate-800',
@@ -141,8 +141,8 @@
           <!-- Attachments in this step -->
           <div class="space-y-2">
             <span class="text-[10px] font-bold text-gray-500 uppercase">Lampiran / Bukti pada Tahap Ini:</span>
-            <div v-if="stepperStages[selectedStepIndex]?.attachments.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div v-for="att in stepperStages[selectedStepIndex].attachments" :key="att.id" class="p-2.5 bg-gray-50 dark:bg-slate-800/60 rounded-lg border border-gray-100 dark:border-slate-700 flex items-center justify-between">
+            <div v-if="stepperStages[selectedStepIndex]?.attachments?.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div v-for="att in stepperStages[selectedStepIndex]?.attachments ?? []" :key="att.id" class="p-2.5 bg-gray-50 dark:bg-slate-800/60 rounded-lg border border-gray-100 dark:border-slate-700 flex items-center justify-between">
                 <div class="flex items-center gap-2 overflow-hidden">
                   <Paperclip class="w-3.5 h-3.5 text-[#026bb1] shrink-0" />
                   <div class="truncate">
@@ -262,6 +262,7 @@
 import { ref, computed, watch, nextTick } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon } from 'lucide-vue-next';
+import type { TicketStatus } from '~/types';
 import { triggerPrintPDF } from '~/utils/export';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
 
@@ -312,7 +313,7 @@ const stepperStages = computed(() => {
   if (!ticket.value) return [];
   const t = ticket.value;
   const atts = t.attachments || [];
-  const hasDelegation = !!t.delegation || t.status === 'DELEGASE' || t.status === 'DELEGASI';
+  const hasDelegation = !!t.delegation || t.status === 'DELEGASI' || t.status === 'DELEGASI';
 
   const isAssignCompleted = (t.audit_logs || []).some(log => log.action === 'TAHAP_ASSIGN_SELESAI');
   const isProcessCompleted = (t.audit_logs || []).some(log => log.action === 'TAHAP_IN_PROGRESS_SELESAI');
@@ -336,7 +337,7 @@ const stepperStages = computed(() => {
       completed: isAssignCompleted || t.status === 'SELESAI' || t.status === 'DELEGASI',
       current: !isAssignCompleted && t.status !== 'SELESAI' && t.status !== 'DELEGASI',
       actorInfo: `Worker: ${t.assignedToName || 'Belum ditugaskan'}`,
-      attachments: atts.filter(a => a.stage === 'ASSIGN'),
+      attachments: atts.filter(a => (a.stage as string) === 'ASSIGN'),
     },
     {
       label: 'Process (In Progress)',
@@ -393,6 +394,6 @@ const filteredWorklogs = computed(() => {
 });
 
 const handlePrint = () => {
-  if (ticket.value) triggerPrintPDF(ticket.value);
+  if (ticket.value) triggerPrintPDF(ticket.value.id);
 };
 </script>

@@ -11,25 +11,22 @@
           <p class="text-xs text-gray-500 dark:text-gray-400">Monitoring & Distribusi Penanganan Tiket IT</p>
         </div>
 
-        <!-- View Mode Switcher + Refresh -->
-        <div class="flex items-center gap-2">
-          <div class="flex items-center gap-1 bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
-            <button
-              v-for="mode in viewModes"
-              :key="mode.id"
-              @click="viewMode = mode.id"
-              :class="[
-                'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5',
-                viewMode === mode.id
-                  ? 'bg-white dark:bg-slate-900 shadow-sm text-[#026bb1] dark:text-[#52b5f2]'
-                  : 'text-gray-500 hover:text-gray-700',
-              ]"
-            >
-              <component :is="mode.icon" class="w-3.5 h-3.5" />
-              <span>{{ mode.label }}</span>
-            </button>
-          </div>
-          <RefreshButton mode="tickets" />
+        <!-- View Mode Switcher -->
+        <div class="flex items-center gap-1 bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
+          <button
+            v-for="mode in viewModes"
+            :key="mode.id"
+            @click="viewMode = mode.id"
+            :class="[
+              'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5',
+              viewMode === mode.id
+                ? 'bg-white dark:bg-slate-900 shadow-sm text-[#026bb1] dark:text-[#52b5f2]'
+                : 'text-gray-500 hover:text-gray-700',
+            ]"
+          >
+            <component :is="mode.icon" class="w-3.5 h-3.5" />
+            <span>{{ mode.label }}</span>
+          </button>
         </div>
       </div>
 
@@ -202,7 +199,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { Columns, Table as TableIcon, LayoutGrid, Search } from 'lucide-vue-next';
-import { AppUser, Ticket, TicketStatus } from '~/types';
+import type { AppUser, Ticket, TicketStatus } from '~/types';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
 import AppSelect from '~/components/common/AppSelect.vue';
 
@@ -214,7 +211,7 @@ const props = defineProps<{
   onMoveStatus: (ticketId: string, newStatus: TicketStatus) => void;
 }>();
 
-const viewMode = ref<'kanban' | 'card' | 'table'>('kanban');
+const viewMode = ref<'kanban' | 'table'>('kanban');
 const searchQuery = ref('');
 const statusFilter = ref('ALL');
 const priorityFilter = ref('ALL');

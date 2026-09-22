@@ -81,7 +81,8 @@
         </div>
         <p class="text-[11px] text-amber-600/70 dark:text-amber-400/60">Pilih user lain sebagai pelapor tiket. Jika tidak dipilih, tiket dibuat atas nama Anda sendiri.</p>
         <AppSelect
-          v-model="behalfUserId"
+          :modelValue="behalfUserId ?? ''"
+          @update:modelValue="val => behalfUserId = val || null"
           :options="behalfUserOptions"
           label="Pilih Pelapor Tiket"
           placeholder="-- Buat untuk diri sendiri --"
@@ -252,7 +253,7 @@ import { ref, computed, watch } from 'vue';
 import { ArrowLeft, Upload, Check, CheckCircle2, Eye, X, Shield } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
 import { useModal } from '~/composables/useModal';
-import { TicketPriority, Ticket } from '~/types';
+import type { TicketPriority, Ticket } from '~/types';
 import AppSelect from '~/components/common/AppSelect.vue';
 
 const store = useAppStore();
@@ -309,7 +310,7 @@ const currentSubcategories = computed(() => {
   return storeSubs;
 });
 
-const priorities = [
+const priorities: { id: TicketPriority; label: string; activeClass: string }[] = [
   { id: 'LOW', label: 'Low', activeClass: 'bg-slate-100 dark:bg-slate-800 border-slate-400 text-slate-700 dark:text-slate-300' },
   { id: 'MEDIUM', label: 'Med', activeClass: 'bg-blue-50 dark:bg-blue-950/60 border-blue-400 text-[#026bb1] dark:text-[#52b5f2]' },
   { id: 'HIGH', label: 'High', activeClass: 'bg-amber-50 dark:bg-amber-950/60 border-amber-400 text-amber-700 dark:text-amber-300' },

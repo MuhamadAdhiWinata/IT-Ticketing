@@ -12,7 +12,6 @@
             <span class="truncate">Tracking Tiket IT Percetakan Integral Offset</span>
           </div>
           <div class="flex items-center gap-2">
-            <RefreshButton mode="tickets" />
             <button
               v-if="onCreateTicketClick"
               @click="onCreateTicketClick"
@@ -137,7 +136,7 @@ import {
   Search, CheckCircle2, Clock, ExternalLink, MapPin, User,
   PlusCircle, AlertTriangle, Shield
 } from 'lucide-vue-next';
-import { AppUser, Ticket } from '~/types';
+import type { AppUser, Ticket } from '~/types';
 
 const props = defineProps<{
   tickets: Ticket[];

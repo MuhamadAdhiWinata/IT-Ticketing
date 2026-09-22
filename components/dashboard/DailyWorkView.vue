@@ -15,9 +15,8 @@
         </p>
       </div>
 
-      <!-- Action Buttons + Refresh -->
+      <!-- Action Buttons -->
       <div class="flex flex-wrap items-center gap-2.5">
-        <RefreshButton mode="tickets" />
         <button
           @click="isAddModalOpen = true"
           class="px-3.5 py-2 bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all"
@@ -392,16 +391,16 @@ import { exportWorklogsToExcel, triggerPrintPDF } from '~/utils/export';
 const store = useAppStore();
 const { toast } = useToast();
 
-const getTodayIso = () => new Date().toISOString().split('T')[0];
+const getTodayIso = () => new Date().toISOString().split('T')[0]!;
 const getDaysAgoIso = (days: number) => {
   const d = new Date();
   d.setDate(d.getDate() - days);
-  return d.toISOString().split('T')[0];
+  return d.toISOString().split('T')[0]!;
 };
 const getFirstDayOfMonthIso = () => {
   const d = new Date();
   d.setDate(1);
-  return d.toISOString().split('T')[0];
+  return d.toISOString().split('T')[0]!;
 };
 
 const presets = [
@@ -467,8 +466,8 @@ const shiftRange = (direction: number) => {
   start.setDate(start.getDate() + direction * diffDays);
   end.setDate(end.getDate() + direction * diffDays);
 
-  startDate.value = start.toISOString().split('T')[0];
-  endDate.value = end.toISOString().split('T')[0];
+  startDate.value = start.toISOString().split('T')[0]!;
+  endDate.value = end.toISOString().split('T')[0]!;
   activePreset.value = 'custom';
 };
 
@@ -487,7 +486,7 @@ const formatDateIndo = (isoDate: string) => {
 
 const formatItemDate = (val?: string) => {
   if (!val) return '-';
-  const iso = val.includes('T') ? val.split('T')[0] : val;
+  const iso = val.includes('T') ? val.split('T')[0]! : val;
   return formatDateIndo(iso);
 };
 
@@ -506,7 +505,7 @@ const rangeWorklogs = computed(() => {
 
   store.tickets.forEach(ticket => {
     (ticket.worklogs || []).forEach(wl => {
-      const wlDate = wl.date || (wl.created_at ? wl.created_at.split('T')[0] : '');
+      const wlDate = wl.date || (wl.created_at ? wl.created_at.split('T')[0]! : '');
       const inRange = wlDate >= start && wlDate <= end;
       const matchWorker = selectedWorkerId.value === 'ALL' || wl.worker_id === selectedWorkerId.value;
       if (inRange && matchWorker) {
@@ -517,8 +516,8 @@ const rangeWorklogs = computed(() => {
 
   // Sort descending by date, then by start_at
   return results.sort((a, b) => {
-    const dateA = a.wl.date || (a.wl.created_at ? a.wl.created_at.split('T')[0] : '');
-    const dateB = b.wl.date || (b.wl.created_at ? b.wl.created_at.split('T')[0] : '');
+    const dateA = a.wl.date || (a.wl.created_at ? a.wl.created_at.split('T')[0]! : '');
+    const dateB = b.wl.date || (b.wl.created_at ? b.wl.created_at.split('T')[0]! : '');
     if (dateA !== dateB) {
       return dateB.localeCompare(dateA);
     }
@@ -537,7 +536,7 @@ const completedInRangeCount = computed(() => {
   const end = endDate.value;
   return store.tickets.filter(t => {
     if (t.status !== 'SELESAI' || !t.completed_at) return false;
-    const completedDate = t.completed_at.split('T')[0];
+    const completedDate = t.completed_at.split('T')[0]!;
     const inRange = completedDate >= start && completedDate <= end;
     const matchWorker = selectedWorkerId.value === 'ALL' || t.assignedTo === selectedWorkerId.value;
     return inRange && matchWorker;

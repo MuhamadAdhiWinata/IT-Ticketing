@@ -15,9 +15,8 @@
         </p>
       </div>
 
-      <!-- Quick Export Buttons + Refresh -->
+      <!-- Quick Export Buttons -->
       <div class="flex flex-wrap items-center gap-2.5">
-        <RefreshButton mode="tickets" />
         <button
           @click="handleExportActiveTab"
           class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
