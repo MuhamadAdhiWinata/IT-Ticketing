@@ -1,4 +1,5 @@
-// Serializer: Drizzle camelCase → Frontend snake_case (types/index.ts)
+// Serializer: Drizzle result → Frontend snake_case
+// Includes name resolution via JOINs to users table
 
 export function serializeUser(u: any) {
   return {
@@ -19,25 +20,11 @@ export function serializeSubcategory(s: any) {
   return { id: s.id, category_id: s.categoryId, name: s.name };
 }
 
-export function serializeVendor(v: any) {
-  return {
-    id: v.id,
-    name: v.name,
-    service_type: v.serviceType,
-    contact_person: v.contactPerson,
-    phone: v.phone,
-  };
-}
-
-export function serializeTechnician(t: any) {
-  return { id: t.id, name: t.name, specialty: t.specialty, phone: t.phone };
-}
-
 export function serializeTicketMember(m: any) {
   return {
     id: m.id,
     user_id: m.userId,
-    user_name: m.userName,
+    user_name: m.userName || m.user?.name || '',
     created_at: m.createdAt,
   };
 }
@@ -47,36 +34,13 @@ export function serializeWorklog(w: any) {
     id: w.id,
     stageKey: w.stageKey,
     worker_id: w.workerId,
-    worker_name: w.workerName,
+    worker_name: w.workerName || w.worker?.name || '',
     date: w.date,
     start_at: w.startAt,
     finish_at: w.finishAt,
     duration_minutes: w.durationMinutes,
     description: w.description,
     created_at: w.createdAt,
-  };
-}
-
-export function serializeComment(c: any) {
-  return {
-    id: c.id,
-    ticket_id: c.ticketId,
-    user_id: c.userId,
-    user_name: c.userName,
-    user_role: c.userRole,
-    message: c.message,
-    created_at: c.createdAt,
-  };
-}
-
-export function serializeNote(n: any) {
-  return {
-    id: n.id,
-    ticket_id: n.ticketId,
-    author_id: n.authorId,
-    author_name: n.authorName,
-    note: n.note,
-    created_at: n.createdAt,
   };
 }
 
@@ -87,7 +51,7 @@ export function serializeAuditLog(a: any) {
     action: a.action,
     performed_at: a.performedAt,
     performed_by: a.performedBy,
-    performed_by_name: a.performedByName,
+    performed_by_name: a.performedByName || a.actor?.name || '',
     detail: a.detail ?? null,
     notes: a.notes ?? null,
   };
@@ -103,7 +67,7 @@ export function serializeAttachment(a: any) {
     file_size: a.fileSize ?? null,
     file_path: a.filePath ?? null,
     uploaded_by: a.uploadedBy,
-    uploaded_by_name: a.uploadedByName,
+    uploaded_by_name: a.uploadedByName || a.uploader?.name || '',
     uploaded_at: a.uploadedAt,
   };
 }
@@ -125,6 +89,11 @@ export function serializeTicket(t: any) {
     };
   }
 
+  let supporting_members = t.supportingMembers;
+  if (typeof supporting_members === 'string') {
+    try { supporting_members = JSON.parse(supporting_members); } catch { supporting_members = []; }
+  }
+
   return {
     id: t.id,
     title: t.title,
@@ -136,17 +105,17 @@ export function serializeTicket(t: any) {
     status: t.status,
 
     created_by: t.createdBy,
-    created_by_name: t.createdByName,
+    created_by_name: t.creator?.name || t.createdByName || '',
     created_by_dept: t.createdByDept,
     created_by_admin_id: t.createdByAdminId ?? null,
     created_by_admin_name: t.createdByAdminName ?? null,
 
     requestedBy: t.requestedBy,
-    requestedByName: t.requestedByName,
+    requestedByName: t.requester?.name || t.requestedByName || '',
     requestedByDept: t.requestedByDept,
 
     assignedTo: t.assignedTo ?? null,
-    assignedToName: t.assignedToName ?? null,
+    assignedToName: t.assignee?.name || t.assignedToName || '',
 
     members: (t.members || []).map(serializeTicketMember),
 
@@ -156,8 +125,6 @@ export function serializeTicket(t: any) {
 
     attachments: (t.attachments || []).map(serializeAttachment),
     worklogs: (t.worklogs || []).map(serializeWorklog),
-    comments: (t.comments || []).map(serializeComment),
-    internal_notes: (t.internal_notes || []).map(serializeNote),
     audit_logs: (t.auditLogs || []).map(serializeAuditLog),
 
     created_at: t.createdAt,
@@ -165,24 +132,14 @@ export function serializeTicket(t: any) {
     issued_at: t.issuedAt ?? null,
     process_started_at: t.processStartedAt ?? null,
     completed_at: t.completedAt ?? null,
-    resolution_summary: t.resolutionSummary ?? null,
-    confirmed_by_user: t.confirmedByUser ?? 0,
   };
 }
 
 // Batch serializers
-export function serializeTickets(ticketsList: any[]) {
-  return ticketsList.map(serializeTicket);
-}
-
-export function serializeSubcategories(subs: any[]) {
-  return subs.map(serializeSubcategory);
-}
-
-export function serializeVendors(vendors: any[]) {
-  return vendors.map(serializeVendor);
-}
-
-export function serializeUsers(users: any[]) {
-  return users.map(serializeUser);
-}
+export function serializeTickets(list: any[]) { return list.map(serializeTicket); }
+export function serializeSubcategories(list: any[]) { return list.map(serializeSubcategory); }
+export function serializeVendors(list: any[]) { return list.map(serializeVendor); }
+export function serializeUsers(list: any[]) { return list.map(serializeUser); }
+export function serializeCategories(list: any[]) { return list.map(serializeCategory); }
+export function serializeTechnicians(list: any[]) { return list.map(serializeTechnician); }
+export function serializeTicketMembers(list: any[]) { return list.map(serializeTicketMember); }

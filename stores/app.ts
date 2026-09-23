@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia';
-import type { AppUser, Ticket, CategoryItem, SubcategoryItem, VendorItem, TechnicianItem } from '~/types';
+import type { AppUser, Ticket, CategoryItem, SubcategoryItem } from '~/types';
 import { useAuthStore } from '~/stores/auth';
 
-// Wrapper that ensures cookies are sent with all requests
 function apiFetch<T>(url: string, opts?: any): Promise<T> {
   return $fetch<T>(url, { ...opts, credentials: 'include' });
 }
@@ -18,8 +17,6 @@ export const useAppStore = defineStore('app', {
     tickets: [] as Ticket[],
     categories: [] as CategoryItem[],
     subcategories: [] as SubcategoryItem[],
-    vendors: [] as VendorItem[],
-    technicians: [] as TechnicianItem[],
     allUsers: [] as AppUser[],
     isCreateModalOpen: false,
     selectedTicket: null as Ticket | null,
@@ -44,13 +41,11 @@ export const useAppStore = defineStore('app', {
       const authStore = useAuthStore();
       this.currentUser = authStore.user;
 
-      const [usersRes, ticketsRes, catsRes, subcatsRes, vendorsRes, techsRes, prefsRes] = await Promise.all([
+      const [usersRes, ticketsRes, catsRes, subcatsRes, prefsRes] = await Promise.all([
         apiFetch<{ success: boolean; data: AppUser[] }>('/api/users').catch(() => null),
         apiFetch<{ success: boolean; data: Ticket[] }>('/api/tickets').catch(() => null),
         apiFetch<{ success: boolean; data: CategoryItem[] }>('/api/categories').catch(() => null),
         apiFetch<{ success: boolean; data: SubcategoryItem[] }>('/api/subcategories').catch(() => null),
-        apiFetch<{ success: boolean; data: VendorItem[] }>('/api/vendors').catch(() => null),
-        apiFetch<{ success: boolean; data: TechnicianItem[] }>('/api/technicians').catch(() => null),
         apiFetch<{ success: boolean; data: { darkMode: boolean } }>('/api/user/preferences').catch(() => null),
       ]);
 
@@ -58,8 +53,6 @@ export const useAppStore = defineStore('app', {
       if (ticketsRes) this.tickets = ticketsRes.data;
       if (catsRes) this.categories = catsRes.data;
       if (subcatsRes) this.subcategories = subcatsRes.data;
-      if (vendorsRes) this.vendors = vendorsRes.data;
-      if (techsRes) this.technicians = techsRes.data;
       if (prefsRes) this.darkMode = prefsRes.data.darkMode;
 
       this.loadStateFromUrl();
@@ -77,17 +70,13 @@ export const useAppStore = defineStore('app', {
 
     async refetchMasterData() {
       try {
-        const [catsRes, subcatsRes, vendorsRes, techsRes, allUsersRes] = await Promise.all([
+        const [catsRes, subcatsRes, allUsersRes] = await Promise.all([
           apiFetch<{ success: boolean; data: CategoryItem[] }>('/api/categories'),
           apiFetch<{ success: boolean; data: SubcategoryItem[] }>('/api/subcategories'),
-          apiFetch<{ success: boolean; data: VendorItem[] }>('/api/vendors'),
-          apiFetch<{ success: boolean; data: TechnicianItem[] }>('/api/technicians'),
           apiFetch<{ success: boolean; data: AppUser[] }>('/api/users'),
         ]);
         this.categories = catsRes.data;
         this.subcategories = subcatsRes.data;
-        this.vendors = vendorsRes.data;
-        this.technicians = techsRes.data;
         this.allUsers = allUsersRes.data;
       } catch (e) {
         console.error('Failed to refetch master data:', e);

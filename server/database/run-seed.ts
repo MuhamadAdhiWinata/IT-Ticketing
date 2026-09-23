@@ -1,9 +1,9 @@
-import { resolve } from 'path';
 import { config } from 'dotenv';
+import { resolve } from 'path';
 config({ path: resolve(process.cwd(), '.env') });
 
 import bcrypt from 'bcryptjs';
-import { eq, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { db } from './client';
 import {
   users, categories, subcategories,
@@ -100,128 +100,102 @@ async function seedTickets() {
   console.log('[SEED] Seeding tickets...');
   const ticketsData = [
     {
-      id: 'TCK-202609-001', title: 'Printer Lantai 2 Kehabisan Tinta & Paper Jam',
-      description: 'Printer EPSON L3150 tidak dapat mencetak invoice akhir bulan.',
-      category: 'Support IT', subcategory: 'Printer & Mesin Fotokopi',
-      location: 'Gedung A, Lantai 2 - Ruang Finance', priority: 'HIGH', status: 'PROCESS',
+      id: 'TCK-202609-001', title: 'Printer Lantai 2 Kehabisan Tinta',
+      description: 'Printer EPSON tidak dapat mencetak invoice.', category: 'Support IT', subcategory: 'Printer & Mesin Fotokopi',
+      location: 'Gedung A, Lantai 2', priority: 'HIGH', status: 'PROCESS',
       createdBy: 'USR-001', createdByDept: 'Finance & Accounting',
-      requestedBy: 'USR-001', requestedByDept: 'Finance & Accounting',
-      assignedTo: 'IT-001',
+      requestedBy: 'USR-001', requestedByDept: 'Finance & Accounting', assignedTo: 'IT-001',
       createdAt: ts('2026-09-01'), ticketNumber: 'TIKSP-100001', issuedAt: ts('2026-09-01', '09:05:00'),
-      processStartedAt: ts('2026-09-01', '09:15:00'), completedAt: null,
     },
     {
-      id: 'TCK-202609-002', title: 'Gagal Login Akun ERP SAP Keuangan',
-      description: 'User account locked due to 3 incorrect password attempts.',
-      category: 'IT Programmer', subcategory: 'Maintenance ERP Desktop',
-      location: 'Gedung A, Lantai 3 - Akuntansi', priority: 'CRITICAL', status: 'SELESAI',
+      id: 'TCK-202609-002', title: 'Gagal Login ERP SAP',
+      description: 'User account locked.', category: 'IT Programmer', subcategory: 'Maintenance ERP Desktop',
+      location: 'Gedung A, Lantai 3', priority: 'CRITICAL', status: 'SELESAI',
       createdBy: 'USR-001', createdByDept: 'Finance & Accounting',
-      requestedBy: 'USR-001', requestedByDept: 'Finance & Accounting',
-      assignedTo: 'IT-002',
-      createdAt: ts('2026-09-02'), ticketNumber: 'TIKPG-200001', issuedAt: ts('2026-09-02', '14:02:00'),
-      processStartedAt: ts('2026-09-02', '14:10:00'), completedAt: ts('2026-09-02', '14:45:00'),
+      requestedBy: 'USR-001', requestedByDept: 'Finance & Accounting', assignedTo: 'IT-002',
+      createdAt: ts('2026-09-02'), ticketNumber: 'TIKPG-200001',
+      issuedAt: ts('2026-09-02', '14:02:00'), completedAt: ts('2026-09-02', '14:45:00'),
     },
     {
-      id: 'TCK-202609-003', title: 'Koneksi Wifi Boardroom Drop',
-      description: 'AP Aruba sering disconnect saat video conference.',
-      category: 'Support IT', subcategory: 'Koneksi Wifi & Jaringan Kantor',
-      location: 'Gedung Utama, Lantai 5 - Boardroom', priority: 'HIGH', status: 'DELEGASI',
+      id: 'TCK-202609-003', title: 'Wifi Boardroom Drop',
+      description: 'AP sering disconnect saat video conference.', category: 'Support IT', subcategory: 'Koneksi Wifi & Jaringan Kantor',
+      location: 'Lantai 5', priority: 'HIGH', status: 'DELEGASI',
       createdBy: 'USR-002', createdByDept: 'Human Resources',
-      requestedBy: 'USR-002', requestedByDept: 'Human Resources',
-      assignedTo: 'IT-003', delegationType: 'DELEGASI_VENDOR',
-      vendorId: 'VND-02', vendorName: 'PT Telkom Akses Prima',
-      referenceNo: 'TLK-WO-2026-8821',
-      createdAt: ts('2026-09-03'), ticketNumber: 'TIKSP-100002', issuedAt: ts('2026-09-03', '08:35:00'),
-      processStartedAt: ts('2026-09-03', '09:00:00'), completedAt: null,
+      requestedBy: 'USR-002', requestedByDept: 'Human Resources', assignedTo: 'IT-003',
+      delegationType: 'DELEGASI_VENDOR', vendorName: 'PT Telkom', referenceNo: 'TLK-WO-8821',
+      createdAt: ts('2026-09-03'), ticketNumber: 'TIKSP-100002',
+      issuedAt: ts('2026-09-03', '08:35:00'),
     },
     {
-      id: 'TCK-202609-004', title: 'Request Lisensi Figma Professional',
-      description: 'Permintaan lisensi Figma untuk 2 staff UI/UX baru.',
-      category: 'IT Programmer', subcategory: 'Development Aplikasi / Sistem Baru',
-      location: 'Gedung B, Lantai 4 - Tim Desain', priority: 'LOW', status: 'DRAFT',
-      createdBy: 'USR-003', createdByDept: 'Marketing & Sales',
-      requestedBy: 'USR-003', requestedByDept: 'Marketing & Sales',
-      assignedTo: null,
-      createdAt: ts('2026-09-04'), ticketNumber: 'TIKPG-200002', issuedAt: null,
-      processStartedAt: null, completedAt: null,
+      id: 'TCK-202609-004', title: 'Request Lisensi Figma',
+      description: 'Lisensi untuk 2 staff UI/UX.', category: 'IT Programmer', subcategory: 'Development Aplikasi / Sistem Baru',
+      location: 'Gedung B', priority: 'LOW', status: 'DRAFT',
+      createdBy: 'USR-003', createdByDept: 'Marketing',
+      requestedBy: 'USR-003', requestedByDept: 'Marketing', assignedTo: null,
+      createdAt: ts('2026-09-04'), ticketNumber: 'TIKPG-200002',
     },
     {
-      id: 'TCK-202609-005', title: 'Server Database Payroll High CPU',
-      description: 'Alert Zabbix: DB-PAYROLL utilisasi memory 96%.',
-      category: 'IT Programmer', subcategory: 'Pengelolaan Database dan Backup Sistem ERP',
-      location: 'Data Center Lt 1 - Server Room A', priority: 'CRITICAL', status: 'PROCESS',
-      createdBy: 'ADMIN-001', createdByDept: 'Enterprise IT Governance',
-      requestedBy: 'ADMIN-001', requestedByDept: 'Enterprise IT Governance',
-      assignedTo: 'IT-004',
-      createdAt: ts('2026-09-05'), ticketNumber: 'TIKPG-200003', issuedAt: ts('2026-09-05', '07:46:00'),
-      processStartedAt: ts('2026-09-05', '08:00:00'), completedAt: null,
+      id: 'TCK-202609-005', title: 'DB Payroll High CPU',
+      description: 'Utilisasi memory 96%.', category: 'IT Programmer', subcategory: 'Pengelolaan Database dan Backup Sistem ERP',
+      location: 'Server Room', priority: 'CRITICAL', status: 'PROCESS',
+      createdBy: 'ADMIN-001', createdByDept: 'IT Governance',
+      requestedBy: 'ADMIN-001', requestedByDept: 'IT Governance', assignedTo: 'IT-004',
+      createdAt: ts('2026-09-05'), ticketNumber: 'TIKPG-200003',
     },
     {
-      id: 'TCK-202609-006', title: 'Monitor PC Kasir Bergaris',
-      description: 'Monitor Dell 24 inch bergaris hijau vertikal.',
-      category: 'Support IT', subcategory: 'Hardware Laptop, PC & Monitor',
-      location: 'Cabang Thamrin - Front Desk', priority: 'MEDIUM', status: 'SELESAI',
+      id: 'TCK-202609-006', title: 'Monitor PC Bergaris',
+      description: 'Monitor Dell bergaris hijau.', category: 'Support IT', subcategory: 'Hardware Laptop, PC & Monitor',
+      location: 'Cabang Thamrin', priority: 'MEDIUM', status: 'SELESAI',
       createdBy: 'USR-004', createdByDept: 'Operasional',
-      requestedBy: 'USR-004', requestedByDept: 'Operasional',
-      assignedTo: 'IT-001',
-      createdAt: ts('2026-09-06'), ticketNumber: 'TIKSP-100003', issuedAt: ts('2026-09-06', '10:05:00'),
-      processStartedAt: ts('2026-09-06', '10:30:00'), completedAt: ts('2026-09-06', '11:45:00'),
+      requestedBy: 'USR-004', requestedByDept: 'Operasional', assignedTo: 'IT-001',
+      createdAt: ts('2026-09-06'), ticketNumber: 'TIKSP-100003',
+      completedAt: ts('2026-09-06', '11:45:00'),
     },
     {
-      id: 'TCK-202609-007', title: 'Email Kantor Tidak Bisa Kirim Eksternal',
-      description: 'Seluruh divisi Marketing tidak bisa kirim email ke domain eksternal.',
-      category: 'Support IT', subcategory: 'Email Perusahaan & Office 365',
-      location: 'Gedung A, Lantai 4 - Marketing', priority: 'HIGH', status: 'PROCESS',
-      createdBy: 'USR-003', createdByDept: 'Marketing & Sales',
-      requestedBy: 'USR-003', requestedByDept: 'Marketing & Sales',
-      assignedTo: 'IT-002',
-      createdAt: ts('2026-09-07'), ticketNumber: 'TIKSP-100004', issuedAt: ts('2026-09-07', '08:10:00'),
-      processStartedAt: ts('2026-09-07', '08:30:00'), completedAt: null,
+      id: 'TCK-202609-007', title: 'Email Tidak Bisa Kirim',
+      description: 'Error 550 Relay.', category: 'Support IT', subcategory: 'Email Perusahaan & Office 365',
+      location: 'Lantai 4', priority: 'HIGH', status: 'PROCESS',
+      createdBy: 'USR-003', createdByDept: 'Marketing',
+      requestedBy: 'USR-003', requestedByDept: 'Marketing', assignedTo: 'IT-002',
+      createdAt: ts('2026-09-07'), ticketNumber: 'TIKSP-100004',
     },
     {
-      id: 'TCK-202609-008', title: 'Instalasi ERP Desktop untuk 10 User',
-      description: 'Instalasi ERP Desktop client untuk 10 staf baru.',
-      category: 'IT Programmer', subcategory: 'Release ERP Desktop Production',
-      location: 'Gedung B, Lantai 2 - Purchasing', priority: 'MEDIUM', status: 'PROCESS',
-      createdBy: 'ADMIN-001', createdByDept: 'Enterprise IT Governance',
-      requestedBy: 'ADMIN-001', requestedByDept: 'Enterprise IT Governance',
-      assignedTo: 'IT-002',
-      createdAt: ts('2026-09-08'), ticketNumber: 'TIKPG-200004', issuedAt: ts('2026-09-08', '09:00:00'),
-      processStartedAt: ts('2026-09-08', '09:30:00'), completedAt: null,
+      id: 'TCK-202609-008', title: 'Instalasi ERP 10 User',
+      description: 'Client ERP untuk staf baru.', category: 'IT Programmer', subcategory: 'Release ERP Desktop Production',
+      location: 'Gedung B', priority: 'MEDIUM', status: 'PROCESS',
+      createdBy: 'ADMIN-001', createdByDept: 'IT Governance',
+      requestedBy: 'ADMIN-001', requestedByDept: 'IT Governance', assignedTo: 'IT-002',
+      createdAt: ts('2026-09-08'), ticketNumber: 'TIKPG-200004',
     },
     {
-      id: 'TCK-202609-009', title: 'Lampu Ceiling AC Mati Ruang Rapat',
-      description: 'Lampu LED di plafon ruang rapat mati total.',
-      category: 'Support IT', subcategory: 'CCTV & Keamanan Akses Fisik IT',
-      location: 'Gedung Utama, Lantai 3 - Ruang Rapat', priority: 'MEDIUM', status: 'SELESAI',
-      createdBy: 'USR-002', createdByDept: 'Human Resources',
-      requestedBy: 'USR-002', requestedByDept: 'Human Resources',
-      assignedTo: 'IT-005',
-      createdAt: ts('2026-09-09'), ticketNumber: 'TIKSP-100005', issuedAt: ts('2026-09-09', '11:00:00'),
-      processStartedAt: ts('2026-09-09', '11:20:00'), completedAt: ts('2026-09-09', '13:00:00'),
+      id: 'TCK-202609-009', title: 'Lampu Ceiling Mati',
+      description: 'Lampu LED plafon mati.', category: 'Support IT', subcategory: 'CCTV & Keamanan Akses Fisik IT',
+      location: 'Ruang Rapat', priority: 'MEDIUM', status: 'SELESAI',
+      createdBy: 'USR-002', createdByDept: 'HR',
+      requestedBy: 'USR-002', requestedByDept: 'HR', assignedTo: 'IT-005',
+      createdAt: ts('2026-09-09'), ticketNumber: 'TIKSP-100005',
+      completedAt: ts('2026-09-09', '13:00:00'),
     },
     {
-      id: 'TCK-202609-010', title: 'Bug Modul Payroll ERP Web',
-      description: 'Perhitungan lembur tidak sesuai formula.',
-      category: 'IT Programmer', subcategory: 'Penanganan Bug ERP Web',
-      location: 'Data Center Lt 1', priority: 'CRITICAL', status: 'PROCESS',
+      id: 'TCK-202609-010', title: 'Bug Payroll ERP Web',
+      description: 'Lembur salah hitung.', category: 'IT Programmer', subcategory: 'Penanganan Bug ERP Web',
+      location: 'DC Lt 1', priority: 'CRITICAL', status: 'PROCESS',
       createdBy: 'USR-004', createdByDept: 'Operasional',
-      requestedBy: 'USR-004', requestedByDept: 'Operasional',
-      assignedTo: 'IT-005',
-      createdAt: ts('2026-09-10'), ticketNumber: 'TIKPG-200005', issuedAt: ts('2026-09-10', '10:00:00'),
-      processStartedAt: ts('2026-09-10', '10:15:00'), completedAt: null,
+      requestedBy: 'USR-004', requestedByDept: 'Operasional', assignedTo: 'IT-005',
+      createdAt: ts('2026-09-10'), ticketNumber: 'TIKPG-200005',
     },
   ];
   for (const t of ticketsData) await db.insert(tickets).values(t);
   console.log(`[SEED] ${ticketsData.length} tickets berhasil.`);
+  return ticketsData;
 }
 
 async function seedWorklogs(ticketIds: string[]) {
   console.log('[SEED] Seeding worklogs...');
   const data = [
     { ticketId: ticketIds[0], stageKey: 'IN_PROGRESS', workerId: 'IT-001', date: '2026-09-01', startAt: '09:15', finishAt: '09:45', durationMinutes: 30, description: 'Pengecekan fisik printer.' },
-    { ticketId: ticketIds[1], stageKey: 'IN_PROGRESS', workerId: 'IT-002', date: '2026-09-02', startAt: '14:10', finishAt: '14:45', durationMinutes: 35, description: 'Unlock user SU01.' },
-    { ticketId: ticketIds[4], stageKey: 'IN_PROGRESS', workerId: 'IT-004', date: '2026-09-05', startAt: '08:00', finishAt: '09:15', durationMinutes: 75, description: 'Kill blocked transactions.' },
+    { ticketId: ticketIds[1], stageKey: 'IN_PROGRESS', workerId: 'IT-002', date: '2026-09-02', startAt: '14:10', finishAt: '14:45', durationMinutes: 35, description: 'Unlock user SAP.' },
+    { ticketId: ticketIds[4], stageKey: 'IN_PROGRESS', workerId: 'IT-004', date: '2026-09-05', startAt: '08:00', finishAt: '09:15', durationMinutes: 75, description: 'Kill transactions.' },
     { ticketId: ticketIds[5], stageKey: 'IN_PROGRESS', workerId: 'IT-001', date: '2026-09-06', startAt: '10:30', finishAt: '11:45', durationMinutes: 75, description: 'Ganti kabel HDMI.' },
   ];
   for (const w of data) await db.insert(worklogs).values({ id: randomId('WL'), ...w, createdAt: ts(w.date, w.finishAt) });
@@ -237,9 +211,7 @@ async function seedAuditLogs(ticketIds: string[]) {
     { ticketId: ticketIds[1], action: 'TAHAP_IN_PROGRESS_SELESAI', performedBy: 'IT-002' },
     { ticketId: ticketIds[4], action: 'TIKET_DITERBITKAN', performedBy: 'ADMIN-001' },
   ];
-  for (const a of data) {
-    await db.insert(auditLogs).values({ id: randomId('AUD'), ...a, performedAt: ts('2026-09-08'), detail: null, notes: null });
-  }
+  for (const a of data) await db.insert(auditLogs).values({ id: randomId('AUD'), ...a, performedAt: ts('2026-09-08'), detail: null, notes: null });
   console.log(`[SEED] ${data.length} audit logs berhasil.`);
 }
 
@@ -255,32 +227,24 @@ async function seedTicketMembers(ticketIds: string[]) {
   console.log(`[SEED] ${data.length} ticket members berhasil.`);
 }
 
-export async function seed() {
-  console.log('='.repeat(50));
-  console.log('[SEED] Mulai seeding data...');
-  console.log('='.repeat(50));
+console.log('='.repeat(50));
+console.log('[SEED] Mulai seeding data...');
+console.log('='.repeat(50));
 
-  await cleanup();
-  const hash = await bcrypt.hash('password123', 10);
+await cleanup();
+const hash = await bcrypt.hash('password123', 10);
 
-  await seedUsers(hash);
-  console.log('[SEED] users done');
-  await seedCategories();
-  console.log('[SEED] categories done');
-  await seedSubcategories();
-  console.log('[SEED] subcategories done');
+await seedUsers(hash);
+await seedCategories();
+await seedSubcategories();
 
-  const ticketIds = (await seedTickets()).map(t => t.id);
-  console.log('[SEED] tickets done, ids:', ticketIds.length);
-  await seedWorklogs(ticketIds);
-  console.log('[SEED] worklogs done');
-  await seedAuditLogs(ticketIds);
-  console.log('[SEED] audit logs done');
-  await seedTicketMembers(ticketIds);
-  console.log('[SEED] ticket members done');
+const ticketIds = (await seedTickets()).map((t: any) => t.id);
+await seedWorklogs(ticketIds);
+await seedAuditLogs(ticketIds);
+await seedTicketMembers(ticketIds);
 
-  console.log('='.repeat(50));
-  console.log('[SEED] Semua data berhasil dimasukkan!');
-  console.log('[SEED] Default password: password123');
-  console.log('='.repeat(50));
-}
+console.log('='.repeat(50));
+console.log('[SEED] Semua data berhasil dimasukkan!');
+console.log('[SEED] Default password: password123');
+console.log('='.repeat(50));
+process.exit(0);

@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
   if (!isValidTransition(existing.status, targetStatus)) {
     throw createError({
       statusCode: 409,
-      statusMessage: `Cannot transition from ${existing.status} to ${targetStatus}`,
+      statusMessage: `Cannot transition from ${existing.status} to ${targetStatus}. Gunakan tombol "Kirim" untuk menambah catatan tanpa mengubah status.`,
     });
   }
 

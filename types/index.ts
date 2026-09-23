@@ -44,23 +44,6 @@ export interface Worklog {
   created_at: string;
 }
 
-export interface TicketComment {
-  id: string;
-  user_id: string;
-  user_name: string;
-  user_role: UserRole;
-  message: string;
-  created_at: string;
-}
-
-export interface InternalNote {
-  id: string;
-  author_id: string;
-  author_name: string;
-  note: string;
-  created_at: string;
-}
-
 export interface DelegationInfo {
   type: DelegationType;
   vendor_id?: string;
@@ -116,8 +99,6 @@ export interface Ticket {
 
   attachments: Attachment[];
   worklogs: Worklog[];
-  comments: TicketComment[];
-  internal_notes: InternalNote[];
   audit_logs: AuditLog[];
 
   created_at: string;
@@ -125,8 +106,6 @@ export interface Ticket {
   issued_at?: string | null;
   process_started_at?: string | null;
   completed_at?: string | null;
-  resolution_summary?: string | null;
-  confirmed_by_user?: boolean;
 }
 
 export interface CategoryItem {
@@ -138,19 +117,4 @@ export interface SubcategoryItem {
   id: string;
   category_id: string;
   name: string;
-}
-
-export interface VendorItem {
-  id: string;
-  name: string;
-  service_type: string;
-  contact_person: string;
-  phone: string;
-}
-
-export interface TechnicianItem {
-  id: string;
-  name: string;
-  specialty: string;
-  phone: string;
 }

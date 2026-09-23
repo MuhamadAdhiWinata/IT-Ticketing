@@ -183,8 +183,8 @@
             </div>
           </div>
 
-          <!-- Action / Submit Done for Active Step (Hanya untuk worker IT dan kecuali tahap REQUEST/Created) -->
-          <div v-if="stepperStages[selectedStepIndex]?.current && stepperStages[selectedStepIndex]?.stageKey !== 'REQUEST' && store.currentUser?.role !== 'USER_NON_IT'" class="pt-3 border-t border-gray-100 dark:border-slate-800 space-y-3">
+           <!-- Action Buttons (hidden when ticket already SELESAI/DELEGASI) -->
+          <div v-if="stepperStages[selectedStepIndex]?.current && stepperStages[selectedStepIndex]?.stageKey !== 'REQUEST' && store.currentUser?.role !== 'USER_NON_IT' && ticket?.status !== 'SELESAI' && ticket?.status !== 'DELEGASI'" class="pt-3 border-t border-gray-100 dark:border-slate-800 space-y-3">
             <div class="space-y-1.5">
               <label class="block text-[11px] font-bold text-gray-700 dark:text-gray-300">
                 {{
@@ -198,13 +198,7 @@
               <textarea
                 v-model="stageNotes"
                 rows="2"
-                :placeholder="
-                  stepperStages[selectedStepIndex]?.stageKey === 'ASSIGN'
-                    ? 'Tuliskan catatan pengambilan tiket...'
-                    : stepperStages[selectedStepIndex]?.stageKey === 'IN_PROGRESS'
-                    ? 'Tuliskan catatan pengerjaan / check-in...'
-                    : 'Tuliskan catatan delegasi vendor...'
-                "
+                placeholder="Tuliskan catatan (opsional)..."
                 class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#026bb1]/50 resize-none"
               ></textarea>
             </div>
@@ -212,18 +206,16 @@
               <input type="file" ref="stageFileInput" @change="handleStageFile" class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-[#026bb1] hover:file:bg-blue-100" />
               
               <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <!-- Simpan Catatan / Absen Button (IN_PROGRESS & ASSIGN saja) -->
+                <!-- Simpan Catatan Button (hijau) -->
                 <button
-                  v-if="stepperStages[selectedStepIndex]?.stageKey === 'IN_PROGRESS' || stepperStages[selectedStepIndex]?.stageKey === 'ASSIGN'"
                   @click="handleSaveNote()"
-                  :disabled="!stageNotes.trim()"
-                  class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 dark:disabled:bg-slate-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                  class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
                 >
                   <Clock class="w-4 h-4" />
-                  <span>Kirim</span>
+                  <span>Simpan Catatan</span>
                 </button>
 
-                <!-- Submit Normal Button -->
+                <!-- Lanjut Button (biru) -->
                 <button
                   @click="handleSubmitCurrentStage()"
                   class="w-full px-4 py-2.5 bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
@@ -232,22 +224,12 @@
                   <span>
                     {{
                       stepperStages[selectedStepIndex]?.stageKey === 'ASSIGN'
-                        ? 'Konfirmasi Assign'
+                        ? 'Ambil Tiket'
                         : stepperStages[selectedStepIndex]?.stageKey === 'IN_PROGRESS'
                         ? 'Selesai'
-                        : 'Kirim'
+                        : 'Delegasi'
                     }}
                   </span>
-                </button>
-
-                <!-- Delegasikan Button (Saat berada di tahap Selesai Internal untuk eskalasi lanjutan) -->
-                <button
-                  v-if="stepperStages[selectedStepIndex]?.stageKey === 'COMPLETION' && ticket?.status !== 'DELEGASI'"
-                  @click="handleSubmitCurrentStage('DELEGASI')"
-                  class="w-full px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
-                >
-                  <ExternalLinkIcon class="w-4 h-4" />
-                  <span>Delegasi</span>
                 </button>
               </div>
             </div>
