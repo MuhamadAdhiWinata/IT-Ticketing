@@ -1,0 +1,19 @@
+services:
+  app:
+    build: .
+    container_name: it-ticketing-app
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      - DATABASE_URL=mysql2://root:rootpassword@172.23.0.2:3306/ticket_db
+      - NODE_ENV=production
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - tunnel-network
+    restart: unless-stopped
+
+networks:
+  tunnel-network:
+    external: true

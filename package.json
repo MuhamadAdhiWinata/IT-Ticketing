@@ -9,7 +9,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "lint": "nuxt lint"
+    "lint": "nuxt lint",
+    "seed": "npx tsx -r dotenv/config server/database/seed.ts"
   },
   "dependencies": {
     "@nuxtjs/tailwindcss": "^6.14.0",
