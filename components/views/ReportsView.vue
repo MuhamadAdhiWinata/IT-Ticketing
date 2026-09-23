@@ -456,8 +456,6 @@ const resetFilters = () => {
 
 const getTicketContributors = (t: Ticket): string => {
   const list = new Set<string>();
-  if (t.assignedToName) list.add(t.assignedToName);
-  if (t.assignedToName) list.add(t.assignedToName);
   (t.members || []).forEach(m => list.add(m.user_name));
   (t.worklogs || []).forEach(wl => {
     if (wl.worker_name) list.add(wl.worker_name);

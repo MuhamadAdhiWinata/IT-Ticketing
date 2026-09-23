@@ -57,8 +57,15 @@
             </span>
           </div>
           <div class="flex items-center justify-between">
-            <span class="text-xs text-gray-500">Worker:</span>
-            <span class="text-xs font-semibold text-gray-800 dark:text-gray-200">{{ ticket.assignedToName || 'Belum ditugaskan' }}</span>
+            <span class="text-xs text-gray-500">Workers:</span>
+            <div class="text-xs font-semibold text-gray-800 dark:text-gray-200">
+              <template v-if="ticket.members && ticket.members.length > 0">
+                <span v-for="(m, i) in ticket.members" :key="m.id">
+                  {{ m.user_name }}<span v-if="i < ticket.members.length - 1">, </span>
+                </span>
+              </template>
+              <span v-else class="text-gray-400">Belum ditugaskan</span>
+            </div>
           </div>
         </div>
       </div>

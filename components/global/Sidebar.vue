@@ -23,7 +23,7 @@
           <img src="~/assets/image/IO.png" alt="Logo" class="w-9 h-9 object-contain shrink-0" />
           <div v-if="!store.isSidebarCollapsed || store.isMobileSidebarOpen" class="min-w-0">
             <span class="font-extrabold text-sm text-gray-900 dark:text-white block truncate">
-              IT Workload
+              Percetakan Integral Offset
             </span>
             <span class="text-[10px] text-gray-500 dark:text-gray-400 block -mt-0.5 truncate">
               Monitoring & Ticketing

@@ -181,7 +181,13 @@
                 <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-900/60 text-[#026bb1] dark:text-[#52b5f2]">
                   {{ t.status }}
                 </span>
-                <div class="text-[10px] text-gray-400 mt-0.5">{{ t.assignedToName || 'Belum ditugaskan' }}</div>
+                <div class="text-[10px] text-gray-400 mt-0.5">
+                  <template v-if="t.members && t.members.length > 0">
+                    <span v-for="(m, i) in t.members.slice(0, 3)" :key="m.id">{{ m.user_name }}<span v-if="i < Math.min(t.members.length, 3) - 1">, </span></span>
+                    <span v-if="t.members.length > 3" class="text-gray-300">+{{ t.members.length - 3 }}</span>
+                  </template>
+                  <span v-else>Belum ditugaskan</span>
+                </div>
               </td>
               <td class="p-3.5 text-right">
                 <button @click.stop="onSelectTicket(t)" class="px-3 py-1 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-semibold hover:bg-gray-200">

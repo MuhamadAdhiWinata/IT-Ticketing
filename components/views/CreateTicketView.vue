@@ -199,6 +199,14 @@
       </div>
     </div>
 
+    <!-- Worker Picker Modal -->
+    <WorkerPickerModal
+      :show="showWorkerPicker"
+      :users="store.allUsers"
+      @close="showWorkerPicker = false"
+      @confirm="handleWorkerConfirm"
+    />
+
     <!-- Modal Dialog Sukses Buat Tiket (Android / Mobile Responsive - Teleport to Body) -->
     <Teleport to="body">
       <div v-if="createdTicketSuccess" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4">
@@ -255,6 +263,7 @@ import { useAppStore } from '~/stores/app';
 import { useModal } from '~/composables/useModal';
 import type { TicketPriority, Ticket } from '~/types';
 import AppSelect from '~/components/common/AppSelect.vue';
+import WorkerPickerModal from '~/components/common/WorkerPickerModal.vue';
 
 const store = useAppStore();
 const { showError, showSuccess } = useModal();
@@ -264,6 +273,9 @@ const serviceView = ref<'SUPPORT_IT' | 'IT_PROGRAMMER'>('SUPPORT_IT');
 const ticketPrefix = computed(() => serviceView.value === 'SUPPORT_IT' ? 'TIKSP' : 'TIKPG');
 const ticketNumber = ref(Math.floor(100000 + Math.random() * 900000));
 const behalfUserId = ref<string | null>(null);
+const showWorkerPicker = ref(false);
+const selectedWorkers = ref<string[]>([]);
+const isSaving = ref(false);
 
 const behalfUserOptions = computed(() => [
   { value: '', label: '-- Buat untuk diri sendiri --' },
@@ -334,42 +346,51 @@ const handleFileDrop = (e: Event) => {
   }
 };
 
-const handleSubmit = async (shouldIssue: boolean) => {
+const handleSubmit = async (shouldAssign: boolean) => {
   if (!title.value.trim() || !description.value.trim()) {
     showError('Formulir Tidak Lengkap', 'Mohon isi Judul Tiket dan Deskripsi Masalah.');
     return;
   }
+  if (shouldAssign) {
+    showWorkerPicker.value = true;
+    return;
+  }
+  await createTicket(false);
+};
 
-  const attachments = fileName.value
-    ? [
-        {
-          id: `ATT-${Date.now()}`,
-          stage: 'REQUEST' as const,
-          visibility: 'USER_VISIBLE' as const,
-          file_name: fileName.value,
-          file_size: fileSize.value || '1.2 MB',
-          uploaded_by: store.currentUser?.id || 'USR-001',
-          uploaded_by_name: store.currentUser?.name || 'Karyawan',
-          uploaded_at: new Date().toISOString(),
-        },
-      ]
-    : [];
+const handleWorkerConfirm = async (userIds: string[]) => {
+  showWorkerPicker.value = false;
+  selectedWorkers.value = userIds;
+  await createTicket(true);
+};
 
-  const ticketPayload: Partial<Ticket> = {
-    title: title.value.trim(),
-    category: serviceView.value === 'SUPPORT_IT' ? 'Support IT' : 'IT Programmer',
-    subcategory: subcategory.value,
-    location: location.value.trim(),
-    priority: priority.value,
-    description: description.value.trim(),
-    attachments,
-  };
-
-  const newTicket = await store.addTicket(ticketPayload, shouldIssue, behalfUserId.value || null);
-  if (newTicket) {
-    createdTicketSuccess.value = newTicket;
-  } else {
-    showError('Gagal Membuat Tiket', 'Terjadi kesalahan saat membuat tiket. Pastikan semua field terisi dengan benar dan coba lagi.');
+const createTicket = async (shouldIssue: boolean = false) => {
+  isSaving.value = true;
+  try {
+    const ticketPayload: Partial<Ticket> = {
+      title: title.value.trim(),
+      category: serviceView.value === 'SUPPORT_IT' ? 'Support IT' : 'IT Programmer',
+      subcategory: subcategory.value,
+      location: location.value.trim(),
+      priority: priority.value,
+      description: description.value.trim(),
+    };
+    const newTicket = await store.addTicket(ticketPayload, shouldIssue, behalfUserId.value || null);
+    if (newTicket && selectedWorkers.value.length > 0) {
+      await $fetch(`/api/tickets/${newTicket.id}/members`, {
+        method: 'POST',
+        body: { userIds: selectedWorkers.value },
+      });
+    }
+    if (newTicket) {
+      createdTicketSuccess.value = newTicket;
+    } else {
+      showError('Gagal Membuat Tiket', 'Terjadi kesalahan saat membuat tiket.');
+    }
+  } catch (e: any) {
+    showError('Gagal', e?.message || 'Terjadi kesalahan.');
+  } finally {
+    isSaving.value = false;
   }
 };
 
@@ -394,5 +415,6 @@ const resetForm = () => {
   fileName.value = '';
   fileSize.value = '';
   behalfUserId.value = null;
+  selectedWorkers.value = [];
 };
 </script>
