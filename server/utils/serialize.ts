@@ -138,8 +138,6 @@ export function serializeTicket(t: any) {
 // Batch serializers
 export function serializeTickets(list: any[]) { return list.map(serializeTicket); }
 export function serializeSubcategories(list: any[]) { return list.map(serializeSubcategory); }
-export function serializeVendors(list: any[]) { return list.map(serializeVendor); }
 export function serializeUsers(list: any[]) { return list.map(serializeUser); }
 export function serializeCategories(list: any[]) { return list.map(serializeCategory); }
-export function serializeTechnicians(list: any[]) { return list.map(serializeTechnician); }
 export function serializeTicketMembers(list: any[]) { return list.map(serializeTicketMember); }

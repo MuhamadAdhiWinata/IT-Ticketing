@@ -141,7 +141,7 @@
           <!-- Attachments in this step -->
           <div class="space-y-2">
             <span class="text-[10px] font-bold text-gray-500 uppercase">Lampiran / Bukti pada Tahap Ini:</span>
-            <div v-if="stepperStages[selectedStepIndex]?.attachments?.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div v-if="(stepperStages[selectedStepIndex]?.attachments?.length ?? 0) > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div v-for="att in stepperStages[selectedStepIndex]?.attachments ?? []" :key="att.id" class="p-2.5 bg-gray-50 dark:bg-slate-800/60 rounded-lg border border-gray-100 dark:border-slate-700 flex items-center justify-between">
                 <div class="flex items-center gap-2 overflow-hidden">
                   <Paperclip class="w-3.5 h-3.5 text-[#026bb1] shrink-0" />
@@ -183,8 +183,8 @@
             </div>
           </div>
 
-           <!-- Action Buttons (hidden when ticket already SELESAI/DELEGASI) -->
-          <div v-if="stepperStages[selectedStepIndex]?.current && stepperStages[selectedStepIndex]?.stageKey !== 'REQUEST' && store.currentUser?.role !== 'USER_NON_IT' && ticket?.status !== 'SELESAI' && ticket?.status !== 'DELEGASI'" class="pt-3 border-t border-gray-100 dark:border-slate-800 space-y-3">
+           <!-- Action Buttons -->
+          <div v-if="stepperStages[selectedStepIndex]?.current && stepperStages[selectedStepIndex]?.stageKey !== 'REQUEST' && store.currentUser?.role !== 'USER_NON_IT'" class="pt-3 border-t border-gray-100 dark:border-slate-800 space-y-3">
             <div class="space-y-1.5">
               <label class="block text-[11px] font-bold text-gray-700 dark:text-gray-300">
                 {{
@@ -206,13 +206,13 @@
               <input type="file" ref="stageFileInput" @change="handleStageFile" class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-[#026bb1] hover:file:bg-blue-100" />
               
               <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <!-- Simpan Catatan Button (hijau) -->
+                <!-- Kirim Button (hijau) -->
                 <button
                   @click="handleSaveNote()"
                   class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
                 >
                   <Clock class="w-4 h-4" />
-                  <span>Simpan Catatan</span>
+                  <span>Kirim</span>
                 </button>
 
                 <!-- Lanjut Button (biru) -->
@@ -295,7 +295,7 @@ const stepperStages = computed(() => {
   if (!ticket.value) return [];
   const t = ticket.value;
   const atts = t.attachments || [];
-  const hasDelegation = !!t.delegation || t.status === 'DELEGASI' || t.status === 'DELEGASI';
+  const hasDelegation = !!t.delegation || (t.status as string) === 'DELEGASI';
 
   const isAssignCompleted = (t.audit_logs || []).some(log => log.action === 'TAHAP_ASSIGN_SELESAI');
   const isProcessCompleted = (t.audit_logs || []).some(log => log.action === 'TAHAP_IN_PROGRESS_SELESAI');

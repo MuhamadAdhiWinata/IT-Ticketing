@@ -2,12 +2,9 @@ import { describe, it, expect } from 'vitest';
 import {
   serializeTicket,
   serializeWorklog,
-  serializeComment,
-  serializeNote,
   serializeAuditLog,
   serializeAttachment,
   serializeSubcategory,
-  serializeVendor,
   serializeTicketMember,
 } from '../utils/serialize';
 
@@ -104,16 +101,12 @@ describe('Serializers', () => {
         referencedTicketId: null,
         attachments: [],
         worklogs: [],
-        comments: [],
-        internal_notes: [],
         auditLogs: [],
         createdAt: '2026-09-21 10:00:00',
         ticketNumber: 'TIKSP-123456',
         issuedAt: null,
         processStartedAt: null,
         completedAt: null,
-        resolutionSummary: null,
-        confirmedByUser: 0,
       };
 
       const result = serializeTicket(dbTicket);
@@ -136,14 +129,6 @@ describe('Serializers', () => {
     it('maps categoryId to category_id', () => {
       const result = serializeSubcategory({ id: 'SUB-001', categoryId: 'CAT-01', name: 'Printer' });
       expect(result).toEqual({ id: 'SUB-001', category_id: 'CAT-01', name: 'Printer' });
-    });
-  });
-
-  describe('serializeVendor', () => {
-    it('maps camelCase to snake_case', () => {
-      const result = serializeVendor({ id: 'VND-01', name: 'PT Test', serviceType: 'Hardware', contactPerson: 'Budi', phone: '0812' });
-      expect(result.service_type).toBe('Hardware');
-      expect(result.contact_person).toBe('Budi');
     });
   });
 

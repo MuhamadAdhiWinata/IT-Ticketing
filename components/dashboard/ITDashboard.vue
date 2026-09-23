@@ -239,7 +239,7 @@ const cardStatusOptions = [
   { value: 'DELEGASI', label: 'Delegasi' },
 ];
 
-const viewModes = [
+const viewModes: Array<{ id: 'kanban' | 'table'; label: string; icon: any }> = [
   { id: 'kanban', label: 'Kanban', icon: Columns },
   { id: 'table', label: 'Tabel', icon: TableIcon },
 ];
