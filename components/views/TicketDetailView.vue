@@ -435,8 +435,10 @@ import type { TicketStatus, PendingAttachment } from '~/types';
 import { triggerPrintPDF } from '~/utils/export';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
 import { isImage, isPdf, getFileExtLabel } from '~/utils/fileHelpers';
+import { useModal } from '~/composables/useModal';
 
 const store = useAppStore();
+const { showError } = useModal();
 const isOpen = computed(() => store.activeView === 'ticket-detail');
 const ticket = computed(() => store.selectedTicket);
 const isCompleted = computed(() => ticket.value?.status === 'SELESAI');
@@ -454,6 +456,13 @@ const getDefaultStepIndex = (status: string): number => {
   if (status === 'PROCESS') return 2;
   if (status === 'SELESAI' || status === 'DELEGASI') return 3;
   return 1;
+};
+
+const scrollToStep = (index: number) => {
+  nextTick(() => {
+    const cards = document.querySelectorAll('.custom-scrollbar > div > div > div');
+    cards[index + 1]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  });
 };
 
 const openPreview = (att: { file_path?: string | null; file_name: string }) => {
@@ -486,11 +495,18 @@ const handleSubmitCurrentStage = async (targetStatus?: TicketStatus) => {
   const currentStage = stepperStages.value[selectedStepIndex.value];
   if (!currentStage) return;
 
-  await store.completeStage(ticket.value.id, currentStage.stageKey, stageNotes.value || undefined, pendingFiles.value.length > 0 ? pendingFiles.value : undefined, targetStatus);
+  try {
+    await store.completeStage(ticket.value.id, currentStage.stageKey, stageNotes.value || undefined, pendingFiles.value.length > 0 ? pendingFiles.value : undefined, targetStatus);
+    const newStatus = store.selectedTicket?.status;
+    if (newStatus) {
+      selectedStepIndex.value = getDefaultStepIndex(newStatus);
+      scrollToStep(selectedStepIndex.value);
+    }
+  } catch (e: any) {
+    showError('Gagal Memproses', e?.data?.statusMessage || e?.message || 'Terjadi kesalahan.');
+  }
   stageNotes.value = '';
   pendingFiles.value = [];
-  const newStatus = (store.selectedTicket?.status as string) || ticket.value.status as string;
-  selectedStepIndex.value = getDefaultStepIndex(newStatus);
 };
 
 const handleSaveNote = async () => {
@@ -534,10 +550,17 @@ const handleAddMember = async () => {
 
 const handleStartWork = async () => {
   if (!ticket.value) return;
-  await store.completeStage(ticket.value.id, 'START_WORK', stageNotes.value || undefined, pendingFiles.value.length > 0 ? pendingFiles.value : undefined);
+  try {
+    await store.completeStage(ticket.value.id, 'START_WORK', stageNotes.value || undefined, pendingFiles.value.length > 0 ? pendingFiles.value : undefined);
+    if (store.selectedTicket?.status === 'PROCESS') {
+      selectedStepIndex.value = 2;
+      scrollToStep(2);
+    }
+  } catch (e: any) {
+    showError('Gagal Memulai Pekerjaan', e?.data?.statusMessage || e?.message || 'Terjadi kesalahan.');
+  }
   stageNotes.value = '';
   pendingFiles.value = [];
-  selectedStepIndex.value = 2;
 };
 
 const stepperStages = computed(() => {
