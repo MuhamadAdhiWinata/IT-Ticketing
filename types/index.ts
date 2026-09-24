@@ -25,7 +25,7 @@ export interface Attachment {
   visibility: AttachmentVisibility;
   file_name: string;
   file_size?: string;
-  file_url?: string;
+  file_path?: string | null;
   uploaded_by: string;
   uploaded_by_name: string;
   uploaded_at: string;

@@ -155,24 +155,105 @@
           <!-- Attachments in this step -->
           <div class="space-y-2">
             <span class="text-[10px] font-bold text-gray-500 uppercase">Lampiran / Bukti pada Tahap Ini:</span>
-            <div v-if="(stepperStages[selectedStepIndex]?.attachments?.length ?? 0) > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div v-for="att in stepperStages[selectedStepIndex]?.attachments ?? []" :key="att.id" class="p-2.5 bg-gray-50 dark:bg-slate-800/60 rounded-lg border border-gray-100 dark:border-slate-700 flex items-center justify-between">
-                <div class="flex items-center gap-2 overflow-hidden">
-                  <Paperclip class="w-3.5 h-3.5 text-[#026bb1] shrink-0" />
-                  <div class="truncate">
-                    <p class="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{{ att.file_name }}</p>
-                    <p class="text-[9px] text-gray-400">Oleh: {{ att.uploaded_by_name }} • {{ att.file_size || 'Standard' }}</p>
+            <div v-if="(stepperStages[selectedStepIndex]?.attachments?.length ?? 0) > 0" class="space-y-2">
+              <template v-for="att in stepperStages[selectedStepIndex]?.attachments ?? []" :key="att.id">
+                <!-- Image Preview Card -->
+                <div v-if="isImage(att.file_name)" class="bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden">
+                  <div class="relative bg-gray-100 dark:bg-slate-900 flex items-center justify-center max-h-[250px] overflow-hidden">
+                    <img
+                      :src="att.file_path || '#'"
+                      :alt="att.file_name"
+                      class="max-h-[250px] w-full object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                      @click="openPreview(att)"
+                      @error="handleImageError"
+                    />
+                  </div>
+                  <div class="p-2.5 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 overflow-hidden min-w-0">
+                      <ImageIcon class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <div class="truncate">
+                        <p class="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{{ att.file_name }}</p>
+                        <p class="text-[9px] text-gray-400">{{ att.file_size || '' }}</p>
+                      </div>
+                    </div>
+                    <a
+                      v-if="att.file_path"
+                      :href="att.file_path"
+                      :download="att.file_name"
+                      class="shrink-0 p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-[#026bb1] dark:text-[#52b5f2] hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                      title="Download"
+                    >
+                      <Download class="w-3.5 h-3.5" />
+                    </a>
                   </div>
                 </div>
-                <span class="text-[9px] px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-[#026bb1] dark:text-blue-300 rounded font-semibold shrink-0">
-                  {{ att.visibility }}
-                </span>
-              </div>
+
+                <!-- PDF Card -->
+                <div v-else-if="isPdf(att.file_name)" class="p-2.5 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-100 dark:border-slate-700 flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-950/50 flex items-center justify-center shrink-0">
+                    <FileText class="w-5 h-5 text-red-500 dark:text-red-400" />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{{ att.file_name || 'Attachment' }}</p>
+                    <p class="text-[9px] text-gray-400">{{ att.file_size || '' }}</p>
+                  </div>
+                  <a
+                    v-if="att.file_path"
+                    :href="att.file_path"
+                    :download="att.file_name"
+                    class="shrink-0 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-[#026bb1] dark:text-[#52b5f2] hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors text-[10px] font-semibold flex items-center gap-1"
+                    title="Download"
+                  >
+                    <Download class="w-3 h-3" />
+                    <span class="hidden sm:inline">Download</span>
+                  </a>
+                </div>
+
+                <!-- Generic File Card -->
+                <div v-else class="p-2.5 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-100 dark:border-slate-700 flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-950/50 flex items-center justify-center shrink-0">
+                    <File class="w-5 h-5 text-[#026bb1] dark:text-[#52b5f2]" />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{{ att.file_name || 'Attachment' }}</p>
+                    <p class="text-[9px] text-gray-400">
+                      <span v-if="getFileExtLabel(att.file_name) !== 'FILE'" class="font-semibold text-[#026bb1] dark:text-[#52b5f2]">{{ getFileExtLabel(att.file_name) }}</span>
+                      <span v-if="getFileExtLabel(att.file_name) !== 'FILE' && att.file_size"> • </span>
+                      {{ att.file_size || '' }}
+                    </p>
+                  </div>
+                  <a
+                    v-if="att.file_path"
+                    :href="att.file_path"
+                    :download="att.file_name"
+                    class="shrink-0 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-[#026bb1] dark:text-[#52b5f2] hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors text-[10px] font-semibold flex items-center gap-1"
+                    title="Download"
+                  >
+                    <Download class="w-3 h-3" />
+                    <span class="hidden sm:inline">Download</span>
+                  </a>
+                </div>
+              </template>
             </div>
             <div v-else class="text-center py-4 text-xs text-gray-400 bg-gray-50/50 dark:bg-slate-800/20 rounded-lg border border-dashed border-gray-200 dark:border-slate-700">
               Tidak ada lampiran pada tahap ini.
             </div>
           </div>
+
+          <!-- Image Lightbox -->
+          <Teleport to="body">
+            <div v-if="previewImage" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" @click="previewImage = null">
+              <div class="relative max-w-4xl max-h-[90vh] w-full" @click.stop>
+                <button @click="previewImage = null" class="absolute -top-3 -right-3 p-2 rounded-full bg-white dark:bg-slate-800 shadow-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white z-10">
+                  <X class="w-5 h-5" />
+                </button>
+                <img :src="previewImage.url" :alt="previewImage.name" class="max-h-[85vh] w-full object-contain rounded-xl" />
+                <div class="mt-2 text-center">
+                  <p class="text-xs text-gray-300 font-medium">{{ previewImage.name }}</p>
+                </div>
+              </div>
+            </div>
+          </Teleport>
 
           <!-- History Catatan / Worklog pada Tahap Ini -->
           <div v-if="filteredWorklogs.length > 0" class="space-y-2 pt-2 border-t border-gray-100 dark:border-slate-800">
@@ -265,10 +346,11 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
 import { useAppStore } from '~/stores/app';
-import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon, User, X } from 'lucide-vue-next';
+import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon, User, X, Download, Image as ImageIcon, FileText, File } from 'lucide-vue-next';
 import type { TicketStatus, PendingAttachment } from '~/types';
 import { triggerPrintPDF } from '~/utils/export';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
+import { isImage, isPdf, getFileExtLabel } from '~/utils/fileHelpers';
 
 const store = useAppStore();
 const isOpen = computed(() => store.activeView === 'ticket-detail');
@@ -279,6 +361,18 @@ const selectedStepIndex = ref(0);
 const activeStepEl = ref<HTMLElement | null>(null);
 const stageNotes = ref('');
 const pendingFiles = ref<PendingAttachment[]>([]);
+const previewImage = ref<{ url: string; name: string } | null>(null);
+
+const openPreview = (att: { file_path?: string | null; file_name: string }) => {
+  if (att.file_path) {
+    previewImage.value = { url: att.file_path, name: att.file_name };
+  }
+};
+
+const handleImageError = (e: Event) => {
+  const img = e.target as HTMLImageElement;
+  img.style.display = 'none';
+};
 
 const handleStageFile = (e: Event) => {
   const target = e.target as HTMLInputElement;
