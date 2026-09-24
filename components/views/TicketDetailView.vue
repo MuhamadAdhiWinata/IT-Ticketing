@@ -56,15 +56,22 @@
               {{ ticket.status }}
             </span>
           </div>
-          <div class="flex items-center justify-between">
+          <div class="flex flex-col gap-1">
             <span class="text-xs text-gray-500">Workers:</span>
-            <div class="text-xs font-semibold text-gray-800 dark:text-gray-200">
+            <div class="flex flex-wrap items-center gap-1.5">
               <template v-if="ticket.members && ticket.members.length > 0">
-                <span v-for="(m, i) in ticket.members" :key="m.id">
-                  {{ m.user_name }}<span v-if="i < ticket.members.length - 1">, </span>
+                <span
+                  v-for="m in ticket.members"
+                  :key="m.id"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100/80 dark:from-blue-950/60 dark:to-blue-900/40 border border-blue-200/80 dark:border-blue-800/60 shadow-xs"
+                >
+                  <span class="w-5 h-5 rounded-full bg-[#026bb1] dark:bg-[#52b5f2] flex items-center justify-center shrink-0">
+                    <User class="w-3 h-3 text-white" />
+                  </span>
+                  <span class="text-xs font-semibold text-[#026bb1] dark:text-[#52b5f2]">{{ m.user_name }}</span>
                 </span>
               </template>
-              <span v-else class="text-gray-400">Belum ditugaskan</span>
+              <span v-else class="text-xs text-gray-400 italic">Belum ditugaskan</span>
             </div>
           </div>
         </div>
@@ -250,7 +257,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
 import { useAppStore } from '~/stores/app';
-import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon } from 'lucide-vue-next';
+import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon, User } from 'lucide-vue-next';
 import type { TicketStatus } from '~/types';
 import { triggerPrintPDF } from '~/utils/export';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
@@ -325,7 +332,7 @@ const stepperStages = computed(() => {
       stageKey: 'ASSIGN',
       completed: isAssignCompleted || t.status === 'SELESAI' || t.status === 'DELEGASI',
       current: !isAssignCompleted && t.status !== 'SELESAI' && t.status !== 'DELEGASI',
-      actorInfo: `Worker: ${t.assignedToName || 'Belum ditugaskan'}`,
+      actorInfo: `Worker: ${t.members?.length > 0 ? t.members.map((m: any) => m.user_name).join(', ') : 'Belum ditugaskan'}`,
       attachments: atts.filter(a => (a.stage as string) === 'ASSIGN'),
     },
     {
