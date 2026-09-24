@@ -217,7 +217,15 @@
               ></textarea>
             </div>
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <input type="file" ref="stageFileInput" @change="handleStageFile" class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-[#026bb1] hover:file:bg-blue-100" />
+              <div class="flex-1 space-y-1.5">
+                <input type="file" multiple ref="stageFileInput" @change="handleStageFile" class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-[#026bb1] hover:file:bg-blue-100" />
+                <div v-if="pendingFiles.length > 0" class="flex flex-wrap gap-1.5">
+                  <span v-for="(pf, i) in pendingFiles" :key="i" class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg text-[10px] text-[#026bb1] dark:text-[#52b5f2] font-semibold">
+                    {{ pf.file.name }}
+                    <button @click="removePendingFile(i)" class="text-red-400 hover:text-red-600"><X class="w-3 h-3" /></button>
+                  </span>
+                </div>
+              </div>
               
               <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <!-- Kirim Button (hijau) -->
@@ -257,8 +265,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
 import { useAppStore } from '~/stores/app';
-import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon, User } from 'lucide-vue-next';
-import type { TicketStatus } from '~/types';
+import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon, User, X } from 'lucide-vue-next';
+import type { TicketStatus, PendingAttachment } from '~/types';
 import { triggerPrintPDF } from '~/utils/export';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
 
@@ -270,19 +278,20 @@ const isCompleted = computed(() => ticket.value?.status === 'SELESAI');
 const selectedStepIndex = ref(0);
 const activeStepEl = ref<HTMLElement | null>(null);
 const stageNotes = ref('');
-const stageFile = ref<{ file_name: string; file_size: string; stage: string; visibility: string } | null>(null);
+const pendingFiles = ref<PendingAttachment[]>([]);
 
 const handleStageFile = (e: Event) => {
   const target = e.target as HTMLInputElement;
-  if (target.files && target.files[0]) {
-    const file = target.files[0];
-    stageFile.value = {
-      file_name: file.name,
-      file_size: `${(file.size / 1024).toFixed(1)} KB`,
-      stage: stepperStages.value[selectedStepIndex.value]?.stageKey || 'IN_PROGRESS',
-      visibility: 'Public'
-    };
+  if (target.files) {
+    for (const file of Array.from(target.files)) {
+      pendingFiles.value.push({ file });
+    }
   }
+  target.value = '';
+};
+
+const removePendingFile = (index: number) => {
+  pendingFiles.value.splice(index, 1);
 };
 
 const handleSubmitCurrentStage = async (targetStatus?: TicketStatus) => {
@@ -290,19 +299,23 @@ const handleSubmitCurrentStage = async (targetStatus?: TicketStatus) => {
   const currentStage = stepperStages.value[selectedStepIndex.value];
   if (!currentStage) return;
 
-  await store.completeStage(ticket.value.id, currentStage.stageKey, stageNotes.value, stageFile.value || undefined, targetStatus);
+  await store.completeStage(ticket.value.id, currentStage.stageKey, stageNotes.value || undefined, pendingFiles.value.length > 0 ? pendingFiles.value : undefined, targetStatus);
   stageNotes.value = '';
-  stageFile.value = null;
+  pendingFiles.value = [];
 };
 
 const handleSaveNote = async () => {
-  if (!ticket.value || !stageNotes.value.trim()) return;
+  if (!ticket.value) return;
+  const hasNote = stageNotes.value.trim();
+  const hasFiles = pendingFiles.value.length > 0;
+  if (!hasNote && !hasFiles) return;
+
   const currentStage = stepperStages.value[selectedStepIndex.value];
   if (!currentStage) return;
 
-  await store.saveWorklogNote(ticket.value.id, currentStage.stageKey, stageNotes.value, stageFile.value || undefined);
+  await store.saveWorklogNote(ticket.value.id, currentStage.stageKey, stageNotes.value, pendingFiles.value.length > 0 ? pendingFiles.value : undefined);
   stageNotes.value = '';
-  stageFile.value = null;
+  pendingFiles.value = [];
 };
 
 const stepperStages = computed(() => {

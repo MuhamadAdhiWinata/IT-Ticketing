@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { AppUser, Ticket, CategoryItem, SubcategoryItem } from '~/types';
+import type { AppUser, Ticket, CategoryItem, SubcategoryItem, PendingAttachment } from '~/types';
 import { useAuthStore } from '~/stores/auth';
 
 function apiFetch<T>(url: string, opts?: any): Promise<T> {
@@ -262,13 +262,29 @@ export const useAppStore = defineStore('app', {
       }
     },
 
-    async saveWorklogNote(ticketId: string, stageKey: string, notes: string, filePayload?: { file_name: string; file_size: string; stage: string; visibility: string }) {
+    async saveWorklogNote(ticketId: string, stageKey: string, notes: string, pendingFiles?: PendingAttachment[]) {
       if (!this.currentUser) return;
       try {
-        const res = await apiFetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}/worklogs`, {
-          method: 'POST',
-          body: { stageKey, description: notes, attachment: filePayload },
-        });
+        let res: { success: boolean; data: Ticket };
+
+        if (pendingFiles && pendingFiles.length > 0) {
+          const fd = new FormData();
+          fd.append('stageKey', stageKey);
+          fd.append('description', notes);
+          for (const pf of pendingFiles) {
+            fd.append('files', pf.file);
+          }
+          res = await apiFetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}/worklogs`, {
+            method: 'POST',
+            body: fd,
+          });
+        } else {
+          res = await apiFetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}/worklogs`, {
+            method: 'POST',
+            body: { stageKey, description: notes },
+          });
+        }
+
         this.tickets = this.tickets.map(t => t.id === res.data.id ? res.data : t);
         if (this.selectedTicket?.id === res.data.id) {
           this.selectedTicket = res.data;
@@ -278,14 +294,32 @@ export const useAppStore = defineStore('app', {
       }
     },
 
-    async completeStage(ticketId: string, stageKey: string, notes?: string, filePayload?: { file_name: string; file_size: string; stage: string; visibility: string }, targetStatus?: Ticket['status']) {
+    async completeStage(ticketId: string, stageKey: string, notes?: string, pendingFiles?: PendingAttachment[], targetStatus?: Ticket['status'], delegation?: any) {
       if (!this.currentUser) return;
 
       try {
-        const res = await apiFetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}/stages/complete`, {
-          method: 'POST',
-          body: { stageKey, notes, targetStatus, attachment: filePayload },
-        });
+        let res: { success: boolean; data: Ticket };
+
+        if (pendingFiles && pendingFiles.length > 0) {
+          const fd = new FormData();
+          fd.append('stageKey', stageKey);
+          if (notes) fd.append('notes', notes);
+          if (targetStatus) fd.append('targetStatus', targetStatus);
+          if (delegation) fd.append('delegation', JSON.stringify(delegation));
+          for (const pf of pendingFiles) {
+            fd.append('files', pf.file);
+          }
+          res = await apiFetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}/stages/complete`, {
+            method: 'POST',
+            body: fd,
+          });
+        } else {
+          res = await apiFetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}/stages/complete`, {
+            method: 'POST',
+            body: { stageKey, notes, targetStatus, delegation },
+          });
+        }
+
         this.tickets = this.tickets.map(t => t.id === res.data.id ? res.data : t);
         if (this.selectedTicket?.id === res.data.id) {
           this.selectedTicket = res.data;

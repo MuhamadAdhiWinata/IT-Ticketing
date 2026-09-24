@@ -164,17 +164,25 @@
         <div class="border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl p-5 text-center bg-gray-50/50 dark:bg-slate-800/30 relative">
           <input 
             type="file" 
+            multiple
             @change="handleFileDrop"
             class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
           />
-          <div v-if="fileName" class="flex items-center justify-center gap-2 text-sm text-[#026bb1] dark:text-[#52b5f2] font-semibold">
-            <Check class="w-4 h-4" />
-            <span>{{ fileName }}</span>
-            <span class="text-xs text-gray-400 font-normal">({{ fileSize }})</span>
+          <div v-if="pendingFiles.length > 0" class="space-y-2">
+            <div v-for="(pf, i) in pendingFiles" :key="i" class="flex items-center justify-center gap-2 text-sm text-[#026bb1] dark:text-[#52b5f2] font-semibold">
+              <Check class="w-4 h-4 shrink-0" />
+              <span>{{ pf.file.name }}</span>
+              <span class="text-xs text-gray-400 font-normal">({{ (pf.file.size / 1024).toFixed(1) }} KB)</span>
+              <button @click.stop="removePendingFile(i)" class="text-red-400 hover:text-red-600 ml-1">
+                <X class="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <p class="text-[10px] text-gray-400">Klik area ini untuk menambah file lain</p>
           </div>
           <div v-else class="flex flex-col items-center justify-center space-y-1">
             <Upload class="w-6 h-6 text-gray-400" />
             <p class="text-xs text-gray-600 dark:text-gray-300 font-medium">Klik atau seret file ke sini untuk unggah</p>
+            <p class="text-[10px] text-gray-400">Bisa pilih beberapa file sekaligus</p>
           </div>
         </div>
       </div>
@@ -261,7 +269,7 @@ import { ref, computed, watch } from 'vue';
 import { ArrowLeft, Upload, Check, CheckCircle2, Eye, X, Shield } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
 import { useModal } from '~/composables/useModal';
-import type { TicketPriority, Ticket } from '~/types';
+import type { TicketPriority, Ticket, PendingAttachment } from '~/types';
 import AppSelect from '~/components/common/AppSelect.vue';
 import WorkerPickerModal from '~/components/common/WorkerPickerModal.vue';
 
@@ -305,8 +313,7 @@ const subcategory = ref('Printer');
 const location = ref('Lantai 2');
 const priority = ref<TicketPriority>('MEDIUM');
 const description = ref('');
-const fileName = ref('');
-const fileSize = ref('');
+const pendingFiles = ref<PendingAttachment[]>([]);
 const createdTicketSuccess = ref<Ticket | null>(null);
 
 const currentSubcategories = computed(() => {
@@ -339,11 +346,16 @@ watch(serviceView, (newView) => {
 
 const handleFileDrop = (e: Event) => {
   const target = e.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (file) {
-    fileName.value = file.name;
-    fileSize.value = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+  if (target.files) {
+    for (const file of Array.from(target.files)) {
+      pendingFiles.value.push({ file });
+    }
   }
+  target.value = '';
+};
+
+const removePendingFile = (index: number) => {
+  pendingFiles.value.splice(index, 1);
 };
 
 const handleSubmit = async (shouldAssign: boolean) => {
@@ -376,13 +388,28 @@ const createTicket = async (shouldIssue: boolean = false) => {
       description: description.value.trim(),
     };
     const newTicket = await store.addTicket(ticketPayload, shouldIssue, behalfUserId.value || null);
-    if (newTicket && selectedWorkers.value.length > 0) {
-      await $fetch(`/api/tickets/${newTicket.id}/members`, {
-        method: 'POST',
-        body: { userIds: selectedWorkers.value },
-      });
-    }
     if (newTicket) {
+      if (selectedWorkers.value.length > 0) {
+        await $fetch(`/api/tickets/${newTicket.id}/members`, {
+          method: 'POST',
+          body: { userIds: selectedWorkers.value },
+        });
+      }
+      if (pendingFiles.value.length > 0) {
+        const fd = new FormData();
+        fd.append('ticketId', newTicket.id);
+        fd.append('stage', 'REQUEST');
+        fd.append('visibility', 'USER_VISIBLE');
+        for (const pf of pendingFiles.value) {
+          fd.append('files', pf.file);
+        }
+        await $fetch('/api/upload', {
+          method: 'POST',
+          body: fd,
+          credentials: 'include',
+        });
+        await store.refreshTicket(newTicket.id);
+      }
       createdTicketSuccess.value = newTicket;
     } else {
       showError('Gagal Membuat Tiket', 'Terjadi kesalahan saat membuat tiket.');
@@ -412,8 +439,7 @@ const closeSuccessModalAndGoMain = () => {
 const resetForm = () => {
   title.value = '';
   description.value = '';
-  fileName.value = '';
-  fileSize.value = '';
+  pendingFiles.value = [];
   behalfUserId.value = null;
   selectedWorkers.value = [];
 };

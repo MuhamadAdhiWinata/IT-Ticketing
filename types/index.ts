@@ -113,6 +113,11 @@ export interface CategoryItem {
   name: string;
 }
 
+export interface PendingAttachment {
+  file: File;
+  preview?: string;
+}
+
 export interface SubcategoryItem {
   id: string;
   category_id: string;

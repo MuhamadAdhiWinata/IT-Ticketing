@@ -1,55 +1,71 @@
-import formidable from 'formidable';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileStorage } from '~/server/services/storage';
 import { successResponse } from '~/server/utils/response';
 import { getCurrentUserId } from '~/server/utils/user-context';
+import { parseMultipart, cleanupTempFiles, sanitizeFilename } from '~/server/utils/upload';
+import { db } from '~/server/database/client';
+import { attachments } from '~/server/database/schema';
+
+function now(): string {
+  return new Date().toISOString().replace('T', ' ').replace('Z', '').slice(0, 19);
+}
 
 export default defineEventHandler(async (event) => {
   const uploadBase = process.env.UPLOAD_DIR || './server/uploads';
-  const tempDir = path.join(uploadBase, 'temp');
-  await fs.mkdir(tempDir, { recursive: true });
+  const userId = getCurrentUserId(event);
 
-  const form = formidable({
-    uploadDir: tempDir,
-    keepExtensions: true,
-    maxFileSize: 50 * 1024 * 1024,
-  });
+  const { fields, files } = await parseMultipart(event.node.req, uploadBase);
 
-  const [fields, files] = await new Promise<any[]>((resolve, reject) => {
-    form.parse(event.node.req, (err: any, fields: any, files: any) => {
-      if (err) reject(err);
-      else resolve([fields, files]);
-    });
-  });
-
-  const file = Array.isArray(files.file) ? files.file[0] : files.file;
-  if (!file) {
+  if (!files.length) {
     throw createError({ statusCode: 400, statusMessage: 'No file uploaded' });
   }
 
-  const ticketId = Array.isArray(fields.ticketId) ? fields.ticketId[0] : fields.ticketId || 'general';
-  const stage = Array.isArray(fields.stage) ? fields.stage[0] : fields.stage || 'REQUEST';
-  const visibility = Array.isArray(fields.visibility) ? fields.visibility[0] : fields.visibility || 'USER_VISIBLE';
-  const userId = getCurrentUserId(event);
-
-  const ext = path.extname(file.originalFilename || 'file');
-  const fileName = path.basename(file.originalFilename || 'file', ext) + ext;
+  const ticketId = fields.ticketId || 'general';
+  const stage = fields.stage || 'REQUEST';
+  const visibility = fields.visibility || 'USER_VISIBLE';
   const safeId = ticketId.replace(/[^a-zA-Z0-9-_]/g, '_');
-  const filePath = path.join('uploads', safeId, fileName);
 
-  const fileData = await fs.readFile(file.filepath);
-  const result = await fileStorage.upload(
-    { name: fileName, size: file.size, data: fileData },
-    filePath,
-  );
+  const ts = now();
+  const results: any[] = [];
 
-  await fs.rm(file.filepath, { force: true }).catch(() => {});
+  try {
+    for (const file of files) {
+      const ext = path.extname(file.originalFilename || 'file');
+      const fileName = sanitizeFilename(file.originalFilename || `file${ext}`);
+      const filePath = path.join('uploads', safeId, `${Date.now()}_${fileName}`);
 
-  return successResponse({
-    ...result,
-    stage,
-    visibility,
-    uploaded_by: userId,
-  });
+      const fileData = await fs.readFile(file.filepath);
+      const uploaded = await fileStorage.upload(
+        { name: fileName, size: file.size, data: fileData },
+        filePath,
+      );
+
+      const attachId = `ATT-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      await db.insert(attachments).values({
+        id: attachId,
+        ticketId,
+        stage,
+        visibility: visibility as any,
+        fileName,
+        fileSize: `${(file.size / 1024).toFixed(1)} KB`,
+        filePath: uploaded.url,
+        uploadedBy: userId || 'system',
+        uploadedAt: ts,
+      }).execute();
+
+      results.push({
+        id: attachId,
+        file_name: fileName,
+        file_size: `${(file.size / 1024).toFixed(1)} KB`,
+        file_url: uploaded.url,
+        stage,
+        visibility,
+      });
+    }
+  } finally {
+    await cleanupTempFiles(files);
+  }
+
+  return successResponse(results);
 });
