@@ -1,10 +1,10 @@
 // Ticket lifecycle rules
-// Valid transitions based on frontend behavior
+// Workflow: DRAFT → PROCESS → SELESAI
+// ASSIGN is a UI phase, NOT a database status
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   DRAFT: ['PROCESS'],
-  PROCESS: ['DRAFT', 'IN_PROGRESS', 'SELESAI', 'DELEGASI'],
-  IN_PROGRESS: ['SELESAI', 'DELEGASI'],
+  PROCESS: ['DRAFT', 'SELESAI', 'DELEGASI'],
   DELEGASI: ['PROCESS'],
   SELESAI: ['PROCESS'],
 };
@@ -16,7 +16,7 @@ export function isValidTransition(from: string, to: string): boolean {
 export function getTargetStatus(stageKey: string): string {
   const map: Record<string, string> = {
     REQUEST: 'DRAFT',
-    ASSIGN: 'PROCESS',
+    START_WORK: 'PROCESS',
     IN_PROGRESS: 'SELESAI',
     COMPLETION: 'SELESAI',
     DELEGATION: 'DELEGASI',

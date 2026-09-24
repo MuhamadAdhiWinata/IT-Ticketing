@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
       subcategory: body.subcategory || 'General',
       location: body.location || 'Lantai 1',
       priority: body.priority || 'MEDIUM',
-      status: shouldIssue ? 'PROCESS' : 'DRAFT',
+      status: 'DRAFT',
       createdBy: userId,
       createdByName: requestedByName,
       createdByDept: requestedByDept,

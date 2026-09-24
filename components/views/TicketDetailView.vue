@@ -279,63 +279,147 @@
           </div>
 
            <!-- Action Buttons -->
-          <div v-if="stepperStages[selectedStepIndex]?.current && stepperStages[selectedStepIndex]?.stageKey !== 'REQUEST' && store.currentUser?.role !== 'USER_NON_IT'" class="pt-3 border-t border-gray-100 dark:border-slate-800 space-y-3">
-            <div class="space-y-1.5">
-              <label class="block text-[11px] font-bold text-gray-700 dark:text-gray-300">
-                {{
-                  stepperStages[selectedStepIndex]?.stageKey === 'ASSIGN'
-                    ? 'Catatan Penugasan / Ambil Tiket:'
-                    : stepperStages[selectedStepIndex]?.stageKey === 'IN_PROGRESS'
-                    ? 'Catatan Pengerjaan:'
-                    : 'Catatan Eskalasi Delegasi:'
-                }}
-              </label>
-              <textarea
-                v-model="stageNotes"
-                rows="2"
-                placeholder="Tuliskan catatan (opsional)..."
-                class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#026bb1]/50 resize-none"
-              ></textarea>
-            </div>
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <div class="flex-1 space-y-1.5">
-                <input type="file" multiple ref="stageFileInput" @change="handleStageFile" class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-[#026bb1] hover:file:bg-blue-100" />
-                <div v-if="pendingFiles.length > 0" class="flex flex-wrap gap-1.5">
-                  <span v-for="(pf, i) in pendingFiles" :key="i" class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg text-[10px] text-[#026bb1] dark:text-[#52b5f2] font-semibold">
-                    {{ pf.file.name }}
-                    <button @click="removePendingFile(i)" class="text-red-400 hover:text-red-600"><X class="w-3 h-3" /></button>
-                  </span>
+          <div v-if="store.currentUser?.role !== 'USER_NON_IT'" class="pt-3 border-t border-gray-100 dark:border-slate-800 space-y-3">
+            <!-- ASSIGN step context -->
+            <template v-if="activeStep === 'ASSIGN'">
+              <div class="space-y-1.5">
+                <label class="block text-[11px] font-bold text-gray-700 dark:text-gray-300">
+                  Catatan Penugasan:
+                </label>
+                <textarea
+                  v-model="stageNotes"
+                  rows="2"
+                  placeholder="Tuliskan catatan (opsional)..."
+                  class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#026bb1]/50 resize-none"
+                ></textarea>
+              </div>
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div class="flex-1 space-y-1.5">
+                  <input type="file" multiple ref="stageFileInput" @change="handleStageFile" class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-[#026bb1] hover:file:bg-blue-100" />
+                  <div v-if="pendingFiles.length > 0" class="flex flex-wrap gap-1.5">
+                    <span v-for="(pf, i) in pendingFiles" :key="i" class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg text-[10px] text-[#026bb1] dark:text-[#52b5f2] font-semibold">
+                      {{ pf.file.name }}
+                      <button @click="removePendingFile(i)" class="text-red-400 hover:text-red-600"><X class="w-3 h-3" /></button>
+                    </span>
+                  </div>
+                </div>
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <!-- Kirim (always available) -->
+                  <button
+                    @click="handleSaveNote()"
+                    class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Clock class="w-4 h-4" />
+                    <span>Kirim</span>
+                  </button>
+                  <!-- Ambil Tiket (add member, non-members only, not when SELESAI) -->
+                  <button
+                    v-if="!isCurrentUserMember && ticket.status !== 'SELESAI'"
+                    @click="handleAddMember()"
+                    class="w-full px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <UserPlus class="w-4 h-4" />
+                    <span>Ambil Tiket</span>
+                  </button>
+                  <!-- Mulai Proses (DRAFT → PROCESS, only when DRAFT + member) -->
+                  <button
+                    v-if="isCurrentUserMember && ticket.status === 'DRAFT'"
+                    @click="handleStartWork()"
+                    class="w-full px-4 py-2.5 bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Play class="w-4 h-4" />
+                    <span>Mulai Proses</span>
+                  </button>
                 </div>
               </div>
-              
-              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <!-- Kirim Button (hijau) -->
-                <button
-                  @click="handleSaveNote()"
-                  class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
-                >
-                  <Clock class="w-4 h-4" />
-                  <span>Kirim</span>
-                </button>
+            </template>
 
-                <!-- Lanjut Button (biru) -->
-                <button
-                  @click="handleSubmitCurrentStage()"
-                  class="w-full px-4 py-2.5 bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
-                >
-                  <CheckCircle2 class="w-4 h-4" />
-                  <span>
-                    {{
-                      stepperStages[selectedStepIndex]?.stageKey === 'ASSIGN'
-                        ? 'Ambil Tiket'
-                        : stepperStages[selectedStepIndex]?.stageKey === 'IN_PROGRESS'
-                        ? 'Selesai'
-                        : 'Delegasi'
-                    }}
-                  </span>
-                </button>
-              </div>
-            </div>
+            <!-- PROCESS step context -->
+            <template v-else-if="activeStep === 'IN_PROGRESS'">
+              <template v-if="ticket.status === 'PROCESS'">
+                <div class="space-y-1.5">
+                  <label class="block text-[11px] font-bold text-gray-700 dark:text-gray-300">
+                    Catatan Pengerjaan:
+                  </label>
+                  <textarea
+                    v-model="stageNotes"
+                    rows="2"
+                    placeholder="Tuliskan catatan (opsional)..."
+                    class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#026bb1]/50 resize-none"
+                  ></textarea>
+                </div>
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <div class="flex-1 space-y-1.5">
+                    <input type="file" multiple ref="stageFileInput" @change="handleStageFile" class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-[#026bb1] hover:file:bg-blue-100" />
+                    <div v-if="pendingFiles.length > 0" class="flex flex-wrap gap-1.5">
+                      <span v-for="(pf, i) in pendingFiles" :key="i" class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg text-[10px] text-[#026bb1] dark:text-[#52b5f2] font-semibold">
+                        {{ pf.file.name }}
+                        <button @click="removePendingFile(i)" class="text-red-400 hover:text-red-600"><X class="w-3 h-3" /></button>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <!-- Kirim -->
+                    <button
+                      @click="handleSaveNote()"
+                      class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Clock class="w-4 h-4" />
+                      <span>Kirim</span>
+                    </button>
+                    <!-- Selesaikan (PROCESS → SELESAI) -->
+                    <button
+                      @click="handleSubmitCurrentStage()"
+                      class="w-full px-4 py-2.5 bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <CheckCircle2 class="w-4 h-4" />
+                      <span>Selesaikan</span>
+                    </button>
+                  </div>
+                </div>
+              </template>
+              <!-- DRAFT status on PROCESS step: info only -->
+              <template v-else-if="ticket.status === 'DRAFT'">
+                <div class="text-center py-3 text-xs text-gray-400 bg-gray-50/50 dark:bg-slate-800/20 rounded-lg border border-dashed border-gray-200 dark:border-slate-700">
+                  Proses belum dimulai. Klik "Mulai Proses" pada tahap Assign untuk memulai.
+                </div>
+              </template>
+            </template>
+
+            <!-- SELESAI step / COMPLETION step -->
+            <template v-else-if="activeStep === 'COMPLETION'">
+              <template v-if="ticket.status === 'SELESAI'">
+                <div class="space-y-1.5">
+                  <label class="block text-[11px] font-bold text-gray-700 dark:text-gray-300">
+                    Catatan:
+                  </label>
+                  <textarea
+                    v-model="stageNotes"
+                    rows="2"
+                    placeholder="Tuliskan catatan (opsional)..."
+                    class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#026bb1]/50 resize-none"
+                  ></textarea>
+                </div>
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <div class="flex-1 space-y-1.5">
+                    <input type="file" multiple ref="stageFileInput" @change="handleStageFile" class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-[#026bb1] hover:file:bg-blue-100" />
+                    <div v-if="pendingFiles.length > 0" class="flex flex-wrap gap-1.5">
+                      <span v-for="(pf, i) in pendingFiles" :key="i" class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg text-[10px] text-[#026bb1] dark:text-[#52b5f2] font-semibold">
+                        {{ pf.file.name }}
+                        <button @click="removePendingFile(i)" class="text-red-400 hover:text-red-600"><X class="w-3 h-3" /></button>
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    @click="handleSaveNote()"
+                    class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Clock class="w-4 h-4" />
+                    <span>Kirim</span>
+                  </button>
+                </div>
+              </template>
+            </template>
           </div>
         </div>
       </div>
@@ -346,7 +430,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
 import { useAppStore } from '~/stores/app';
-import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon, User, X, Download, Image as ImageIcon, FileText, File } from 'lucide-vue-next';
+import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon, User, X, Download, Image as ImageIcon, FileText, File, UserPlus, Play } from 'lucide-vue-next';
 import type { TicketStatus, PendingAttachment } from '~/types';
 import { triggerPrintPDF } from '~/utils/export';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
@@ -359,9 +443,18 @@ const isCompleted = computed(() => ticket.value?.status === 'SELESAI');
 
 const selectedStepIndex = ref(0);
 const activeStepEl = ref<HTMLElement | null>(null);
+const hasInitializedStep = ref(false);
 const stageNotes = ref('');
 const pendingFiles = ref<PendingAttachment[]>([]);
 const previewImage = ref<{ url: string; name: string } | null>(null);
+
+const activeStep = computed(() => stepperStages.value[selectedStepIndex.value]?.stageKey || 'ASSIGN');
+
+const getDefaultStepIndex = (status: string): number => {
+  if (status === 'PROCESS') return 2;
+  if (status === 'SELESAI' || status === 'DELEGASI') return 3;
+  return 1;
+};
 
 const openPreview = (att: { file_path?: string | null; file_name: string }) => {
   if (att.file_path) {
@@ -396,6 +489,8 @@ const handleSubmitCurrentStage = async (targetStatus?: TicketStatus) => {
   await store.completeStage(ticket.value.id, currentStage.stageKey, stageNotes.value || undefined, pendingFiles.value.length > 0 ? pendingFiles.value : undefined, targetStatus);
   stageNotes.value = '';
   pendingFiles.value = [];
+  const newStatus = (store.selectedTicket?.status as string) || ticket.value.status as string;
+  selectedStepIndex.value = getDefaultStepIndex(newStatus);
 };
 
 const handleSaveNote = async () => {
@@ -412,14 +507,51 @@ const handleSaveNote = async () => {
   pendingFiles.value = [];
 };
 
+const isCurrentUserMember = computed(() => {
+  if (!ticket.value || !store.currentUser) return false;
+  return ticket.value.members?.some(m => m.user_id === store.currentUser?.id) ?? false;
+});
+
+const isTicketActive = computed(() => {
+  if (!ticket.value) return false;
+  const status = ticket.value.status as string;
+  return status === 'DRAFT' || status === 'PROCESS';
+});
+
+const handleAddMember = async () => {
+  if (!ticket.value || !store.currentUser) return;
+  try {
+    await $fetch(`/api/tickets/${ticket.value.id}/members`, {
+      method: 'POST',
+      body: { userIds: [store.currentUser.id] },
+      credentials: 'include',
+    });
+    await store.refreshTicket(ticket.value.id);
+  } catch (e: any) {
+    console.error('Failed to add member:', e);
+  }
+};
+
+const handleStartWork = async () => {
+  if (!ticket.value) return;
+  await store.completeStage(ticket.value.id, 'START_WORK', stageNotes.value || undefined, pendingFiles.value.length > 0 ? pendingFiles.value : undefined);
+  stageNotes.value = '';
+  pendingFiles.value = [];
+  selectedStepIndex.value = 2;
+};
+
 const stepperStages = computed(() => {
   if (!ticket.value) return [];
   const t = ticket.value;
+  const status = t.status as string;
   const atts = t.attachments || [];
-  const hasDelegation = !!t.delegation || (t.status as string) === 'DELEGASI';
+  const hasDelegation = !!t.delegation || status === 'DELEGASI';
+  const hasMembers = (t.members?.length ?? 0) > 0;
 
-  const isAssignCompleted = (t.audit_logs || []).some(log => log.action === 'TAHAP_ASSIGN_SELESAI');
-  const isProcessCompleted = (t.audit_logs || []).some(log => log.action === 'TAHAP_IN_PROGRESS_SELESAI');
+  const isDraft = status === 'DRAFT';
+  const isProcess = status === 'PROCESS';
+  const isSelesai = status === 'SELESAI';
+  const isDelegasi = status === 'DELEGASI';
 
   const stages = [
     {
@@ -434,20 +566,20 @@ const stepperStages = computed(() => {
       attachments: atts.filter(a => a.stage === 'REQUEST'),
     },
     {
-      label: 'Issued & Assigned',
-      desc: 'Masuk antrean & Penugasan IT',
+      label: 'Assigned',
+      desc: 'Penugasan worker',
       stageKey: 'ASSIGN',
-      completed: isAssignCompleted || t.status === 'SELESAI' || t.status === 'DELEGASI',
-      current: !isAssignCompleted && t.status !== 'SELESAI' && t.status !== 'DELEGASI',
-      actorInfo: `Worker: ${t.members?.length > 0 ? t.members.map((m: any) => m.user_name).join(', ') : 'Belum ditugaskan'}`,
+      completed: isProcess || isSelesai || isDelegasi,
+      current: selectedStepIndex.value === 1,
+      actorInfo: `Worker: ${hasMembers ? t.members!.map((m: any) => m.user_name).join(', ') : 'Belum ditugaskan'}`,
       attachments: atts.filter(a => (a.stage as string) === 'ASSIGN'),
     },
     {
       label: 'Process (In Progress)',
       desc: 'Pengerjaan & Worklog IT',
       stageKey: 'IN_PROGRESS',
-      completed: isProcessCompleted || t.status === 'SELESAI' || t.status === 'DELEGASI',
-      current: isAssignCompleted && !isProcessCompleted && t.status !== 'SELESAI' && t.status !== 'DELEGASI',
+      completed: isSelesai || isDelegasi,
+      current: selectedStepIndex.value === 2,
       actorInfo: `Total Worklog: ${t.worklogs?.length || 0} aktivitas tercatat`,
       attachments: atts.filter(a => a.stage === 'IN_PROGRESS'),
     },
@@ -455,8 +587,8 @@ const stepperStages = computed(() => {
       label: 'Selesai Internal',
       desc: 'Penyelesaian tugas IT Internal',
       stageKey: 'COMPLETION',
-      completed: t.status === 'SELESAI' || t.status === 'DELEGASI',
-      current: t.status === 'SELESAI',
+      completed: isSelesai || isDelegasi,
+      current: selectedStepIndex.value === 3,
       actorInfo: t.completed_at ? `Selesai pada: ${new Date(t.completed_at).toLocaleString()}` : 'Belum selesai',
       attachments: atts.filter(a => a.stage === 'COMPLETION'),
     },
@@ -467,8 +599,8 @@ const stepperStages = computed(() => {
       label: 'Delegasi (Eksternal / Vendor)',
       desc: 'Eskalasi lanjutan ke pihak luar',
       stageKey: 'DELEGATION',
-      completed: t.status === 'DELEGASI' && !!t.delegation,
-      current: t.status === 'DELEGASI',
+      completed: isDelegasi && !!t.delegation,
+      current: selectedStepIndex.value === 4,
       actorInfo: t.delegation ? `Delegasi ke: ${t.delegation.vendor_name || t.delegation.technician_name || 'Vendor'}` : 'Ada delegasi tercatat',
       attachments: atts.filter(a => a.stage === 'DELEGATION'),
     });
@@ -477,11 +609,11 @@ const stepperStages = computed(() => {
   return stages;
 });
 
-// Auto-select current step and smooth scroll to it when ticket changes or opens
+// Auto-select step based on ticket status on first load, then let user control
 watch(stepperStages, (stages) => {
-  const currentIndex = stages.findIndex(s => s.current);
-  if (currentIndex !== -1) {
-    selectedStepIndex.value = currentIndex;
+  if (!hasInitializedStep.value && stages.length > 1 && ticket.value) {
+    hasInitializedStep.value = true;
+    selectedStepIndex.value = getDefaultStepIndex(ticket.value.status as string);
     nextTick(() => {
       if (activeStepEl.value) {
         activeStepEl.value.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });

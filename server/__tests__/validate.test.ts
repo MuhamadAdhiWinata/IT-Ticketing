@@ -88,8 +88,8 @@ describe('Validation', () => {
   describe('CompleteStageSchema', () => {
     it('accepts valid stage completion', () => {
       const result = validate(CompleteStageSchema, {
-        stageKey: 'ASSIGN',
-        notes: 'Taking ticket',
+        stageKey: 'START_WORK',
+        notes: 'Starting work',
         targetStatus: 'PROCESS',
       });
       expect(result.success).toBe(true);

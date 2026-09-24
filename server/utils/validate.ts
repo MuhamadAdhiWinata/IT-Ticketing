@@ -37,7 +37,7 @@ export const AssigneeSchema = z.object({
 });
 
 export const CompleteStageSchema = z.object({
-  stageKey: z.enum(['ASSIGN', 'IN_PROGRESS', 'COMPLETION', 'DELEGATION']),
+  stageKey: z.enum(['START_WORK', 'IN_PROGRESS', 'COMPLETION', 'DELEGATION']),
   notes: z.string().optional(),
   targetStatus: z.enum(['DRAFT', 'PROCESS', 'DELEGASI', 'SELESAI']).optional(),
   attachment: z.object({

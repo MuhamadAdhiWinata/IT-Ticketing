@@ -3,7 +3,7 @@ import { isValidTransition, getTargetStatus, EDITABLE_TICKET_FIELDS, WORKFLOW_CO
 
 describe('Ticket Lifecycle', () => {
   describe('isValidTransition', () => {
-    it('allows DRAFT -> PROCESS', () => {
+    it('allows DRAFT -> PROCESS (Mulai Pekerjaan)', () => {
       expect(isValidTransition('DRAFT', 'PROCESS')).toBe(true);
     });
 
@@ -11,24 +11,20 @@ describe('Ticket Lifecycle', () => {
       expect(isValidTransition('DRAFT', 'SELESAI')).toBe(false);
     });
 
-    it('allows PROCESS -> IN_PROGRESS', () => {
-      expect(isValidTransition('PROCESS', 'IN_PROGRESS')).toBe(true);
+    it('allows PROCESS -> SELESAI', () => {
+      expect(isValidTransition('PROCESS', 'SELESAI')).toBe(true);
     });
 
     it('allows PROCESS -> DELEGASI', () => {
       expect(isValidTransition('PROCESS', 'DELEGASI')).toBe(true);
     });
 
-    it('allows PROCESS -> SELESAI (direct completion)', () => {
-      expect(isValidTransition('PROCESS', 'SELESAI')).toBe(true);
+    it('allows PROCESS -> DRAFT (revert)', () => {
+      expect(isValidTransition('PROCESS', 'DRAFT')).toBe(true);
     });
 
-    it('allows IN_PROGRESS -> SELESAI', () => {
-      expect(isValidTransition('IN_PROGRESS', 'SELESAI')).toBe(true);
-    });
-
-    it('allows IN_PROGRESS -> DELEGASI', () => {
-      expect(isValidTransition('IN_PROGRESS', 'DELEGASI')).toBe(true);
+    it('rejects PROCESS -> PROCESS', () => {
+      expect(isValidTransition('PROCESS', 'PROCESS')).toBe(false);
     });
 
     it('allows DELEGASI -> PROCESS', () => {
@@ -42,11 +38,15 @@ describe('Ticket Lifecycle', () => {
     it('rejects SELESAI -> SELESAI', () => {
       expect(isValidTransition('SELESAI', 'SELESAI')).toBe(false);
     });
+
+    it('rejects IN_PROGRESS as source (not a valid status)', () => {
+      expect(isValidTransition('IN_PROGRESS', 'SELESAI')).toBe(false);
+    });
   });
 
   describe('getTargetStatus', () => {
-    it('returns PROCESS for ASSIGN', () => {
-      expect(getTargetStatus('ASSIGN')).toBe('PROCESS');
+    it('returns PROCESS for START_WORK', () => {
+      expect(getTargetStatus('START_WORK')).toBe('PROCESS');
     });
 
     it('returns SELESAI for IN_PROGRESS', () => {
@@ -59,6 +59,10 @@ describe('Ticket Lifecycle', () => {
 
     it('returns DELEGASI for DELEGATION', () => {
       expect(getTargetStatus('DELEGATION')).toBe('DELEGASI');
+    });
+
+    it('returns DRAFT for REQUEST', () => {
+      expect(getTargetStatus('REQUEST')).toBe('DRAFT');
     });
   });
 

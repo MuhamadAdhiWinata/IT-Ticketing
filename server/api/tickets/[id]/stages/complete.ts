@@ -131,13 +131,9 @@ export default defineEventHandler(async (event) => {
   let issuedAt = existing.issuedAt;
   let processStartedAt = existing.processStartedAt;
 
-  if (stageKey === 'ASSIGN') {
-    if (!assignedTo && user?.role !== 'USER_NON_IT') {
-      assignedTo = userId;
-      assignedToName = user?.name || userId;
-    }
-    issuedAt = existing.issuedAt || ts;
+  if (stageKey === 'START_WORK') {
     processStartedAt = existing.processStartedAt || ts;
+    issuedAt = existing.issuedAt || ts;
   } else if (stageKey === 'IN_PROGRESS') {
     completedAt = ts;
   } else if (stageKey === 'COMPLETION') {
