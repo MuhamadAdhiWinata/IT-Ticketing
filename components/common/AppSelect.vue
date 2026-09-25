@@ -1,50 +1,52 @@
 <template>
   <div class="relative" ref="dropdownRef">
-    <label v-if="label" class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{{ label }}</label>
-    
-    <!-- Trigger Button -->
+    <label v-if="label" class="block text-xs font-semibold text-foreground mb-1.5">{{ label }}</label>
+
     <button
       type="button"
       @click="isOpen = !isOpen"
       :class="[
-        'w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#026bb1]/50 transition-all flex items-center justify-between shadow-xs',
-        size === 'sm' ? 'px-3 py-1.5 text-xs font-semibold' : 'px-4 py-3 text-sm font-medium'
+        'w-full rounded-lg border border-input bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all flex items-center justify-between',
+        size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-3 py-2.5 text-xs',
       ]"
+      :aria-haspopup="true"
+      :aria-expanded="isOpen"
     >
-      <span class="truncate">{{ selectedLabel || placeholder || 'Pilih opsi...' }}</span>
-      <ChevronDown :class="['text-gray-500 transition-transform duration-200 shrink-0 ml-1.5', size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4', isOpen ? 'rotate-180' : '']" />
+      <span class="truncate font-medium">{{ selectedLabel || placeholder || 'Pilih opsi...' }}</span>
+      <ChevronDown :class="['text-muted-foreground transition-transform duration-150 shrink-0 ml-1.5', size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4', isOpen ? 'rotate-180' : '']" />
     </button>
 
-    <!-- Dropdown Menu / Popover -->
-    <transition
+    <Transition
       enter-active-class="transition duration-150 ease-out"
-      enter-from-class="transform scale-95 opacity-0"
-      enter-to-class="transform scale-100 opacity-100"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
       leave-active-class="transition duration-100 ease-in"
-      leave-from-class="transform scale-100 opacity-100"
-      leave-to-class="transform scale-95 opacity-0"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
     >
-      <div v-if="isOpen" class="absolute z-50 mt-1.5 w-full min-w-[140px] bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 max-h-60 overflow-y-auto custom-scrollbar p-1">
-        <div v-if="normalizedOptions.length === 0" class="px-3 py-2.5 text-[11px] text-gray-400 dark:text-gray-500 text-center font-medium">
+      <div v-if="isOpen" class="absolute z-dropdown mt-1.5 w-full min-w-[140px] bg-surface rounded-lg shadow-lg border border-border max-h-60 overflow-y-auto custom-scrollbar p-1" role="listbox">
+        <div v-if="normalizedOptions.length === 0" class="px-3 py-2.5 text-[11px] text-muted-foreground text-center font-medium">
           Tidak ada data tersedia
         </div>
-        <div
+        <button
           v-for="option in normalizedOptions"
           :key="option.value"
           @click="selectOption(option.value)"
           :class="[
-            'rounded-lg cursor-pointer transition-colors flex items-center justify-between',
-            size === 'sm' ? 'px-2.5 py-1.5 text-xs font-semibold' : 'px-3.5 py-2.5 text-xs font-medium',
+            'w-full rounded-md cursor-pointer transition-colors flex items-center justify-between text-left',
+            size === 'sm' ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-xs',
             modelValue === option.value
-              ? 'bg-[#026bb1]/10 text-[#026bb1] dark:bg-[#52b5f2]/15 dark:text-[#52b5f2] font-bold'
-              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800'
+              ? 'bg-primary/10 text-primary font-semibold'
+              : 'text-foreground hover:bg-muted font-medium'
           ]"
+          role="option"
+          :aria-selected="modelValue === option.value"
         >
           <span class="truncate">{{ option.label }}</span>
-          <Check v-if="modelValue === option.value" class="w-3.5 h-3.5 text-[#026bb1] dark:text-[#52b5f2] shrink-0 ml-1" />
-        </div>
+          <Check v-if="modelValue === option.value" class="w-3.5 h-3.5 text-primary shrink-0 ml-1" />
+        </button>
       </div>
-    </transition>
+    </Transition>
   </div>
 </template>
 
@@ -74,9 +76,8 @@ const normalizedOptions = computed(() => {
   return props.options.map(option => {
     if (typeof option === 'string') {
       return { value: option, label: option };
-    } else {
-      return option;
     }
+    return option;
   });
 });
 

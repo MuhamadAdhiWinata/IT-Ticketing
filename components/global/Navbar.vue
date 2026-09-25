@@ -1,92 +1,85 @@
 <template>
-  <header class="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 h-16 sticky top-0 z-20 flex items-center justify-between px-4 sm:px-6">
-    <!-- Left: Menu & Sidebar Toggle & Title -->
+  <header class="bg-surface border-b border-border h-16 sticky top-0 z-sticky flex items-center justify-between px-4 sm:px-6">
+    <!-- Left -->
     <div class="flex items-center gap-3">
       <button
         @click="toggleSidebarAction"
-        class="p-2 rounded-xl border border-gray-200 dark:border-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-        title="Buka/Tutup Sidebar"
+        class="p-2 rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        aria-label="Buka/Tutup Sidebar"
       >
         <Menu class="w-5 h-5" />
       </button>
 
-      <h1 class="text-sm font-bold text-gray-800 dark:text-white capitalize">
+      <h1 class="text-sm font-bold text-foreground capitalize">
         {{ store.activeTab.replace('-', ' ') }}
       </h1>
     </div>
 
-    <!-- Actions -->
+    <!-- Right -->
     <div class="flex items-center gap-2">
-      <!-- Refresh Button (visible on all sizes) -->
       <RefreshButton mode="all" />
 
-      <!-- Create Ticket -->
-      <button
-        @click="store.openCreateTicket()"
-        class="px-3 py-1.5 bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all"
-      >
+      <UiButton size="sm" @click="store.openCreateTicket()">
         <PlusCircle class="w-4 h-4" />
         <span class="hidden sm:inline">Buat Tiket</span>
-      </button>
+      </UiButton>
 
-      <!-- Dark Mode Toggle -->
       <button
         @click="store.toggleDarkMode"
-        class="w-8 h-8 rounded-xl border border-gray-200 dark:border-slate-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-        title="Toggle Tema Gelap/Terang"
+        class="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        :aria-label="store.darkMode ? 'Alihkan ke tema terang' : 'Alihkan ke tema gelap'"
       >
-        <Sun v-if="store.darkMode" class="w-4 h-4 text-amber-400" />
-        <Moon v-else class="w-4 h-4 text-slate-600" />
+        <Sun v-if="store.darkMode" class="w-4 h-4 text-warning" />
+        <Moon v-else class="w-4 h-4" />
       </button>
 
-      <!-- Profile Dropdown -->
+      <!-- Profile -->
       <div class="relative" ref="profileDropdownRef">
         <button
           @click="isProfileOpen = !isProfileOpen"
-          class="flex items-center gap-1.5 px-1.5 py-1 rounded-xl border border-gray-200 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+          class="flex items-center gap-1.5 px-1.5 py-1 rounded-lg border border-border hover:bg-muted transition-colors"
+          aria-haspopup="true"
+          :aria-expanded="isProfileOpen"
         >
           <img
             v-if="authStore.user?.avatarUrl"
             :src="authStore.user.avatarUrl"
             :alt="authStore.user.name"
-            class="w-7 h-7 rounded-full object-cover ring-1 ring-[#026bb1]"
+            class="w-7 h-7 rounded-full object-cover ring-2 ring-primary/20"
             referrerpolicy="no-referrer"
           />
-          <div v-else class="w-7 h-7 rounded-full bg-[#026bb1] text-white flex items-center justify-center font-bold text-[10px]">
+          <div v-else class="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-[10px]">
             {{ authStore.user?.name.charAt(0) }}
           </div>
-          <span class="hidden sm:inline text-xs font-bold text-gray-800 dark:text-gray-200 max-w-[80px] truncate">
+          <span class="hidden sm:inline text-xs font-semibold text-foreground max-w-[80px] truncate">
             {{ authStore.user?.name.split(' ')[0] }}
           </span>
-          <ChevronDown class="w-3 h-3 text-gray-400" :class="{ 'rotate-180': isProfileOpen }" />
+          <ChevronDown class="w-3 h-3 text-muted-foreground transition-transform duration-150" :class="{ 'rotate-180': isProfileOpen }" />
         </button>
 
-        <!-- Dropdown Menu -->
-        <transition
+        <Transition
           enter-active-class="transition duration-150 ease-out"
-          enter-from-class="transform scale-95 opacity-0"
-          enter-to-class="transform scale-100 opacity-100"
+          enter-from-class="opacity-0 scale-95"
+          enter-to-class="opacity-100 scale-100"
           leave-active-class="transition duration-100 ease-in"
-          leave-from-class="transform scale-100 opacity-100"
-          leave-to-class="transform scale-95 opacity-0"
+          leave-from-class="opacity-100 scale-100"
+          leave-to-class="opacity-0 scale-95"
         >
-          <div v-if="isProfileOpen" class="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xl py-2 z-50">
-            <!-- User Info -->
-            <div class="px-3 py-2 border-b border-gray-100 dark:border-slate-800">
-              <p class="text-xs font-bold text-gray-900 dark:text-white">{{ authStore.user?.name }}</p>
-              <p class="text-[10px] text-gray-400">{{ authStore.user?.role.replace('_', ' ') }}</p>
+          <div v-if="isProfileOpen" class="absolute right-0 mt-2 w-52 bg-surface rounded-lg border border-border shadow-lg py-1 z-dropdown" role="menu">
+            <div class="px-3 py-2 border-b border-border">
+              <p class="text-xs font-bold text-foreground">{{ authStore.user?.name }}</p>
+              <p class="text-[10px] text-muted-foreground">{{ authStore.user?.role.replace('_', ' ') }}</p>
             </div>
-
-            <!-- Logout -->
             <button
               @click="handleLogout"
-              class="w-full text-left px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center gap-2 transition-colors"
+              class="w-full text-left px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/5 flex items-center gap-2 transition-colors"
+              role="menuitem"
             >
               <LogOut class="w-4 h-4" />
               <span>Keluar</span>
             </button>
           </div>
-        </transition>
+        </Transition>
       </div>
     </div>
   </header>
@@ -124,7 +117,6 @@ const toggleSidebarAction = () => {
   }
 };
 
-// Close dropdown when clicking outside
 const handleClickOutside = (e: MouseEvent) => {
   if (profileDropdownRef.value && !profileDropdownRef.value.contains(e.target as Node)) {
     isProfileOpen.value = false;

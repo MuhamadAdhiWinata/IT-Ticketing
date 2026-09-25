@@ -1,59 +1,57 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-slate-950">
-    <div class="w-full max-w-md">
-      <!-- Logo / Header -->
+  <div class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-sm">
+      <!-- Header -->
       <div class="text-center mb-8">
-        <div class="w-16 h-16 rounded-2xl bg-[#026bb1] flex items-center justify-center mx-auto mb-4 shadow-lg">
-          <Shield class="w-8 h-8 text-white" />
+        <div class="w-14 h-14 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4 shadow-md">
+          <Shield class="w-7 h-7 text-primary-foreground" />
         </div>
-        <h1 class="text-2xl font-extrabold text-gray-900 dark:text-white">IT Ticketing System</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Masuk ke sistem untuk melanjutkan</p>
+        <h1 class="text-xl font-bold text-foreground">IT Ticketing System</h1>
+        <p class="text-xs text-muted-foreground mt-1">Masuk ke sistem untuk melanjutkan</p>
       </div>
 
-      <!-- Login Form -->
-      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 shadow-sm">
+      <!-- Form -->
+      <div class="bg-surface rounded-lg border border-border p-5 shadow-xs">
         <form @submit.prevent="handleLogin">
-          <div class="space-y-4">
-            <!-- Email -->
+          <div class="space-y-3">
             <div>
-              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Email</label>
+              <label for="login-email" class="block text-xs font-semibold text-foreground mb-1.5">Email</label>
               <input
+                id="login-email"
                 v-model="email"
                 type="email"
                 placeholder="email@company.co.id"
                 required
-                class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#026bb1]/50 transition-all font-medium"
+                class="w-full px-3 py-2.5 rounded-lg border border-input bg-surface text-foreground text-xs font-medium placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
               />
             </div>
 
-            <!-- Password -->
             <div>
-              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Password</label>
+              <label for="login-password" class="block text-xs font-semibold text-foreground mb-1.5">Password</label>
               <input
+                id="login-password"
                 v-model="password"
                 type="password"
                 placeholder="Masukkan password"
                 required
-                class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#026bb1]/50 transition-all font-medium"
+                class="w-full px-3 py-2.5 rounded-lg border border-input bg-surface text-foreground text-xs font-medium placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
               />
             </div>
           </div>
 
-          <!-- Error Message -->
-          <div v-if="authStore.error" class="mt-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
-            <p class="text-xs text-red-600 dark:text-red-400 font-medium">{{ authStore.error }}</p>
+          <div v-if="authStore.error" class="mt-3 p-3 rounded-lg bg-destructive/5 border border-destructive/20">
+            <p class="text-xs text-destructive font-medium">{{ authStore.error }}</p>
           </div>
 
-          <!-- Submit Button -->
           <button
             type="submit"
             :disabled="authStore.isLoading"
-            class="w-full mt-6 py-3 rounded-xl bg-[#026bb1] hover:bg-[#025a95] disabled:bg-gray-300 dark:disabled:bg-slate-700 text-white text-sm font-bold transition-colors shadow-md"
+            class="w-full mt-5 py-2.5 rounded-lg bg-primary hover:bg-primary-hover disabled:bg-muted text-primary-foreground text-xs font-bold transition-colors shadow-xs"
           >
             <span v-if="authStore.isLoading" class="flex items-center justify-center gap-2">
               <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
               <span>Memproses...</span>
             </span>
@@ -62,13 +60,13 @@
         </form>
       </div>
 
-      <!-- Demo Credentials -->
-      <div class="mt-6 p-4 rounded-xl bg-blue-50/60 dark:bg-slate-800/60 border border-blue-100 dark:border-slate-700/80">
-        <p class="text-[10px] font-bold text-[#026bb1] dark:text-[#52b5f2] uppercase tracking-wider mb-2">Demo Akun</p>
-        <div class="space-y-1.5 text-[11px] text-gray-600 dark:text-gray-400">
-          <p><strong>Admin:</strong> sysadmin@company.co.id / password123</p>
-          <p><strong>IT Worker:</strong> budi.santoso@it.company.co.id / password123</p>
-          <p><strong>User:</strong> rina.wulandari@company.co.id / password123</p>
+      <!-- Demo -->
+      <div class="mt-4 p-3 rounded-lg bg-primary-muted/50 border border-primary/10">
+        <p class="text-[10px] font-bold text-primary uppercase tracking-wider mb-2">Demo Akun</p>
+        <div class="space-y-1 text-[11px] text-muted-foreground">
+          <p><strong class="text-foreground">Admin:</strong> sysadmin@company.co.id / password123</p>
+          <p><strong class="text-foreground">IT Worker:</strong> budi.santoso@it.company.co.id / password123</p>
+          <p><strong class="text-foreground">User:</strong> rina.wulandari@company.co.id / password123</p>
         </div>
       </div>
     </div>

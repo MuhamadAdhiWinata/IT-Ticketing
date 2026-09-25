@@ -1,27 +1,21 @@
 <template>
-  <div class="space-y-6">
-    <!-- Header Controls -->
-    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200/80 dark:border-slate-800 p-5 shadow-sm space-y-4">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 class="text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
-            IT Helpdesk Dashboard
+  <div class="space-y-5">
+    <!-- Header -->
+    <div class="bg-surface rounded-lg border border-border p-4 shadow-xs space-y-3">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <PageHeader title="IT Helpdesk Dashboard" description="Monitoring & Distribusi Penanganan Tiket IT" />
 
-          </h1>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Monitoring & Distribusi Penanganan Tiket IT</p>
-        </div>
-
-        <!-- View Mode Switcher -->
-        <div class="flex items-center gap-1 bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
+        <!-- View Switcher -->
+        <div class="flex items-center gap-0.5 bg-muted p-0.5 rounded-lg">
           <button
             v-for="mode in viewModes"
             :key="mode.id"
             @click="viewMode = mode.id"
             :class="[
-              'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5',
+              'px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5',
               viewMode === mode.id
-                ? 'bg-white dark:bg-slate-900 shadow-sm text-[#026bb1] dark:text-[#52b5f2]'
-                : 'text-gray-500 hover:text-gray-700',
+                ? 'bg-surface shadow-xs text-primary font-bold'
+                : 'text-muted-foreground hover:text-foreground',
             ]"
           >
             <component :is="mode.icon" class="w-3.5 h-3.5" />
@@ -30,37 +24,24 @@
         </div>
       </div>
 
-      <!-- Filters Row -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-2 border-t border-gray-100 dark:border-slate-800">
-        <div class="relative md:col-span-2">
+      <!-- Filters -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-3 border-t border-border">
+        <div class="relative md:col-span-1">
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Cari Tiket, Pelapor, atau Judul..."
-            class="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#026bb1]/50"
+            class="w-full pl-9 pr-3 py-2 rounded-lg border border-input bg-surface text-xs font-medium text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           />
-          <Search class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search class="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
         </div>
 
-        <div class="min-w-[140px]">
-          <AppSelect
-            v-model="statusFilter"
-            :options="statusOptions"
-            size="sm"
-          />
-        </div>
-
-        <div class="min-w-[140px]">
-          <AppSelect
-            v-model="priorityFilter"
-            :options="priorityOptions"
-            size="sm"
-          />
-        </div>
+        <AppSelect v-model="statusFilter" :options="statusOptions" size="sm" />
+        <AppSelect v-model="priorityFilter" :options="priorityOptions" size="sm" />
       </div>
     </div>
 
-    <!-- View Mode: Kanban Board (Horizontal Scroll Bebas di Mobile, Grid di Desktop) -->
+    <!-- Kanban -->
     <div
       v-if="viewMode === 'kanban'"
       class="flex overflow-x-auto gap-4 pb-4 w-full custom-scrollbar md:grid md:grid-cols-4 md:overflow-visible md:pb-0 items-start"
@@ -72,24 +53,24 @@
         @dragleave="draggedOverCol = null"
         @drop="handleDrop($event, col.id as TicketStatus)"
         :class="[
-          'bg-gray-50/80 dark:bg-slate-900/60 p-3 rounded-2xl border transition-all space-y-3 min-h-[480px]',
-          'w-[85vw] sm:w-[320px] md:w-full shrink-0',
+          'bg-muted/40 p-3 rounded-lg border transition-all space-y-3 min-h-[400px]',
+          'w-[85vw] sm:w-[300px] md:w-full shrink-0',
           draggedOverCol === col.id
-            ? 'border-[#026bb1] ring-2 ring-[#026bb1]/30 bg-blue-50/40 dark:bg-slate-800/80'
-            : 'border-gray-200/60 dark:border-slate-800'
+            ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
+            : 'border-border'
         ]"
       >
         <div class="flex items-center justify-between px-1">
-          <span class="text-xs font-extrabold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-            <span :class="['w-2.5 h-2.5 rounded-full', col.colorBg]" />
+          <span class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <span :class="['w-2 h-2 rounded-full', col.colorClass]" />
             {{ col.title }}
           </span>
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white dark:bg-slate-800 border dark:border-slate-700 text-gray-600 dark:text-gray-300">
+          <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-surface border border-border text-muted-foreground">
             {{ getTicketsByStatus(col.id).length }}
           </span>
         </div>
 
-        <div class="space-y-3">
+        <div class="space-y-2">
           <div
             v-for="t in getTicketsByStatus(col.id)"
             :key="t.id"
@@ -98,33 +79,30 @@
             @dragend="handleDragEnd"
             @click="onSelectTicket(t)"
             :class="[
-              'bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-200/80 dark:border-slate-700/80 shadow-xs hover:shadow-md transition-all cursor-grab active:cursor-grabbing space-y-2.5 group touch-pan-y',
-              draggedTicketId === t.id ? 'opacity-40 border-dashed border-[#026bb1]' : ''
+              'bg-surface p-3 rounded-lg border border-border shadow-xs hover:shadow-sm transition-all cursor-grab active:cursor-grabbing space-y-2 group touch-pan-y',
+              draggedTicketId === t.id ? 'opacity-30 border-dashed border-primary' : ''
             ]"
           >
-            <div class="flex items-center justify-between text-[10px] font-semibold text-gray-400">
-              <span class="font-mono text-[#026bb1] dark:text-[#52b5f2] font-bold">{{ t.id }}</span>
-              <div class="flex items-center gap-1.5">
-                <span :class="['px-1.5 py-0.5 rounded text-[9px] font-bold uppercase font-mono', getTicketPriorityBadgeClass(t.priority)]">{{ getTicketPriorityLabel(t.priority) }}</span>
-              </div>
+            <div class="flex items-center justify-between text-[10px] font-semibold text-muted-foreground">
+              <span class="font-mono text-primary font-bold">{{ t.id }}</span>
+              <UiStatusBadge :priority="t.priority" size="xs" />
             </div>
 
-            <h3 class="text-xs font-bold text-gray-900 dark:text-white group-hover:text-[#026bb1] transition-colors line-clamp-2">
+            <h3 class="text-xs font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">
               {{ t.title }}
             </h3>
 
-            <!-- Quick Status Change Actions for Mobile / Touch Screen -->
-            <div class="pt-2 border-t border-gray-100 dark:border-slate-700/60 flex items-center justify-between text-[11px] text-gray-500">
+            <div class="pt-2 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
               <span class="truncate max-w-[120px]">{{ t.requestedByName }}</span>
               <div class="flex items-center gap-1" @click.stop>
                 <button
                   v-if="!t.assignedTo && t.status !== 'SELESAI'"
                   @click="onTakeTicket(t)"
-                  class="px-2 py-1 bg-blue-50 text-[#026bb1] dark:bg-blue-950/60 dark:text-[#52b5f2] hover:bg-[#026bb1] hover:text-white rounded text-[10px] font-bold transition-colors"
+                  class="px-2 py-1 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground rounded text-[10px] font-bold transition-colors"
                 >
-                  Ambil Tiket
+                  Ambil
                 </button>
-                <div class="min-w-[100px]">
+                <div class="min-w-[90px]">
                   <AppSelect
                     :modelValue="t.status"
                     @update:modelValue="val => onMoveStatus(t.id, val as TicketStatus)"
@@ -136,63 +114,61 @@
             </div>
           </div>
 
-          <div v-if="getTicketsByStatus(col.id).length === 0" class="h-32 border-2 border-dashed border-gray-200 dark:border-slate-800 rounded-xl flex items-center justify-center text-[10px] text-gray-400">
-            Tarik atau geser tiket ke sini
+          <div v-if="getTicketsByStatus(col.id).length === 0" class="h-24 border border-dashed border-border rounded-lg flex items-center justify-center text-[10px] text-muted-foreground">
+            Kosong
           </div>
         </div>
       </div>
     </div>
 
-    <!-- View Mode: Table -->
-    <div v-else-if="viewMode === 'table'" class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 overflow-hidden shadow-sm">
-      <div class="w-full overflow-x-auto md:overflow-x-visible custom-scrollbar">
-        <table class="w-full min-w-[700px] text-left border-collapse">
+    <!-- Table -->
+    <div v-else-if="viewMode === 'table'" class="bg-surface rounded-lg border border-border overflow-hidden shadow-xs">
+      <div class="w-full overflow-x-auto custom-scrollbar">
+        <table class="w-full min-w-[600px] text-left border-collapse">
           <thead>
-            <tr class="bg-gray-50 dark:bg-slate-800/60 border-b border-gray-200 dark:border-slate-800 text-[11px] font-bold uppercase text-gray-500 tracking-wider">
-              <th class="p-3.5">ID & Prioritas</th>
-              <th class="p-3.5">Judul & Kategori</th>
-              <th class="p-3.5">Pelapor</th>
-              <th class="p-3.5">Status & Teknisi</th>
-              <th class="p-3.5 text-right">Aksi</th>
+            <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-muted-foreground tracking-wider">
+              <th class="px-4 py-3">ID & Prioritas</th>
+              <th class="px-4 py-3">Judul & Kategori</th>
+              <th class="px-4 py-3">Pelapor</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="px-4 py-3 text-right">Aksi</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100 dark:divide-slate-800 text-xs">
+          <tbody class="divide-y divide-border text-xs">
             <tr
               v-for="t in filteredTickets"
               :key="t.id"
               @click="onSelectTicket(t)"
-              class="hover:bg-gray-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
+              class="hover:bg-muted/50 transition-colors cursor-pointer"
             >
-              <td class="p-3.5 font-mono font-bold text-[#026bb1] dark:text-[#52b5f2]">
-                {{ t.id }}
-                <div>
-                  <span :class="['px-1.5 py-0.5 rounded text-[9px] font-bold font-sans uppercase inline-block mt-0.5', getTicketPriorityBadgeClass(t.priority)]">{{ getTicketPriorityLabel(t.priority) }}</span>
+              <td class="px-4 py-3">
+                <span class="font-mono font-bold text-primary">{{ t.id }}</span>
+                <div class="mt-0.5">
+                  <UiStatusBadge :priority="t.priority" size="xs" />
                 </div>
               </td>
-              <td class="p-3.5">
-                <div class="font-bold text-gray-900 dark:text-white">{{ t.title }}</div>
-                <div class="text-[10px] text-gray-400">{{ t.category }} • {{ t.subcategory }}</div>
+              <td class="px-4 py-3">
+                <div class="font-bold text-foreground">{{ t.title }}</div>
+                <div class="text-[10px] text-muted-foreground">{{ t.category }} · {{ t.subcategory }}</div>
               </td>
-              <td class="p-3.5">
-                <div class="font-semibold text-gray-800 dark:text-gray-200">{{ t.requestedByName }}</div>
-                <div class="text-[10px] text-gray-400">{{ t.location }}</div>
+              <td class="px-4 py-3">
+                <div class="font-semibold text-foreground">{{ t.requestedByName }}</div>
+                <div class="text-[10px] text-muted-foreground">{{ t.location }}</div>
               </td>
-              <td class="p-3.5">
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-900/60 text-[#026bb1] dark:text-[#52b5f2]">
-                  {{ t.status }}
-                </span>
-                <div class="text-[10px] text-gray-400 mt-0.5">
+              <td class="px-4 py-3">
+                <UiStatusBadge :status="t.status" size="xs" />
+                <div class="text-[10px] text-muted-foreground mt-0.5">
                   <template v-if="t.members && t.members.length > 0">
-                    <span v-for="(m, i) in t.members.slice(0, 3)" :key="m.id">{{ m.user_name }}<span v-if="i < Math.min(t.members.length, 3) - 1">, </span></span>
-                    <span v-if="t.members.length > 3" class="text-gray-300">+{{ t.members.length - 3 }}</span>
+                    <span v-for="(m, i) in t.members.slice(0, 2)" :key="m.id">{{ m.user_name }}<span v-if="i < Math.min(t.members.length, 2) - 1">, </span></span>
+                    <span v-if="t.members.length > 2" class="text-muted-foreground/50">+{{ t.members.length - 2 }}</span>
                   </template>
                   <span v-else>Belum ditugaskan</span>
                 </div>
               </td>
-              <td class="p-3.5 text-right">
-                <button @click.stop="onSelectTicket(t)" class="px-3 py-1 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-semibold hover:bg-gray-200">
+              <td class="px-4 py-3 text-right">
+                <UiButton variant="secondary" size="xs" @click.stop="onSelectTicket(t)">
                   Detail
-                </button>
+                </UiButton>
               </td>
             </tr>
           </tbody>
@@ -204,10 +180,9 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Columns, Table as TableIcon, LayoutGrid, Search } from 'lucide-vue-next';
+import { Columns, Table as TableIcon, Search } from 'lucide-vue-next';
 import type { AppUser, Ticket, TicketStatus } from '~/types';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
-import AppSelect from '~/components/common/AppSelect.vue';
 
 const props = defineProps<{
   tickets: Ticket[];
@@ -224,10 +199,10 @@ const priorityFilter = ref('ALL');
 
 const statusOptions = [
   { value: 'ALL', label: 'Semua Status' },
-  { value: 'DRAFT', label: 'DRAFT' },
-  { value: 'PROCESS', label: 'ON-PROGRESS' },
-  { value: 'SELESAI', label: 'SELESAI INTERNAL' },
-  { value: 'DELEGASI', label: 'DIDELEGASIKAN' },
+  { value: 'DRAFT', label: 'Draft' },
+  { value: 'PROCESS', label: 'Proses' },
+  { value: 'SELESAI', label: 'Selesai' },
+  { value: 'DELEGASI', label: 'Delegasi' },
 ];
 
 const priorityOptions = [
@@ -251,10 +226,10 @@ const viewModes: Array<{ id: 'kanban' | 'table'; label: string; icon: any }> = [
 ];
 
 const kanbanColumns = [
-  { id: 'DRAFT', title: 'Baru / Draft', colorBg: 'bg-gray-400' },
-  { id: 'PROCESS', title: 'On-Progress', colorBg: 'bg-[#026bb1]' },
-  { id: 'SELESAI', title: 'Selesai Internal', colorBg: 'bg-emerald-500' },
-  { id: 'DELEGASI', title: 'Didelegasikan', colorBg: 'bg-amber-500' },
+  { id: 'DRAFT', title: 'Baru / Draft', colorClass: 'bg-muted-foreground' },
+  { id: 'PROCESS', title: 'On-Progress', colorClass: 'bg-primary' },
+  { id: 'SELESAI', title: 'Selesai Internal', colorClass: 'bg-success' },
+  { id: 'DELEGASI', title: 'Didelegasikan', colorClass: 'bg-warning' },
 ];
 
 const filteredTickets = computed(() => {
@@ -263,7 +238,6 @@ const filteredTickets = computed(() => {
     const matchSearch = t.id.toLowerCase().includes(q) || t.title.toLowerCase().includes(q) || t.requestedByName.toLowerCase().includes(q);
     const matchStatus = statusFilter.value === 'ALL' || t.status === statusFilter.value;
     const matchPriority = priorityFilter.value === 'ALL' || t.priority === priorityFilter.value;
-
     return matchSearch && matchStatus && matchPriority;
   });
 });

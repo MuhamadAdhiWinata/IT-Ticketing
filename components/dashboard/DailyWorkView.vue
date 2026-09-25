@@ -1,16 +1,16 @@
 <template>
   <div class="space-y-6">
     <!-- Header Banner -->
-    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="bg-surface rounded-lg border border-border p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div class="space-y-1">
-        <div class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#026bb1] dark:text-[#52b5f2] bg-[#e6f1f8] dark:bg-[#026bb1]/20 px-2.5 py-1 rounded-md border border-[#026bb1]/30">
+        <div class="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/5 px-2.5 py-1 rounded-md border border-primary/15">
           <CalendarDays class="w-3.5 h-3.5" />
           <span>Daily Work Log & Monitoring Aktivitas Kerja</span>
         </div>
-        <h1 class="text-xl font-extrabold text-gray-900 dark:text-white">
+        <h1 class="text-xl font-bold text-foreground">
           Aktivitas Kerja Harian & Rentang Waktu IT
         </h1>
-        <p class="text-xs text-gray-500 dark:text-gray-400">
+        <p class="text-xs text-muted-foreground">
           Rekapitulasi catatan waktu, penugasan tiket, dan histori durasi pekerjaan teknisi berdasarkan rentang tanggal fleksibel.
         </p>
       </div>
@@ -19,7 +19,7 @@
       <div class="flex flex-wrap items-center gap-2.5">
         <button
           @click="isAddModalOpen = true"
-          class="px-3.5 py-2 bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all"
+          class="px-3.5 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all"
         >
           <PlusCircle class="w-4 h-4" />
           <span>Catat Log Kerja</span>
@@ -27,7 +27,7 @@
 
         <button
           @click="handleExportExcel"
-          class="px-3.5 py-2 border border-emerald-600/30 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all"
+          class="px-3.5 py-2 border border-emerald-600/30 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all"
           title="Download Rekap Worklog Excel untuk Rentang Tanggal Ini"
         >
           <FileSpreadsheet class="w-4 h-4" />
@@ -36,7 +36,7 @@
 
         <button
           @click="handlePrintPDF"
-          class="px-3 py-2 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all"
+          class="px-3 py-2 border border-border bg-surface text-foreground hover:bg-muted text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all"
           title="Cetak Laporan Aktivitas Periode Ini"
         >
           <Printer class="w-4 h-4" />
@@ -46,12 +46,12 @@
     </div>
 
     <!-- Date Range Navigation & Filter Controls -->
-    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-4 sm:p-5 shadow-xs space-y-3.5">
+    <div class="bg-surface rounded-lg border border-border p-4 sm:p-5 shadow-xs space-y-3.5">
       <!-- Quick Preset Filter Tabs & Worker Filter -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 dark:border-slate-800 pb-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
         <div class="flex-1">
-          <span class="text-xs font-bold text-gray-500 dark:text-gray-400 mr-1 flex items-center gap-1 mb-2 sm:mb-0">
-            <Filter class="w-3.5 h-3.5 text-[#026bb1]" />
+          <span class="text-xs font-bold text-muted-foreground mr-1 flex items-center gap-1 mb-2 sm:mb-0">
+            <Filter class="w-3.5 h-3.5 text-primary" />
             Periode:
           </span>
           <div class="overflow-x-auto no-scrollbar flex items-center gap-1.5 py-1">
@@ -60,10 +60,10 @@
               :key="preset.id"
               @click="applyPreset(preset.id)"
               :class="[
-                'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border shrink-0',
+                'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border shrink-0',
                 activePreset === preset.id
-                  ? 'bg-[#026bb1] text-white border-[#026bb1] shadow-xs'
-                  : 'bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-gray-100'
+                  ? 'bg-primary text-white border-primary shadow-xs'
+                  : 'bg-muted text-foreground border-border hover:bg-muted'
               ]"
             >
               {{ preset.label }}
@@ -72,8 +72,8 @@
         </div>
 
         <!-- Worker Filter (hanya untuk SYSTEM_ADMIN) -->
-        <div v-if="store.currentUser?.role === 'SYSTEM_ADMIN'" class="w-full sm:w-auto flex items-center justify-end sm:justify-start gap-2 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-slate-800">
-          <span class="text-xs font-bold text-gray-500 shrink-0">Worker:</span>
+        <div v-if="store.currentUser?.role === 'SYSTEM_ADMIN'" class="w-full sm:w-auto flex items-center justify-end sm:justify-start gap-2 pt-3 sm:pt-0 border-t sm:border-t-0 border-border">
+          <span class="text-xs font-bold text-muted-foreground shrink-0">Worker:</span>
           <div class="min-w-[180px]">
             <AppSelect
               v-model="selectedWorkerId"
@@ -90,7 +90,7 @@
           <!-- Step backward button -->
           <button
             @click="shiftRange(-1)"
-            class="p-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-gray-50 text-gray-600 dark:text-gray-300 shrink-0"
+            class="p-2 rounded-lg border border-border bg-surface hover:bg-muted text-muted-foreground shrink-0"
             title="Mundur Satu Periode"
           >
             <ChevronLeft class="w-4 h-4" />
@@ -99,23 +99,23 @@
           <div class="flex-1 grid grid-cols-2 gap-2">
             <!-- Start Date -->
             <div class="flex flex-col">
-              <span class="text-gray-500 font-semibold text-[11px] mb-1">Dari:</span>
+              <span class="text-muted-foreground font-semibold text-[11px] mb-1">Dari:</span>
               <input
                 v-model="startDate"
                 type="date"
                 @change="onDateInputChange"
-                class="w-full px-2 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#026bb1]/40"
+                class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
             </div>
 
             <!-- End Date -->
             <div class="flex flex-col">
-              <span class="text-gray-500 font-semibold text-[11px] mb-1">Sampai:</span>
+              <span class="text-muted-foreground font-semibold text-[11px] mb-1">Sampai:</span>
               <input
                 v-model="endDate"
                 type="date"
                 @change="onDateInputChange"
-                class="w-full px-2 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#026bb1]/40"
+                class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
             </div>
           </div>
@@ -123,77 +123,77 @@
           <!-- Step forward button -->
           <button
             @click="shiftRange(1)"
-            class="p-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-gray-50 text-gray-600 dark:text-gray-300 shrink-0"
+            class="p-2 rounded-lg border border-border bg-surface hover:bg-muted text-muted-foreground shrink-0"
             title="Maju Satu Periode"
           >
             <ChevronRight class="w-4 h-4" />
           </button>
         </div>
 
-        <div class="w-full sm:w-auto text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center justify-center sm:justify-end gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-slate-800">
-          <Calendar class="w-3.5 h-3.5 text-[#026bb1]" />
-          <span>Rentang aktif: <strong class="text-gray-900 dark:text-white font-bold">{{ formattedDateRangeDisplay }}</strong></span>
+        <div class="w-full sm:w-auto text-xs text-muted-foreground font-medium flex items-center justify-center sm:justify-end gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
+          <Calendar class="w-3.5 h-3.5 text-primary" />
+          <span>Rentang aktif: <strong class="text-foreground font-bold">{{ formattedDateRangeDisplay }}</strong></span>
         </div>
       </div>
     </div>
 
     <!-- Daily/Period KPI Metric Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-4 shadow-xs space-y-1">
-        <span class="text-[11px] font-bold text-gray-500 uppercase">Tiket Dikerjakan</span>
+      <div class="bg-surface rounded-lg border border-border p-4 shadow-xs space-y-1">
+        <span class="text-[11px] font-bold text-muted-foreground uppercase">Tiket Dikerjakan</span>
         <div class="flex items-center justify-between">
-          <span class="text-2xl font-extrabold text-gray-900 dark:text-white font-mono">{{ dailyTicketsCount }}</span>
-          <div class="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#026bb1] flex items-center justify-center">
+          <span class="text-2xl font-bold text-foreground font-mono">{{ dailyTicketsCount }}</span>
+          <div class="w-8 h-8 rounded-lg bg-primary/5 text-primary flex items-center justify-center">
             <TicketIcon class="w-4 h-4" />
           </div>
         </div>
-        <p class="text-[10px] text-gray-400">Total tiket unik beraktivitas</p>
+        <p class="text-[10px] text-muted-foreground/50">Total tiket unik beraktivitas</p>
       </div>
 
-      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-4 shadow-xs space-y-1">
-        <span class="text-[11px] font-bold text-emerald-600 uppercase">Tiket Selesai</span>
+      <div class="bg-surface rounded-lg border border-border p-4 shadow-xs space-y-1">
+        <span class="text-[11px] font-bold text-success uppercase">Tiket Selesai</span>
         <div class="flex items-center justify-between">
-          <span class="text-2xl font-extrabold text-emerald-600 font-mono">{{ completedInRangeCount }}</span>
-          <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center">
+          <span class="text-2xl font-bold text-success font-mono">{{ completedInRangeCount }}</span>
+          <div class="w-8 h-8 rounded-lg bg-success/5 text-success flex items-center justify-center">
             <CheckCircle2 class="w-4 h-4" />
           </div>
         </div>
-        <p class="text-[10px] text-gray-400">Diselesaikan pada rentang ini</p>
+        <p class="text-[10px] text-muted-foreground/50">Diselesaikan pada rentang ini</p>
       </div>
 
-      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-4 shadow-xs space-y-1">
-        <span class="text-[11px] font-bold text-[#026bb1] dark:text-[#52b5f2] uppercase">On-Progress</span>
+      <div class="bg-surface rounded-lg border border-border p-4 shadow-xs space-y-1">
+        <span class="text-[11px] font-bold text-primary uppercase">On-Progress</span>
         <div class="flex items-center justify-between">
-          <span class="text-2xl font-extrabold text-[#026bb1] dark:text-[#52b5f2] font-mono">{{ onProgressCount }}</span>
-          <div class="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#026bb1] flex items-center justify-center">
+          <span class="text-2xl font-bold text-primary font-mono">{{ onProgressCount }}</span>
+          <div class="w-8 h-8 rounded-lg bg-primary/5 text-primary flex items-center justify-center">
             <Clock class="w-4 h-4" />
           </div>
         </div>
-        <p class="text-[10px] text-gray-400">Tiket aktif dalam penanganan</p>
+        <p class="text-[10px] text-muted-foreground/50">Tiket aktif dalam penanganan</p>
       </div>
 
-      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-4 shadow-xs space-y-1">
-        <span class="text-[11px] font-bold text-purple-600 uppercase">Total Jam Kerja</span>
+      <div class="bg-surface rounded-lg border border-border p-4 shadow-xs space-y-1">
+        <span class="text-[11px] font-bold text-info uppercase">Total Jam Kerja</span>
         <div class="flex items-center justify-between">
-          <span class="text-2xl font-extrabold text-purple-600 font-mono">{{ totalHoursInRange }} <span class="text-xs font-sans font-normal text-gray-500">Jam</span></span>
-          <div class="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center">
+          <span class="text-2xl font-bold text-info font-mono">{{ totalHoursInRange }} <span class="text-xs font-sans font-normal text-muted-foreground">Jam</span></span>
+          <div class="w-8 h-8 rounded-lg bg-info/5 text-info flex items-center justify-center">
             <Timer class="w-4 h-4" />
           </div>
         </div>
-        <p class="text-[10px] text-gray-400">Akumulasi durasi worklog</p>
+        <p class="text-[10px] text-muted-foreground/50">Akumulasi durasi worklog</p>
       </div>
     </div>
 
     <!-- Timeline of Work Activities for the Selected Date Range -->
-    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs space-y-4">
-      <div class="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-3">
+    <div class="bg-surface rounded-lg border border-border p-5 sm:p-6 shadow-xs space-y-4">
+      <div class="flex items-center justify-between border-b border-border pb-3">
         <div>
-          <h2 class="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">
+          <h2 class="text-sm font-bold text-foreground uppercase tracking-wider">
             Histori Aktivitas: {{ formattedDateRangeDisplay }}
           </h2>
-          <p class="text-[11px] text-gray-500">Urutan kronologis catatan pengerjaan tiket oleh teknisi IT</p>
+          <p class="text-[11px] text-muted-foreground">Urutan kronologis catatan pengerjaan tiket oleh teknisi IT</p>
         </div>
-        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300">
+        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-muted text-foreground">
           {{ rangeWorklogs.length }} Catatan Aktivitas
         </span>
       </div>
@@ -203,32 +203,32 @@
         <div
           v-for="item in rangeWorklogs"
           :key="item.wl.id"
-          class="p-4 rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50/60 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 transition-all space-y-2.5 shadow-xs group"
+          class="p-4 rounded-lg border border-border bg-muted/60 hover:bg-surface transition-all space-y-2.5 shadow-xs group"
         >
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
             <div class="flex flex-wrap items-center gap-2">
               <!-- Date Badge -->
-              <span class="font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 text-[11px] flex items-center gap-1">
-                <Calendar class="w-3 h-3 text-slate-500" />
+              <span class="font-semibold px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border text-[11px] flex items-center gap-1">
+                <Calendar class="w-3 h-3 text-muted-foreground" />
                 {{ formatItemDate(item.wl.date || item.wl.created_at) }}
               </span>
 
-              <span class="font-mono font-bold px-2 py-0.5 rounded bg-blue-50 text-[#026bb1] dark:bg-blue-950/60 dark:text-[#52b5f2] border border-blue-200 dark:border-blue-900">
+              <span class="font-mono font-bold px-2 py-0.5 rounded bg-primary/5 text-primary border border-primary/15">
                 {{ item.ticket.id }}
               </span>
-              <span class="font-bold text-gray-900 dark:text-white">{{ item.ticket.title }}</span>
-              <span class="text-gray-400">•</span>
-              <span class="text-gray-500">{{ item.ticket.category }}</span>
+              <span class="font-bold text-foreground">{{ item.ticket.title }}</span>
+              <span class="text-muted-foreground/50">•</span>
+              <span class="text-muted-foreground">{{ item.ticket.category }}</span>
             </div>
 
             <div class="flex items-center gap-2 text-[11px]">
-              <span class="font-bold px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 flex items-center gap-1">
-                <Clock class="w-3 h-3 text-purple-500" />
+              <span class="font-bold px-2 py-0.5 rounded bg-info/10 text-info flex items-center gap-1">
+                <Clock class="w-3 h-3 text-info" />
                 {{ item.wl.start_at }} - {{ item.wl.finish_at }} ({{ item.wl.duration_minutes }} mnt)
               </span>
               <button
                 @click="store.openTicketDetail(item.ticket.id)"
-                class="text-[#026bb1] dark:text-[#52b5f2] hover:underline font-bold transition-all"
+                class="text-primary hover:underline font-bold transition-all"
               >
                 Lihat Tiket &rarr;
               </button>
@@ -236,24 +236,24 @@
           </div>
 
           <!-- Description and Worker -->
-          <div class="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-gray-200/50 dark:border-slate-700/50">
-            <p class="text-xs text-gray-700 dark:text-gray-300 font-medium whitespace-pre-line leading-relaxed">
+          <div class="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-border/50">
+            <p class="text-xs text-foreground font-medium whitespace-pre-line leading-relaxed">
               {{ item.wl.description }}
             </p>
-            <div class="flex items-center gap-1.5 shrink-0 text-[11px] text-gray-500 dark:text-gray-400">
+            <div class="flex items-center gap-1.5 shrink-0 text-[11px] text-muted-foreground">
               <User class="w-3.5 h-3.5" />
-              <span>Teknisi: <strong class="text-gray-800 dark:text-gray-200">{{ item.wl.worker_name }}</strong></span>
+              <span>Teknisi: <strong class="text-foreground">{{ item.wl.worker_name }}</strong></span>
             </div>
           </div>
         </div>
       </div>
 
-      <div v-else class="text-center py-12 text-xs text-gray-400 space-y-2">
-        <Clock class="w-8 h-8 text-gray-300 mx-auto" />
+      <div v-else class="text-center py-12 text-xs text-muted-foreground/50 space-y-2">
+        <Clock class="w-8 h-8 text-muted-foreground/50 mx-auto" />
         <p>Belum ada catatan log aktivitas pengerjaan pada periode {{ formattedDateRangeDisplay }}.</p>
         <button
           @click="isAddModalOpen = true"
-          class="px-3.5 py-2 bg-[#026bb1] text-white text-xs font-bold rounded-xl hover:bg-[#025a95] transition-all"
+          class="px-3.5 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary-hover transition-all"
         >
           + Catat Log Pekerjaan
         </button>
@@ -264,15 +264,15 @@
     <Teleport to="body">
       <div
         v-if="isAddModalOpen"
-        class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4"
+        class="fixed inset-0 bg-foreground/40 backdrop-blur-sm z-modal flex items-center justify-center p-4"
       >
-        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-6 max-w-lg w-full shadow-2xl space-y-4">
-          <div class="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-3">
-            <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <Clock class="w-5 h-5 text-[#026bb1]" />
+        <div class="bg-surface rounded-lg border border-border p-6 max-w-lg w-full shadow-lg space-y-4">
+          <div class="flex items-center justify-between border-b border-border pb-3">
+            <h3 class="text-base font-bold text-foreground flex items-center gap-2">
+              <Clock class="w-5 h-5 text-primary" />
               <span>Catat Log Pekerjaan IT</span>
             </h3>
-            <button @click="isAddModalOpen = false" class="text-gray-400 hover:text-gray-600 cursor-pointer">
+            <button @click="isAddModalOpen = false" class="text-muted-foreground hover:text-muted-foreground/50 cursor-pointer">
               ✕
             </button>
           </div>
@@ -289,50 +289,50 @@
 
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Tanggal Pengerjaan</label>
+                <label class="block text-xs font-bold text-foreground mb-1">Tanggal Pengerjaan</label>
                 <input
                   v-model="newWlDate"
                   type="date"
                   required
-                  class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
+                  class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs font-medium"
                 />
               </div>
               <div>
-                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Durasi (Menit)</label>
+                <label class="block text-xs font-bold text-foreground mb-1">Durasi (Menit)</label>
                 <input
                   v-model.number="newWlDuration"
                   type="number"
                   min="5"
                   step="5"
                   required
-                  class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
+                  class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs font-medium"
                 />
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Jam Mulai</label>
+                <label class="block text-xs font-bold text-foreground mb-1">Jam Mulai</label>
                 <input
                   v-model="newWlStart"
                   type="time"
                   required
-                  class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
+                  class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs font-medium"
                 />
               </div>
               <div>
-                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Jam Selesai</label>
+                <label class="block text-xs font-bold text-foreground mb-1">Jam Selesai</label>
                 <input
                   v-model="newWlFinish"
                   type="time"
                   required
-                  class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
+                  class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs font-medium"
                 />
               </div>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+              <label class="block text-xs font-bold text-foreground mb-1">
                 Rincian Aktivitas / Troubleshooting <span class="text-red-500">*</span>
               </label>
               <textarea
@@ -340,21 +340,21 @@
                 rows="3"
                 required
                 placeholder="Jelaskan tindakan teknis yang telah dilakukan..."
-                class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#026bb1]/40 resize-none"
+                class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
               ></textarea>
             </div>
 
-            <div class="pt-2 flex items-center justify-end gap-2 border-t border-gray-100 dark:border-slate-800">
+            <div class="pt-2 flex items-center justify-end gap-2 border-t border-border">
               <button
                 type="button"
                 @click="isAddModalOpen = false"
-                class="px-4 py-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl cursor-pointer"
+                class="px-4 py-2 bg-muted text-foreground text-xs font-bold rounded-lg cursor-pointer"
               >
                 Batal
               </button>
               <button
                 type="submit"
-                class="px-5 py-2 bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer"
+                class="px-5 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg shadow-xs cursor-pointer"
               >
                 Simpan Log
               </button>

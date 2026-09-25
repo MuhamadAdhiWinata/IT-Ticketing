@@ -1,16 +1,16 @@
 <template>
   <div class="space-y-6">
     <!-- Header Banner -->
-    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="bg-surface rounded-lg border border-border p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div class="space-y-1">
         <div class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-md border border-emerald-200 dark:border-emerald-800/60">
           <FileSpreadsheet class="w-3.5 h-3.5" />
           <span>Pusat Laporan, Audit & Rekapitulasi Kerja IT</span>
         </div>
-        <h1 class="text-xl font-extrabold text-gray-900 dark:text-white">
+        <h1 class="text-xl font-bold text-foreground">
           Laporan & Ekspor Data IT
         </h1>
-        <p class="text-xs text-gray-500 dark:text-gray-400">
+        <p class="text-xs text-muted-foreground">
           Unduh laporan rekapitulasi penanganan insiden, durasi kerja per teknisi, dan kontribusi tim ke Excel dan PDF.
         </p>
       </div>
@@ -19,7 +19,7 @@
       <div class="flex flex-wrap items-center gap-2.5">
         <button
           @click="handleExportActiveTab"
-          class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+          class="px-3.5 py-2 bg-success hover:bg-success-hover text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
         >
           <Download class="w-4 h-4" />
           <span>Download Excel</span>
@@ -27,7 +27,7 @@
 
         <button
           @click="handlePrintPDF"
-          class="px-3.5 py-2 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
+          class="px-3.5 py-2 border border-input bg-surface text-foreground hover:bg-gray-50 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all cursor-pointer"
         >
           <Printer class="w-4 h-4" />
           <span>Cetak PDF</span>
@@ -36,11 +36,11 @@
     </div>
 
     <!-- Filter Panel -->
-    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
-      <div class="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-3">
+    <div class="bg-surface rounded-lg border border-border p-5 shadow-xs space-y-4">
+      <div class="flex items-center justify-between border-b border-border pb-3">
         <div class="flex items-center gap-2">
-          <Filter class="w-4 h-4 text-[#026bb1]" />
-          <h3 class="text-xs font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">
+          <Filter class="w-4 h-4 text-primary" />
+          <h3 class="text-xs font-bold text-foreground uppercase tracking-wider">
             Parameter Filter Laporan
           </h3>
         </div>
@@ -107,19 +107,19 @@
       <!-- Custom Date Pickers when CUSTOM is chosen -->
       <div v-if="timePreset === 'CUSTOM'" class="grid grid-cols-2 gap-3 pt-2 max-w-md">
         <div>
-          <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1 text-[11px]">Tanggal Mulai</label>
+          <label class="block font-bold text-foreground mb-1 text-[11px]">Tanggal Mulai</label>
           <input
             v-model="customStartDate"
             type="date"
-            class="w-full px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-900 dark:text-white font-bold"
+            class="w-full px-3 py-1.5 rounded-lg border border-input bg-surface text-xs text-foreground font-bold"
           />
         </div>
         <div>
-          <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1 text-[11px]">Tanggal Akhir</label>
+          <label class="block font-bold text-foreground mb-1 text-[11px]">Tanggal Akhir</label>
           <input
             v-model="customEndDate"
             type="date"
-            class="w-full px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-900 dark:text-white font-bold"
+            class="w-full px-3 py-1.5 rounded-lg border border-input bg-surface text-xs text-foreground font-bold"
           />
         </div>
       </div>
@@ -127,42 +127,42 @@
 
     <!-- Filtered Results Summary Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-4 shadow-xs">
-        <span class="text-[10px] font-bold text-gray-400 uppercase">Tiket Tersaring</span>
-        <div class="text-2xl font-extrabold text-gray-900 dark:text-white font-mono mt-1">
+      <div class="bg-surface rounded-lg border border-border p-4 shadow-xs">
+        <span class="text-[10px] font-bold text-muted-foreground uppercase">Tiket Tersaring</span>
+        <div class="text-2xl font-bold text-foreground font-mono mt-1">
           {{ filteredTickets.length }}
         </div>
       </div>
 
-      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-4 shadow-xs">
+      <div class="bg-surface rounded-lg border border-border p-4 shadow-xs">
         <span class="text-[10px] font-bold text-emerald-600 uppercase">Selesai Ditangani</span>
-        <div class="text-2xl font-extrabold text-emerald-600 font-mono mt-1">
+        <div class="text-2xl font-bold text-emerald-600 font-mono mt-1">
           {{ countFilteredStatus('SELESAI') }}
         </div>
       </div>
 
-      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-4 shadow-xs">
-        <span class="text-[10px] font-bold text-[#026bb1] dark:text-[#52b5f2] uppercase">Dalam Proses</span>
-        <div class="text-2xl font-extrabold text-[#026bb1] dark:text-[#52b5f2] font-mono mt-1">
+      <div class="bg-surface rounded-lg border border-border p-4 shadow-xs">
+        <span class="text-[10px] font-bold text-primary uppercase">Dalam Proses</span>
+        <div class="text-2xl font-bold text-primary font-mono mt-1">
           {{ countFilteredStatus('PROCESS') }}
         </div>
       </div>
 
-      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-4 shadow-xs">
-        <span class="text-[10px] font-bold text-purple-600 uppercase">Total Jam Kerja</span>
-        <div class="text-2xl font-extrabold text-purple-600 font-mono mt-1">
+      <div class="bg-surface rounded-lg border border-border p-4 shadow-xs">
+        <span class="text-[10px] font-bold text-info uppercase">Total Jam Kerja</span>
+        <div class="text-2xl font-bold text-info font-mono mt-1">
           {{ totalFilteredHours }} <span class="text-xs font-normal text-gray-500">Jam</span>
         </div>
       </div>
     </div>
 
     <!-- Report Sub-Tabs -->
-    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 overflow-hidden shadow-xs">
-      <div class="flex flex-wrap border-b border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/50 p-2 gap-2">
+    <div class="bg-surface rounded-lg border border-border overflow-hidden shadow-xs">
+      <div class="flex flex-wrap border-b border-border bg-muted p-2 gap-2">
         <button
           @click="activeReportTab = 'TICKETS'"
-          class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
-          :class="activeReportTab === 'TICKETS' ? 'bg-white dark:bg-slate-900 text-[#026bb1] shadow-xs' : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'"
+          class="px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+          :class="activeReportTab === 'TICKETS' ? 'bg-surface text-primary shadow-xs' : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'"
         >
           <TicketIcon class="w-4 h-4" />
           <span>Rekapitulasi Tiket ({{ filteredTickets.length }})</span>
@@ -170,8 +170,8 @@
 
         <button
           @click="activeReportTab = 'WORKLOGS'"
-          class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
-          :class="activeReportTab === 'WORKLOGS' ? 'bg-white dark:bg-slate-900 text-[#026bb1] shadow-xs' : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'"
+          class="px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+          :class="activeReportTab === 'WORKLOGS' ? 'bg-surface text-primary shadow-xs' : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'"
         >
           <Clock class="w-4 h-4" />
           <span>Log Pekerjaan Rinci ({{ filteredWorklogs.length }})</span>
@@ -179,8 +179,8 @@
 
         <button
           @click="activeReportTab = 'WORKERS'"
-          class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
-          :class="activeReportTab === 'WORKERS' ? 'bg-white dark:bg-slate-900 text-[#026bb1] shadow-xs' : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'"
+          class="px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+          :class="activeReportTab === 'WORKERS' ? 'bg-surface text-primary shadow-xs' : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'"
         >
           <Users class="w-4 h-4" />
           <span>Ringkasan Per Teknisi</span>
@@ -192,7 +192,7 @@
         <div class="overflow-x-auto custom-scrollbar">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
-              <tr class="bg-gray-50 dark:bg-slate-800/60 border-b border-gray-200 dark:border-slate-800 text-[11px] font-bold uppercase text-gray-500">
+              <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-gray-500">
                 <th class="p-3">No. Tiket</th>
                 <th class="p-3">Judul Masalah</th>
                 <th class="p-3">Kategori</th>
@@ -204,26 +204,26 @@
                 <th class="p-3 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+            <tbody class="divide-y divide-border">
               <tr
                 v-for="t in filteredTickets"
                 :key="t.id"
-                class="hover:bg-gray-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                class="hover:bg-muted/50 transition-colors"
               >
-                <td class="p-3 font-mono font-bold text-[#026bb1] dark:text-[#52b5f2]">
+                <td class="p-3 font-mono font-bold text-primary">
                   {{ t.id }}
                 </td>
-                <td class="p-3 font-semibold text-gray-900 dark:text-white max-w-xs truncate">
+                <td class="p-3 font-semibold text-foreground max-w-xs truncate">
                   {{ t.title }}
                 </td>
                 <td class="p-3 text-gray-600 dark:text-gray-300">
                   {{ t.category }}
                 </td>
                 <td class="p-3">
-                  <span class="font-medium text-gray-800 dark:text-gray-200 block">{{ t.requestedByName }}</span>
-                  <span class="text-[10px] text-gray-400">{{ t.requestedByDept || t.created_by_dept }}</span>
+                  <span class="font-medium text-foreground block">{{ t.requestedByName }}</span>
+                  <span class="text-[10px] text-muted-foreground">{{ t.requestedByDept || t.created_by_dept }}</span>
                 </td>
-                <td class="p-3 text-[11px] text-gray-700 dark:text-gray-300 font-medium">
+                <td class="p-3 text-[11px] text-foreground font-medium">
                   {{ getTicketContributors(t) }}
                 </td>
                 <td class="p-3">
@@ -235,10 +235,10 @@
                   <span
                     :class="[
                       'px-2 py-0.5 rounded text-[10px] font-bold uppercase',
-                      t.status === 'SELESAI' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' :
-                      t.status === 'PROCESS' ? 'bg-blue-100 text-[#026bb1] dark:bg-blue-950 dark:text-blue-300' :
-                      t.status === 'DELEGASI' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' :
-                      'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-gray-300'
+                      t.status === 'SELESAI' ? 'bg-success/10 text-success' :
+                      t.status === 'PROCESS' ? 'bg-primary/10 text-primary' :
+                      t.status === 'DELEGASI' ? 'bg-warning/10 text-warning' :
+                      'bg-muted text-muted-foreground'
                     ]"
                   >
                     {{ t.status }}
@@ -250,14 +250,14 @@
                 <td class="p-3 text-right">
                   <button
                     @click="store.openTicketDetail(t.id)"
-                    class="text-[#026bb1] dark:text-[#52b5f2] hover:underline font-bold text-xs cursor-pointer"
+                    class="text-primary hover:underline font-bold text-xs cursor-pointer"
                   >
                     Detail
                   </button>
                 </td>
               </tr>
               <tr v-if="filteredTickets.length === 0">
-                <td colspan="9" class="p-8 text-center text-gray-400 text-xs">
+                <td colspan="9" class="p-8 text-center text-muted-foreground text-xs">
                   Tidak ada data tiket sesuai filter parameter ini.
                 </td>
               </tr>
@@ -271,7 +271,7 @@
         <div class="overflow-x-auto custom-scrollbar">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
-              <tr class="bg-gray-50 dark:bg-slate-800/60 border-b border-gray-200 dark:border-slate-800 text-[11px] font-bold uppercase text-gray-500">
+              <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-gray-500">
                 <th class="p-3">Tanggal</th>
                 <th class="p-3">Teknisi</th>
                 <th class="p-3">No. Tiket</th>
@@ -281,36 +281,36 @@
                 <th class="p-3">Deskripsi Aktivitas</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+            <tbody class="divide-y divide-border">
               <tr
                 v-for="item in filteredWorklogs"
                 :key="item.wl.id"
-                class="hover:bg-gray-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                class="hover:bg-muted/50 transition-colors"
               >
-                <td class="p-3 font-mono text-[11px] text-gray-600 dark:text-gray-400">
+                <td class="p-3 font-mono text-[11px] text-gray-600 dark:text-muted-foreground">
                   {{ item.wl.date || (item.wl.created_at ? item.wl.created_at.split('T')[0] : '-') }}
                 </td>
-                <td class="p-3 font-bold text-gray-900 dark:text-white">
+                <td class="p-3 font-bold text-foreground">
                   {{ item.wl.worker_name }}
                 </td>
-                <td class="p-3 font-mono font-bold text-[#026bb1] dark:text-[#52b5f2]">
+                <td class="p-3 font-mono font-bold text-primary">
                   {{ item.ticket.id }}
                 </td>
-                <td class="p-3 font-semibold text-gray-800 dark:text-gray-200 max-w-xs truncate">
+                <td class="p-3 font-semibold text-foreground max-w-xs truncate">
                   {{ item.ticket.title }}
                 </td>
                 <td class="p-3 font-mono text-[11px] text-gray-500">
                   {{ item.wl.start_at }} - {{ item.wl.finish_at }}
                 </td>
-                <td class="p-3 text-center font-mono font-bold text-purple-600">
+                <td class="p-3 text-center font-mono font-bold text-info">
                   {{ item.wl.duration_minutes }} mnt
                 </td>
-                <td class="p-3 text-gray-700 dark:text-gray-300 leading-relaxed max-w-sm">
+                <td class="p-3 text-foreground leading-relaxed max-w-sm">
                   {{ item.wl.description }}
                 </td>
               </tr>
               <tr v-if="filteredWorklogs.length === 0">
-                <td colspan="7" class="p-8 text-center text-gray-400 text-xs">
+                <td colspan="7" class="p-8 text-center text-muted-foreground text-xs">
                   Tidak ada data catatan kerja sesuai filter parameter ini.
                 </td>
               </tr>
@@ -324,7 +324,7 @@
         <div class="overflow-x-auto custom-scrollbar">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
-              <tr class="bg-gray-50 dark:bg-slate-800/60 border-b border-gray-200 dark:border-slate-800 text-[11px] font-bold uppercase text-gray-500">
+              <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-gray-500">
                 <th class="p-3">Nama Teknisi</th>
                 <th class="p-3">Departemen</th>
                 <th class="p-3 text-center">Tiket Dikontribusikan</th>
@@ -334,13 +334,13 @@
                 <th class="p-3 text-center">Rata-rata Durasi / Aktivitas</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+            <tbody class="divide-y divide-border">
               <tr
                 v-for="w in workerRecapData"
                 :key="w.user.id"
-                class="hover:bg-gray-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                class="hover:bg-muted/50 transition-colors"
               >
-                <td class="p-3 font-bold text-gray-900 dark:text-white">
+                <td class="p-3 font-bold text-foreground">
                   {{ w.user.name }}
                 </td>
                 <td class="p-3 text-gray-500">
@@ -352,18 +352,18 @@
                 <td class="p-3 text-center font-mono font-bold text-emerald-600">
                   {{ w.completedCount }}
                 </td>
-                <td class="p-3 text-center font-mono font-bold text-[#026bb1]">
+                <td class="p-3 text-center font-mono font-bold text-primary">
                   {{ w.inProgressCount }}
                 </td>
-                <td class="p-3 text-center font-mono font-bold text-purple-600">
+                <td class="p-3 text-center font-mono font-bold text-info">
                   {{ w.totalHours }} Jam
                 </td>
-                <td class="p-3 text-center font-mono text-gray-600 dark:text-gray-400">
+                <td class="p-3 text-center font-mono text-gray-600 dark:text-muted-foreground">
                   {{ w.avgDuration }} mnt
                 </td>
               </tr>
               <tr v-if="workerRecapData.length === 0">
-                <td colspan="7" class="p-8 text-center text-gray-400 text-xs">
+                <td colspan="7" class="p-8 text-center text-muted-foreground text-xs">
                   Tidak ada data teknisi IT terdaftar.
                 </td>
               </tr>

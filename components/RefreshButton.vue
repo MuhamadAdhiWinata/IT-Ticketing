@@ -2,8 +2,9 @@
   <button
     @click="handleRefresh"
     :disabled="loading"
-    class="w-8 h-8 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all"
+    class="w-8 h-8 rounded-lg border border-border bg-surface text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
     title="Refresh Data"
+    aria-label="Refresh data"
   >
     <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
   </button>

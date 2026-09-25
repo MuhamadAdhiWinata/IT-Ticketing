@@ -1,9 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-gray-100 flex">
-    <!-- Global Sidebar Component -->
+  <div class="min-h-screen bg-background text-foreground flex">
     <Sidebar />
 
-    <!-- Right Side Layout with Navbar & Main Page Content -->
     <div
       :class="[
         'flex-1 flex flex-col min-w-0 transition-all duration-300',

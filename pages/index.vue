@@ -44,7 +44,7 @@
     </template>
   </div>
 
-  <div v-else class="py-12 text-center text-xs font-semibold text-gray-500">
+  <div v-else class="py-12 text-center text-xs font-semibold text-muted-foreground">
     <p v-if="!authStore.isAuthenticated">Mengalihkan ke halaman login...</p>
     <p v-else>Memuat data aplikasi...</p>
   </div>

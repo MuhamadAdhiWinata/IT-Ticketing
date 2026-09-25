@@ -1,71 +1,60 @@
 <template>
-  <Teleport to="body">
-    <div v-if="show" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-xs" @click="$emit('close')" />
-      <div class="relative bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 max-w-md w-full shadow-2xl space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-extrabold text-gray-900 dark:text-white">Pilih Worker IT</h3>
-          <button @click="$emit('close')" class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-            <X class="w-5 h-5" />
-          </button>
+  <UiModal :model-value="show" title="Pilih Worker IT" size="md" @update:model-value="(v) => !v && $emit('close')">
+    <p class="text-[11px] text-muted-foreground mb-3">Pilih satu atau lebih worker yang akan ditugaskan ke tiket ini.</p>
+
+    <input
+      v-model="search"
+      type="text"
+      placeholder="Cari worker..."
+      class="w-full px-3 py-2 rounded-lg border border-input bg-surface text-xs font-medium text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+    />
+
+    <div class="max-h-60 overflow-y-auto space-y-1 custom-scrollbar mt-3">
+      <button
+        v-for="worker in filteredWorkers"
+        :key="worker.id"
+        @click="toggleWorker(worker.id)"
+        :class="[
+          'w-full flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors text-left',
+          selected.includes(worker.id)
+            ? 'bg-primary/5 border border-primary/20'
+            : 'border border-border hover:bg-muted'
+        ]"
+      >
+        <div class="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-[10px] shrink-0">
+          {{ worker.name.charAt(0) }}
         </div>
-
-        <p class="text-[11px] text-gray-500 dark:text-gray-400">Pilih satu atau lebih worker yang akan ditugaskan ke tiket ini.</p>
-
-        <!-- Search -->
-        <input
-          v-model="search"
-          type="text"
-          placeholder="Cari worker..."
-          class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-[#026bb1]/50"
-        />
-
-        <!-- Worker List -->
-        <div class="max-h-60 overflow-y-auto space-y-1 custom-scrollbar">
-          <div
-            v-for="worker in filteredWorkers"
-            :key="worker.id"
-            @click="toggleWorker(worker.id)"
-            class="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all"
-            :class="selected.includes(worker.id)
-              ? 'bg-[#e6f1f8] dark:bg-[#026bb1]/20 border border-[#026bb1]/30'
-              : 'bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700'"
-          >
-            <div class="w-8 h-8 rounded-full bg-[#026bb1] text-white flex items-center justify-center font-bold text-[10px] shrink-0">
-              {{ worker.name.charAt(0) }}
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-xs font-bold text-gray-900 dark:text-white truncate">{{ worker.name }}</p>
-              <p class="text-[10px] text-gray-500 truncate">{{ worker.department }}</p>
-            </div>
-            <div class="w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
-              :class="selected.includes(worker.id)
-                ? 'bg-[#026bb1] border-[#026bb1]'
-                : 'border-gray-300 dark:border-slate-600'">
-              <Check v-if="selected.includes(worker.id)" class="w-3 h-3 text-white" />
-            </div>
-          </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-bold text-foreground truncate">{{ worker.name }}</p>
+          <p class="text-[10px] text-muted-foreground truncate">{{ worker.department }}</p>
         </div>
-
-        <div class="flex gap-2">
-          <button @click="$emit('close')" class="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl transition-colors">
-            Batal
-          </button>
-          <button
-            @click="$emit('confirm', [...selected])"
-            class="flex-1 px-4 py-2.5 bg-[#026bb1] hover:bg-[#025a95] text-white text-xs font-bold rounded-xl shadow-md transition-colors"
-          >
-            Simpan ({{ selected.length }} worker)
-          </button>
+        <div
+          :class="[
+            'w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
+            selected.includes(worker.id) ? 'bg-primary border-primary' : 'border-border-strong'
+          ]"
+        >
+          <Check v-if="selected.includes(worker.id)" class="w-3 h-3 text-primary-foreground" />
         </div>
-      </div>
+      </button>
     </div>
-  </Teleport>
+
+    <template #footer>
+      <div class="flex gap-2">
+        <UiButton variant="secondary" class="flex-1" @click="$emit('close')">
+          Batal
+        </UiButton>
+        <UiButton class="flex-1" @click="$emit('confirm', [...selected])">
+          Simpan ({{ selected.length }} worker)
+        </UiButton>
+      </div>
+    </template>
+  </UiModal>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { X, Check } from 'lucide-vue-next';
+import { Check } from 'lucide-vue-next';
 import type { AppUser } from '~/types';
 
 const props = defineProps<{

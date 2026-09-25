@@ -1,3 +1,7 @@
+/* This file is intentionally minimal.
+   Design tokens and base styles live in app/globals.css.
+   This file ensures Tailwind directives are processed. */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
