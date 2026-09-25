@@ -5,8 +5,10 @@
       <div class="absolute right-0 top-0 translate-x-12 -translate-y-12 w-48 h-48 bg-white/5 rounded-full blur-3xl pointer-events-none" />
       <div class="relative z-10 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white/10 text-[11px] sm:text-xs font-semibold border border-white/15">
-            <img src="../../assets/image/IO.png" alt="logo" class="w-5 h-5 sm:w-6 sm:h-6" />
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/10 text-[11px] sm:text-xs font-semibold border border-white/15">
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white flex items-center justify-center shrink-0">
+              <img src="../../assets/image/IO.png" alt="logo" class="w-5 h-5 sm:w-6 sm:h-6 object-contain" />
+            </div>
             <span class="truncate">Tracking Tiket IT Percetakan Integral Offset</span>
           </div>
           <UiButton

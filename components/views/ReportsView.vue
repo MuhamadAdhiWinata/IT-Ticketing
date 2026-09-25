@@ -3,7 +3,7 @@
     <!-- Header Banner -->
     <div class="bg-surface rounded-lg border border-border p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div class="space-y-1">
-        <div class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-md border border-emerald-200 dark:border-emerald-800/60">
+        <div class="inline-flex items-center gap-1.5 text-xs font-semibold text-success bg-success/5 px-2.5 py-1 rounded-md border border-success/20">
           <FileSpreadsheet class="w-3.5 h-3.5" />
           <span>Pusat Laporan, Audit & Rekapitulasi Kerja IT</span>
         </div>
@@ -183,7 +183,7 @@
           :class="activeReportTab === 'WORKERS' ? 'bg-surface text-primary shadow-xs' : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'"
         >
           <Users class="w-4 h-4" />
-          <span>Ringkasan Per Teknisi</span>
+          <span>Ringkasan Per Worker</span>
         </button>
       </div>
 
@@ -489,7 +489,7 @@ const filteredTickets = computed(() => {
 
     // Time Preset Filter
     if (timePreset.value !== 'ALL') {
-      const ticketDateStr = t.created_at ? t.created_at.split('T')[0] : '';
+      const ticketDateStr = t.created_at ? (t.created_at.split('T')[0] ?? '') : '';
       const todayStr = new Date().toISOString().split('T')[0];
 
       if (timePreset.value === 'TODAY') {

@@ -22,7 +22,7 @@ const props = withDefaults(
 
 const sizeClasses = computed(() => {
   const sizes = {
-    xs: 'px-1.5 py-0.5 text-[10px] rounded',
+    xs: 'px-1.5 py-0.5 text-[10px] rounded uppercase',
     sm: 'px-2 py-0.5 text-[11px] rounded-md',
     md: 'px-2.5 py-1 text-xs rounded-md',
   };

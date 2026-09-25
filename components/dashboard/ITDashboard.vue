@@ -3,7 +3,14 @@
     <!-- Header -->
     <div class="bg-surface rounded-lg border border-border p-4 shadow-xs space-y-3">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <PageHeader title="IT Helpdesk Dashboard" description="Monitoring & Distribusi Penanganan Tiket IT" />
+        <div class="space-y-1">
+          <div class="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded-md border border-primary/15">
+            <LayoutGrid class="w-3.5 h-3.5" />
+            <span>IT Helpdesk Dashboard</span>
+          </div>
+          <h1 class="text-xl font-bold text-foreground">IT Helpdesk Dashboard</h1>
+          <p class="text-xs text-muted-foreground">Monitoring & Distribusi Penanganan Tiket IT</p>
+        </div>
 
         <!-- View Switcher -->
         <div class="flex items-center gap-0.5 bg-muted p-0.5 rounded-lg">
@@ -105,7 +112,7 @@
                 <div class="min-w-[90px]">
                   <AppSelect
                     :modelValue="t.status"
-                    @update:modelValue="val => onMoveStatus(t.id, val as TicketStatus)"
+                    @update:modelValue="(val: string) => onMoveStatus(t.id, val as TicketStatus)"
                     :options="cardStatusOptions"
                     size="sm"
                   />
@@ -180,7 +187,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Columns, Table as TableIcon, Search } from 'lucide-vue-next';
+import { Columns, Table as TableIcon, Search, LayoutGrid } from 'lucide-vue-next';
 import type { AppUser, Ticket, TicketStatus } from '~/types';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
 

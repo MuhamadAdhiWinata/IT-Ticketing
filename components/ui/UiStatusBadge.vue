@@ -26,10 +26,10 @@ const label = computed(() => {
   }
   if (props.priority) {
     const labels: Record<TicketPriority, string> = {
-      LOW: 'Rendah',
-      MEDIUM: 'Sedang',
-      HIGH: 'Tinggi',
-      CRITICAL: 'Kritis',
+      LOW: 'Low',
+      MEDIUM: 'Medium',
+      HIGH: 'High',
+      CRITICAL: 'Critical',
     };
     return labels[props.priority];
   }

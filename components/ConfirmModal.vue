@@ -12,10 +12,10 @@
 
     <template #footer>
       <div class="flex gap-2">
-        <UiButton variant="secondary" class="flex-1" @click="state.onCancel">
+        <UiButton variant="secondary" class="flex-1" @click="state.onCancel?.()">
           Batal
         </UiButton>
-        <UiButton variant="danger" class="flex-1" @click="state.onConfirm">
+        <UiButton variant="danger" class="flex-1" @click="state.onConfirm?.()">
           Hapus
         </UiButton>
       </div>
