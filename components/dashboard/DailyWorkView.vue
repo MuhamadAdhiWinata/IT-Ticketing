@@ -79,6 +79,8 @@
               v-model="selectedWorkerId"
               :options="workerOptions"
               size="sm"
+              searchable
+              search-placeholder="Cari worker..."
             />
           </div>
         </div>
@@ -284,6 +286,8 @@
                 :options="candidateTicketOptions"
                 label="Pilih Tiket yang Dikerjakan *"
                 placeholder="-- Pilih Tiket --"
+                searchable
+                search-placeholder="Cari tiket..."
               />
             </div>
 

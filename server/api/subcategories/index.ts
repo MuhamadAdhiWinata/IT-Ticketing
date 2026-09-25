@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, like } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { subcategories } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
@@ -9,14 +9,30 @@ export default defineEventHandler(async (event) => {
 
   if (method === 'GET') {
     const query = getQuery(event);
+    const conditions: any[] = [];
+
+    if (query.categoryId) {
+      conditions.push(eq(subcategories.categoryId, query.categoryId as string));
+    }
+
+    if (query.search && typeof query.search === 'string' && query.search.trim()) {
+      const term = `%${query.search.trim()}%`;
+      conditions.push(like(subcategories.name, term));
+    }
+
+    const limit = query.limit ? Math.min(Number(query.limit), 100) : 50;
+    const offset = query.offset ? Math.max(Number(query.offset), 0) : 0;
 
     let results;
-    if (query.categoryId) {
+    if (conditions.length > 0) {
+      const { and } = await import('drizzle-orm');
       results = await db.query.subcategories.findMany({
-        where: (s, { eq: e }) => e(s.categoryId, query.categoryId as string),
+        where: (s) => and(...conditions),
+        limit,
+        offset,
       });
     } else {
-      results = await db.query.subcategories.findMany();
+      results = await db.query.subcategories.findMany({ limit, offset });
     }
 
     return successResponse(serializeSubcategories(results));

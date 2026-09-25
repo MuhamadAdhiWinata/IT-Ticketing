@@ -70,6 +70,8 @@
             :options="workerOptions"
             label="Teknisi / Worker"
             size="sm"
+            searchable
+            search-placeholder="Cari teknisi..."
           />
         </div>
 

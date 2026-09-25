@@ -3,10 +3,22 @@
     <div class="w-full max-w-sm">
       <!-- Header -->
       <div class="text-center mb-8">
-        <div class="w-14 h-14 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4 shadow-md">
-          <Shield class="w-7 h-7 text-primary-foreground" />
+        <div class="w-14 h-14 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4 shadow-md overflow-hidden">
+          <img
+            v-if="settings.logoUrl && !logoError"
+            :src="settings.logoUrl"
+            :alt="settings.companyName"
+            class="w-10 h-10 object-contain"
+            @error="logoError = true"
+          />
+          <img
+            v-else
+            src="/images/IO.png"
+            :alt="settings.companyName"
+            class="w-10 h-10 object-contain"
+          />
         </div>
-        <h1 class="text-xl font-bold text-foreground">IT Ticketing System</h1>
+        <h1 class="text-xl font-bold text-foreground">{{ settings.companyName }}</h1>
         <p class="text-xs text-muted-foreground mt-1">Masuk ke sistem untuk melanjutkan</p>
       </div>
 
@@ -75,9 +87,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Shield } from 'lucide-vue-next';
 import { useAuthStore } from '~/stores/auth';
 import { useAppStore } from '~/stores/app';
+import { useCompany } from '~/composables/useCompany';
 
 definePageMeta({
   layout: 'flat',
@@ -85,6 +97,8 @@ definePageMeta({
 
 const authStore = useAuthStore();
 const appStore = useAppStore();
+const { settings } = useCompany();
+const logoError = ref(false);
 
 const email = ref('sysadmin@company.co.id');
 const password = ref('password123');

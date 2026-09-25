@@ -87,6 +87,8 @@
           label="Pilih Pelapor Tiket"
           placeholder="-- Buat untuk diri sendiri --"
           size="sm"
+          searchable
+          search-placeholder="Cari user..."
         />
       </div>
 

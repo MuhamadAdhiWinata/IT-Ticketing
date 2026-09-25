@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-background text-foreground flex">
+  <div class="min-h-screen bg-background text-foreground flex theme-transition">
     <Sidebar />
 
     <div

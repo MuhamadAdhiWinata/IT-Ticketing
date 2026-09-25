@@ -41,17 +41,22 @@
         v-else-if="store.activeTab === 'admin'"
         :allUsers="store.allUsers"
       />
+
+      <SettingsView v-else-if="store.activeTab === 'settings'" />
     </template>
   </div>
 
-  <div v-else class="py-12 text-center text-xs font-semibold text-muted-foreground">
-    <p v-if="!authStore.isAuthenticated">Mengalihkan ke halaman login...</p>
-    <p v-else>Memuat data aplikasi...</p>
+  <!-- Loading: tampil sebelum initApp selesai -->
+  <div v-else class="fixed inset-0 bg-white flex items-center justify-center">
+    <div class="flex flex-col items-center gap-4">
+      <div class="w-12 h-12 rounded-lg bg-gray-100 animate-pulse" />
+      <p class="text-xs text-gray-500">Memuat data aplikasi...</p>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch } from 'vue';
+import { onMounted, onUnmounted } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { useAuthStore } from '~/stores/auth';
 import TrackingView from '~/components/views/TrackingView.vue';
@@ -62,11 +67,13 @@ import ReportsView from '~/components/views/ReportsView.vue';
 import AdminMasterView from '~/components/views/AdminMasterView.vue';
 import CreateTicketView from '~/components/views/CreateTicketView.vue';
 import TicketDetailView from '~/components/views/TicketDetailView.vue';
+import SettingsView from '~/components/views/SettingsView.vue';
 
 const store = useAppStore();
 const authStore = useAuthStore();
 
-// Check authentication on mount
+// Company settings sudah di-load di app.vue SEBELUM page ini render
+// Hanya perlu check auth + init app data
 onMounted(async () => {
   await authStore.restoreSession();
 
@@ -76,6 +83,12 @@ onMounted(async () => {
   }
 
   await store.initApp();
+
+  // Deep-link: if URL has ticketId, fetch ticket detail from API
+  if (store.activeView === 'ticket-detail' && store.selectedTicketId && !store.selectedTicket) {
+    await store.openTicketDetail(store.selectedTicketId);
+  }
+
   window.addEventListener('popstate', handlePopState);
 });
 
@@ -83,13 +96,15 @@ onUnmounted(() => {
   window.removeEventListener('popstate', handlePopState);
 });
 
-const handlePopState = (event: PopStateEvent) => {
+const handlePopState = async (event: PopStateEvent) => {
   if (event.state) {
     if (event.state.view) store.activeView = event.state.view;
     if (event.state.tab) store.activeTab = event.state.tab;
     if (event.state.ticketId) {
       store.selectedTicketId = event.state.ticketId;
-      store.selectedTicket = store.tickets.find(t => t.id === event.state.ticketId) || null;
+      if (!store.selectedTicket || store.selectedTicket.id !== event.state.ticketId) {
+        await store.openTicketDetail(event.state.ticketId);
+      }
     }
   } else {
     store.activeView = 'main';

@@ -53,7 +53,12 @@ export const useAppStore = defineStore('app', {
       if (ticketsRes) this.tickets = ticketsRes.data;
       if (catsRes) this.categories = catsRes.data;
       if (subcatsRes) this.subcategories = subcatsRes.data;
-      if (prefsRes) this.darkMode = prefsRes.data.darkMode;
+      if (prefsRes) {
+        this.darkMode = prefsRes.data.darkMode;
+        if (typeof document !== 'undefined') {
+          document.documentElement.classList.toggle('dark', this.darkMode);
+        }
+      }
 
       this.loadStateFromUrl();
       this.isLoaded = true;
@@ -90,6 +95,9 @@ export const useAppStore = defineStore('app', {
     async toggleDarkMode() {
       this.darkMode = !this.darkMode;
       document.documentElement.classList.toggle('dark', this.darkMode);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('darkMode', this.darkMode ? '1' : '0');
+      }
       try {
         await apiFetch('/api/user/preferences', {
           method: 'PUT',

@@ -110,11 +110,13 @@ html.dark {
 html {
   font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;
+  transition: background-color 180ms ease, color 180ms ease;
 }
 
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
+  transition: background-color 180ms ease, color 180ms ease;
 }
 
 /* ============================================
@@ -176,4 +178,9 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Theme transition — applies to elements with this class during dark/light switch */
+.theme-transition {
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }

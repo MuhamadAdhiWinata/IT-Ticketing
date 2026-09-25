@@ -7,9 +7,9 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/10 text-[11px] sm:text-xs font-semibold border border-white/15">
             <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white flex items-center justify-center shrink-0">
-              <img src="../../assets/image/IO.png" alt="logo" class="w-5 h-5 sm:w-6 sm:h-6 object-contain" />
+              <img :src="settings.logoUrl || '/images/IO.png'" alt="Logo" class="w-5 h-5 sm:w-6 sm:h-6 object-contain" />
             </div>
-            <span class="truncate">Tracking Tiket IT Percetakan Integral Offset</span>
+            <span class="truncate">Tracking Tiket IT {{ settings.companyName }}</span>
           </div>
           <UiButton
             v-if="onCreateTicketClick"
@@ -133,6 +133,9 @@ import {
   PlusCircle, AlertTriangle, Shield
 } from 'lucide-vue-next';
 import type { AppUser, Ticket } from '~/types';
+import { useCompany } from '~/composables/useCompany';
+
+const { settings } = useCompany();
 
 const props = defineProps<{
   tickets: Ticket[];

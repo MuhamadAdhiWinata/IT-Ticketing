@@ -196,3 +196,25 @@ export const userPreferences = mysqlTable('user_preferences', {
 export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
   user: one(users, { fields: [userPreferences.userId], references: [users.id] }),
 }));
+
+// ── Company Settings (profile + theme) ──
+export const companySettings = mysqlTable('company_settings', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  companyName: varchar('company_name', { length: 255 }).notNull().default('Percetakan Integral Offset'),
+  logoUrl: text('logo_url'),
+
+  // Theme — brand colors
+  primaryColor: varchar('primary_color', { length: 7 }).default('#026bb1'),
+  primaryHoverColor: varchar('primary_hover_color', { length: 7 }).default('#025790'),
+  primaryActiveColor: varchar('primary_active_color', { length: 7 }).default('#014674'),
+  primaryMutedColor: varchar('primary_muted_color', { length: 7 }).default('#e6f1f8'),
+  primaryForegroundColor: varchar('primary_foreground_color', { length: 7 }).default('#ffffff'),
+  secondaryColor: varchar('secondary_color', { length: 7 }).default('#475569'),
+  secondaryHoverColor: varchar('secondary_hover_color', { length: 7 }).default('#334155'),
+  secondaryForegroundColor: varchar('secondary_foreground_color', { length: 7 }).default('#ffffff'),
+  accentColor: varchar('accent_color', { length: 7 }).default('#0ea5e9'),
+  accentForegroundColor: varchar('accent_foreground_color', { length: 7 }).default('#ffffff'),
+
+  createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' }).notNull(),
+});
