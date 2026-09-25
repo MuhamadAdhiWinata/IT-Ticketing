@@ -3,20 +3,8 @@
     <div class="w-full max-w-sm">
       <!-- Header -->
       <div class="text-center mb-8">
-        <div class="w-14 h-14 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4 shadow-md overflow-hidden">
-          <img
-            v-if="settings.logoUrl && !logoError"
-            :src="settings.logoUrl"
-            :alt="settings.companyName"
-            class="w-10 h-10 object-contain"
-            @error="logoError = true"
-          />
-          <img
-            v-else
-            src="/images/IO.png"
-            :alt="settings.companyName"
-            class="w-10 h-10 object-contain"
-          />
+        <div class="w-14 h-14 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4 shadow-md">
+          <Shield class="w-7 h-7 text-primary-foreground" />
         </div>
         <h1 class="text-xl font-bold text-foreground">{{ settings.companyName }}</h1>
         <p class="text-xs text-muted-foreground mt-1">Masuk ke sistem untuk melanjutkan</p>

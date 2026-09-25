@@ -18,8 +18,12 @@
       <!-- Brand -->
       <div class="h-16 px-4 flex items-center justify-between border-b border-border shrink-0">
         <div class="flex items-center gap-3 overflow-hidden">
-          <img v-if="loaded" :src="settings.logoUrl || '/images/IO.png'" alt="Logo" class="w-8 h-8 object-contain shrink-0" />
-          <div v-else class="w-8 h-8 rounded bg-gray-200 animate-pulse shrink-0" />
+          <div v-if="loaded && settings.logoUrl && !logoError" class="w-8 h-8 shrink-0">
+            <img :src="settings.logoUrl" :alt="settings.companyName" class="w-8 h-8 object-contain" @error="logoError = true" />
+          </div>
+          <div v-else class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+            <span class="text-primary-foreground font-bold text-xs">{{ settings.companyName.charAt(0) }}</span>
+          </div>
           <div v-if="!store.isSidebarCollapsed || store.isMobileSidebarOpen" class="min-w-0">
             <span class="font-bold text-sm text-foreground block truncate">
               {{ loaded ? settings.companyName : '' }}
@@ -93,13 +97,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { Search, Kanban, Briefcase, CalendarDays, FileSpreadsheet, Settings, SlidersHorizontal, X } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
 import { useCompany } from '~/composables/useCompany';
 
 const store = useAppStore();
 const { settings, loaded } = useCompany();
+const logoError = ref(false);
 
 const allNavItems = [
   { id: 'tracking', label: 'Tracking', icon: Search, group: 'workspace', roles: ['USER_NON_IT', 'IT_WORKER', 'SYSTEM_ADMIN'] },

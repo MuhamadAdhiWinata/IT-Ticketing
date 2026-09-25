@@ -1,11 +1,11 @@
 <template>
   <div>
-    <!-- Splash overlay: di atas semua, hilang setelah company settings loaded -->
-    <AppLoading v-if="!companyReady" />
+    <!-- Splash: tampil saat app init -->
+    <AppLoading v-if="!ready" />
 
-    <!-- Router: selalu render, tidak pernah conditionally -->
+    <!-- Router: selalu render dengan transisi halus -->
     <NuxtLayout>
-      <NuxtPage />
+      <NuxtPage :transition="{ name: 'page', mode: 'out-in' }" />
     </NuxtLayout>
     <ErrorModal />
     <ConfirmModal />
@@ -16,11 +16,11 @@
 import { ref, onMounted } from 'vue';
 import { useCompany } from '~/composables/useCompany';
 
-const companyReady = ref(false);
+const ready = ref(false);
 const { fetchSettings } = useCompany();
 
 onMounted(async () => {
   await fetchSettings();
-  companyReady.value = true;
+  ready.value = true;
 });
 </script>
