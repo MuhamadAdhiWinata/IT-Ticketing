@@ -16,7 +16,7 @@
           Batal
         </UiButton>
         <UiButton variant="danger" class="flex-1" @click="state.onConfirm?.()">
-          Hapus
+          {{ state.confirmText }}
         </UiButton>
       </div>
     </template>

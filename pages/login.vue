@@ -78,6 +78,7 @@ import { ref } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 import { useAppStore } from '~/stores/app';
 import { useCompany } from '~/composables/useCompany';
+import { Shield } from 'lucide-vue-next';
 
 definePageMeta({
   layout: 'flat',

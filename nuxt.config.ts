@@ -5,11 +5,8 @@ import { resolve } from 'path';
 export default defineNuxtConfig({
   srcDir: '.',
   compatibilityDate: '2026-09-15',
-  devtools: { enabled: process.env.NODE_ENV !== 'production' },
+  devtools: { enabled: false },
   modules: ["@nuxtjs/tailwindcss", "@pinia/nuxt"],
-  $fetch: {
-    credentials: 'include'
-  },
   alias: {
     '~': resolve(__dirname, '.'),
     '@': resolve(__dirname, '.'),

@@ -24,15 +24,6 @@
         <span class="hidden sm:inline">Buat Tiket</span>
       </UiButton>
 
-      <button
-        @click="store.toggleDarkMode"
-        class="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-        :aria-label="store.darkMode ? 'Alihkan ke tema terang' : 'Alihkan ke tema gelap'"
-      >
-        <Sun v-if="store.darkMode" class="w-4 h-4 text-warning" />
-        <Moon v-else class="w-4 h-4" />
-      </button>
-
       <!-- Profile -->
       <div class="relative" ref="profileDropdownRef">
         <button
@@ -71,6 +62,15 @@
               <p class="text-[10px] text-muted-foreground">{{ authStore.user?.role.replace('_', ' ') }}</p>
             </div>
             <button
+              @click="store.toggleDarkMode"
+              class="w-full text-left px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted flex items-center gap-2 transition-colors"
+              role="menuitem"
+            >
+              <Sun v-if="store.darkMode" class="w-4 h-4 text-warning" />
+              <Moon v-else class="w-4 h-4" />
+              <span>{{ store.darkMode ? 'Mode Terang' : 'Mode Gelap' }}</span>
+            </button>
+            <button
               @click="handleLogout"
               class="w-full text-left px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/5 flex items-center gap-2 transition-colors"
               role="menuitem"
@@ -101,7 +101,7 @@ const profileDropdownRef = ref<HTMLElement | null>(null);
 
 const handleLogout = async () => {
   isProfileOpen.value = false;
-  const ok = await confirm('Keluar', 'Yakin ingin keluar dari sistem?');
+  const ok = await confirm('Keluar', 'Yakin ingin keluar dari sistem?', 'Keluar');
   if (ok) {
     await authStore.logout();
     store.isLoaded = false;

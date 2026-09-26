@@ -45,14 +45,6 @@
       <SettingsView v-else-if="store.activeTab === 'settings'" />
     </template>
   </div>
-
-  <!-- Loading: tampil sebelum initApp selesai -->
-  <div v-else class="fixed inset-0 bg-white flex items-center justify-center">
-    <div class="flex flex-col items-center gap-4">
-      <div class="w-12 h-12 rounded-lg bg-gray-100 animate-pulse" />
-      <p class="text-xs text-gray-500">Memuat data aplikasi...</p>
-    </div>
-  </div>
 </template>
 
 <script setup lang="ts">
