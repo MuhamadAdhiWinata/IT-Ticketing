@@ -80,6 +80,25 @@
   --z-sticky: 20;
   --z-modal-backdrop: 9990;
   --z-modal: 9999;
+
+  /* --- Login Page Scoped --- */
+  --login-visual-bg: #e6f1f8;
+  --login-card-bg: rgba(255, 255, 255, 0.88);
+  --login-card-border: rgba(226, 232, 240, 0.7);
+  --login-card-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --login-network-stroke-opacity: 0.12;
+  --login-network-fill-opacity: 0.04;
+  --login-network-core-opacity: 0.18;
+  --login-network-line-opacity: 0.08;
+  --login-server-stroke-opacity: 0.12;
+  --login-server-led-opacity: 0.4;
+  --login-curve-surface-opacity: 0.95;
+  --login-curve-mid-opacity: 0.6;
+  --login-curve-front-opacity: 0.35;
+}
+
+.login-floating-card {
+  box-shadow: var(--login-card-shadow);
 }
 
 /* ============================================
@@ -101,6 +120,21 @@ html.dark {
   --color-success-muted: #052e16;
   --color-warning-muted: #451a03;
   --color-info-muted: #0c4a6e;
+
+  /* --- Login Page Scoped (Dark) --- */
+  --login-visual-bg: #0c1929;
+  --login-card-bg: rgba(30, 41, 59, 0.92);
+  --login-card-border: rgba(51, 65, 85, 0.6);
+  --login-card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --login-network-stroke-opacity: 0.22;
+  --login-network-fill-opacity: 0.08;
+  --login-network-core-opacity: 0.35;
+  --login-network-line-opacity: 0.15;
+  --login-server-stroke-opacity: 0.2;
+  --login-server-led-opacity: 0.6;
+  --login-curve-surface-opacity: 0.85;
+  --login-curve-mid-opacity: 0.45;
+  --login-curve-front-opacity: 0.2;
 }
 
 /* ============================================
@@ -205,4 +239,35 @@ body {
   .page-leave-active {
     transition: none;
   }
+}
+
+/* ============================================
+   LOGIN PAGE ANIMATIONS
+   ============================================ */
+
+@keyframes login-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes login-fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes login-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.login-anim-float {
+  animation: login-float 5s ease-in-out infinite;
+}
+
+.login-anim-enter {
+  animation: login-fade-in-up 500ms ease-out both;
+}
+
+.login-anim-fade {
+  animation: login-fade-in 600ms ease-out both;
 }

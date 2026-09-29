@@ -8,19 +8,14 @@ export default defineNuxtPlugin(() => {
   } else if (stored === '0') {
     document.documentElement.classList.remove('dark');
   } else {
-    // First visit: respect system preference
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.classList.toggle('dark', prefersDark);
+    // Default to light mode when no saved preference exists
+    document.documentElement.classList.remove('dark');
   }
 
   // Sync dark mode class with Pinia store when it's ready
   const syncDarkMode = () => {
-    const stored = localStorage.getItem('darkMode');
-    const hasDark = document.documentElement.classList.contains('dark');
-    if (stored === null && !hasDark) {
-      // First visit — persist system preference
-      localStorage.setItem('darkMode', hasDark ? '1' : '0');
-    }
+    // Do not persist on first visit — let appStore.initApp() fetch
+    // the server-stored preference after login and persist then.
   };
   syncDarkMode();
 });
