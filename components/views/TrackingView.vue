@@ -120,11 +120,21 @@
       </div>
     </div>
 
+    <!-- Incoming Log (shown when no ticket active) -->
+    <TicketIncomingLog v-if="!activeTicket" @selectTicket="handleIncomingSelect" />
+
     <!-- Found Ticket (direct navigation or selected from autocomplete) -->
     <div v-if="activeTicket" class="bg-surface rounded-lg border border-border shadow-xs overflow-hidden space-y-4 p-4 sm:p-5">
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border">
         <div class="min-w-0 space-y-1.5">
+          <button
+            @click="backToTracking"
+            class="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-semibold mb-1"
+          >
+            <ArrowLeft class="w-3.5 h-3.5" />
+            Kembali ke Tracking
+          </button>
           <div class="flex flex-wrap items-center gap-2">
             <span class="text-xs font-mono font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-md border border-primary/15">
               {{ activeTicket.id }}
@@ -194,11 +204,12 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import {
   Search, ExternalLink, MapPin, User,
-  PlusCircle, AlertTriangle, Shield, X, Loader2
+  PlusCircle, AlertTriangle, Shield, X, Loader2, ArrowLeft
 } from 'lucide-vue-next';
 import type { AppUser, Ticket } from '~/types';
 import { useCompany } from '~/composables/useCompany';
 import { debounce } from '~/utils/debounce';
+import TicketIncomingLog from '~/components/common/TicketIncomingLog.vue';
 
 const { settings } = useCompany();
 
@@ -325,6 +336,14 @@ const clearSearch = () => {
   suggestions.value = [];
   highlightedIndex.value = -1;
   directSearchFailed.value = false;
+};
+
+const backToTracking = () => {
+  clearSearch();
+};
+
+const handleIncomingSelect = (ticketId: string) => {
+  searchQuery.value = ticketId;
 };
 
 const handleClickOutside = (e: MouseEvent) => {
