@@ -81,7 +81,7 @@
                     <button
                       v-for="(s, idx) in suggestions"
                       :key="s.id"
-                      :ref="(el) => { if (el) suggestionRefs[idx] = el as HTMLElement }"
+                      :ref="(el: any) => { if (el) suggestionRefs[idx] = el as HTMLElement }"
                       @click="selectSuggestion(s)"
                       @mouseenter="highlightedIndex = idx"
                       :class="[
