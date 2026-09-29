@@ -16,6 +16,7 @@ export const CreateTicketSchema = z.object({
   behalfUserId: z.string().nullable().optional(),
   requestedByName: z.string().optional(),
   requestedByDept: z.string().optional(),
+  attachmentCount: z.number().optional(),
 });
 
 export const UpdateTicketSchema = z.object({

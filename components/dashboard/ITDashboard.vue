@@ -12,22 +12,41 @@
           <p class="text-xs text-muted-foreground">Monitoring & Distribusi Penanganan Tiket IT</p>
         </div>
 
-        <!-- View Switcher -->
-        <div class="flex items-center gap-0.5 bg-muted p-0.5 rounded-lg">
+        <div class="flex items-center gap-2">
+          <!-- Activity Toggle -->
           <button
-            v-for="mode in viewModes"
-            :key="mode.id"
-            @click="viewMode = mode.id"
+            @click="showActivity = !showActivity"
             :class="[
-              'px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5',
-              viewMode === mode.id
-                ? 'bg-surface shadow-xs text-primary font-bold'
-                : 'text-muted-foreground hover:text-foreground',
+              'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 border',
+              showActivity
+                ? 'bg-primary/10 text-primary border-primary/20'
+                : 'bg-surface text-muted-foreground border-border hover:bg-muted'
             ]"
           >
-            <component :is="mode.icon" class="w-3.5 h-3.5" />
-            <span>{{ mode.label }}</span>
+            <Activity class="w-3.5 h-3.5" />
+            <span>Antrean IT</span>
+            <span v-if="activityCount > 0" class="px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+              {{ activityCount }}
+            </span>
           </button>
+
+          <!-- View Switcher -->
+          <div class="flex items-center gap-0.5 bg-muted p-0.5 rounded-lg">
+            <button
+              v-for="mode in viewModes"
+              :key="mode.id"
+              @click="viewMode = mode.id"
+              :class="[
+                'px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5',
+                viewMode === mode.id
+                  ? 'bg-surface shadow-xs text-primary font-bold'
+                  : 'text-muted-foreground hover:text-foreground',
+              ]"
+            >
+              <component :is="mode.icon" class="w-3.5 h-3.5" />
+              <span>{{ mode.label }}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -47,6 +66,68 @@
         <AppSelect v-model="priorityFilter" :options="priorityOptions" size="sm" />
       </div>
     </div>
+
+    <!-- IT Activity Feed -->
+    <Transition
+      enter-active-class="transition-all duration-200 ease-out"
+      enter-from-class="opacity-0 -translate-y-2"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition-all duration-150 ease-in"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 -translate-y-2"
+    >
+      <div v-if="showActivity" class="bg-surface rounded-lg border border-border p-4 shadow-xs space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <Activity class="w-3.5 h-3.5 text-primary" />
+            Antrean Tiket Masuk
+          </h3>
+          <button @click="fetchActivity" class="text-[11px] text-primary hover:underline font-semibold">
+            Muat Ulang
+          </button>
+        </div>
+
+        <div v-if="loadingActivity" class="flex items-center justify-center py-4 text-xs text-muted-foreground gap-2">
+          <Loader2 class="w-3.5 h-3.5 animate-spin" />
+          Memuat...
+        </div>
+
+        <div v-else-if="activityList.length === 0" class="text-center py-4 text-xs text-muted-foreground">
+          Belum ada aktivitas tiket terbaru.
+        </div>
+
+        <div v-else class="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
+          <div
+            v-for="a in activityList"
+            :key="a.id"
+            @click="onSelectTicket({ id: a.id } as Ticket)"
+            class="flex items-start gap-3 p-2.5 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer group"
+          >
+            <div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
+              <TicketIcon class="w-4 h-4" />
+            </div>
+            <div class="flex-1 min-w-0 space-y-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-mono text-[11px] font-bold text-primary">{{ a.id }}</span>
+                <UiStatusBadge :priority="a.priority" size="xs" />
+              </div>
+              <p class="text-xs font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">{{ a.title }}</p>
+              <div class="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <span class="flex items-center gap-1">
+                  <User class="w-3 h-3" />
+                  {{ a.requestedByName }}
+                </span>
+                <span>•</span>
+                <UiStatusBadge :status="a.status" size="xs" />
+              </div>
+            </div>
+            <span class="text-[10px] text-muted-foreground shrink-0 mt-1">
+              {{ formatRelativeTime(a.created_at) }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Kanban -->
     <div
@@ -186,8 +267,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { Columns, Table as TableIcon, Search, LayoutGrid } from 'lucide-vue-next';
+import { ref, computed, onMounted, watch } from 'vue';
+import { Columns, Table as TableIcon, Search, LayoutGrid, Activity, User, Ticket as TicketIcon, Loader2 } from 'lucide-vue-next';
 import type { AppUser, Ticket, TicketStatus } from '~/types';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
 
@@ -203,6 +284,11 @@ const viewMode = ref<'kanban' | 'table'>('kanban');
 const searchQuery = ref('');
 const statusFilter = ref('ALL');
 const priorityFilter = ref('ALL');
+const showActivity = ref(false);
+const loadingActivity = ref(false);
+const activityList = ref<any[]>([]);
+
+const activityCount = computed(() => activityList.value.filter(a => a.status === 'DRAFT').length);
 
 const statusOptions = [
   { value: 'ALL', label: 'Semua Status' },
@@ -276,4 +362,37 @@ const handleDrop = (e: DragEvent, newStatus: TicketStatus) => {
 };
 
 const getTicketsByStatus = (status: string) => filteredTickets.value.filter(t => t.status === status);
+
+const fetchActivity = async () => {
+  loadingActivity.value = true;
+  try {
+    const res = await $fetch<{ success: boolean; data: any[] }>('/api/tickets/activity?limit=15', {
+      credentials: 'include',
+    });
+    activityList.value = res.success ? res.data : [];
+  } catch {
+    activityList.value = [];
+  } finally {
+    loadingActivity.value = false;
+  }
+};
+
+const formatRelativeTime = (dateStr: string) => {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Baru saja';
+  if (mins < 60) return `${mins}m lalu`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}j lalu`;
+  const days = Math.floor(hrs / 24);
+  return `${days}h lalu`;
+};
+
+onMounted(() => {
+  if (showActivity.value) fetchActivity();
+});
+
+watch(showActivity, (val) => {
+  if (val && activityList.value.length === 0) fetchActivity();
+});
 </script>
