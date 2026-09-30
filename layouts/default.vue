@@ -14,6 +14,10 @@
       <main class="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto">
         <slot />
       </main>
+
+      <footer class="py-4 text-center text-[10px] text-muted-foreground font-medium">
+        &copy; 2026 IT HO - All Rights Reserved.
+      </footer>
     </div>
 
     <ToastContainer />

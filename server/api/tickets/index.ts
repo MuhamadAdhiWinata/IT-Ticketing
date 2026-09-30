@@ -1,6 +1,6 @@
 import { eq, and, or, like } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { tickets } from '~/server/database/schema';
+import { tickets, attachments } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 import { generateTicketId, generateTicketNumber } from '~/server/utils/ticket-id';
 import { getTicketsWithRelations, getTicketById } from '~/server/utils/tickets';
@@ -43,6 +43,14 @@ export default defineEventHandler(async (event) => {
     const ticketNumber = generateTicketNumber(body.category || 'Support IT');
 
     const shouldIssue = body.shouldIssue !== false;
+
+    // Backend validation: CRITICAL requires attachment count > 0 when issuing
+    if (body.priority === 'CRITICAL' && shouldIssue && (!body.attachmentCount || body.attachmentCount === 0)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Ticket CRITICAL membutuhkan minimal 1 lampiran dokumen pendukung.',
+      });
+    }
 
     let requestedBy = userId;
     let requestedByName = user?.name || body.requestedByName || userId;

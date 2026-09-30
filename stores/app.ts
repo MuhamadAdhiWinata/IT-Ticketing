@@ -197,7 +197,7 @@ export const useAppStore = defineStore('app', {
       this.selectedTicket = ticket;
     },
 
-    async addTicket(ticketPayload: Partial<Ticket>, shouldIssue: boolean, behalfUserId?: string | null): Promise<Ticket | null> {
+    async addTicket(ticketPayload: Partial<Ticket>, shouldIssue: boolean, behalfUserId?: string | null, attachmentCount?: number): Promise<Ticket | null> {
       if (!this.currentUser) return null;
 
       try {
@@ -212,6 +212,7 @@ export const useAppStore = defineStore('app', {
             description: ticketPayload.description,
             shouldIssue,
             behalfUserId,
+            attachmentCount: attachmentCount ?? 0,
           },
         });
 

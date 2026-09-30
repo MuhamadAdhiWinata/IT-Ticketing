@@ -12,22 +12,41 @@
           <p class="text-xs text-muted-foreground">Monitoring & Distribusi Penanganan Tiket IT</p>
         </div>
 
-        <!-- View Switcher -->
-        <div class="flex items-center gap-0.5 bg-muted p-0.5 rounded-lg">
+        <div class="flex items-center gap-2">
+          <!-- Activity Toggle -->
           <button
-            v-for="mode in viewModes"
-            :key="mode.id"
-            @click="viewMode = mode.id"
+            @click="showActivity = !showActivity"
             :class="[
-              'px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5',
-              viewMode === mode.id
-                ? 'bg-surface shadow-xs text-primary font-bold'
-                : 'text-muted-foreground hover:text-foreground',
+              'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 border',
+              showActivity
+                ? 'bg-primary/10 text-primary border-primary/20'
+                : 'bg-surface text-muted-foreground border-border hover:bg-muted'
             ]"
           >
-            <component :is="mode.icon" class="w-3.5 h-3.5" />
-            <span>{{ mode.label }}</span>
+            <Activity class="w-3.5 h-3.5" />
+            <span>Antrean IT</span>
+            <span v-if="activityCount > 0" class="px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+              {{ activityCount }}
+            </span>
           </button>
+
+          <!-- View Switcher -->
+          <div class="flex items-center gap-0.5 bg-muted p-0.5 rounded-lg">
+            <button
+              v-for="mode in viewModes"
+              :key="mode.id"
+              @click="viewMode = mode.id"
+              :class="[
+                'px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5',
+                viewMode === mode.id
+                  ? 'bg-surface shadow-xs text-primary font-bold'
+                  : 'text-muted-foreground hover:text-foreground',
+              ]"
+            >
+              <component :is="mode.icon" class="w-3.5 h-3.5" />
+              <span>{{ mode.label }}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -47,6 +66,20 @@
         <AppSelect v-model="priorityFilter" :options="priorityOptions" size="sm" />
       </div>
     </div>
+
+    <!-- IT Activity Feed -->
+    <Transition
+      enter-active-class="transition-all duration-200 ease-out"
+      enter-from-class="opacity-0 -translate-y-2"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition-all duration-150 ease-in"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 -translate-y-2"
+    >
+      <div v-if="showActivity">
+        <TicketIncomingLog @selectTicket="(id) => onSelectTicket({ id } as Ticket)" />
+      </div>
+    </Transition>
 
     <!-- Kanban -->
     <div
@@ -187,9 +220,9 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Columns, Table as TableIcon, Search, LayoutGrid } from 'lucide-vue-next';
+import { Columns, Table as TableIcon, Search, LayoutGrid, Activity } from 'lucide-vue-next';
 import type { AppUser, Ticket, TicketStatus } from '~/types';
-import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
+import TicketIncomingLog from '~/components/common/TicketIncomingLog.vue';
 
 const props = defineProps<{
   tickets: Ticket[];
@@ -203,6 +236,7 @@ const viewMode = ref<'kanban' | 'table'>('kanban');
 const searchQuery = ref('');
 const statusFilter = ref('ALL');
 const priorityFilter = ref('ALL');
+const showActivity = ref(false);
 
 const statusOptions = [
   { value: 'ALL', label: 'Semua Status' },

@@ -147,6 +147,14 @@
         </div>
       </div>
 
+      <!-- CRITICAL Attachment Warning -->
+      <div v-if="priority === 'CRITICAL'" class="p-3.5 bg-red-50/60 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800/40 flex items-start gap-2.5">
+        <AlertTriangle class="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+        <p class="text-[11px] text-red-700 dark:text-red-300 leading-relaxed">
+          Untuk priority <strong>CRITICAL</strong>, lampiran dokumen pendukung wajib disertakan agar tingkat urgensi dapat diverifikasi. Contoh: surat permintaan resmi, bukti kondisi urgent, screenshot, atau dokumen pendukung lainnya.
+        </p>
+      </div>
+
       <!-- Description -->
       <div>
         <label class="block text-xs font-semibold text-foreground mb-1.5">
@@ -161,8 +169,12 @@
       </div>
 
       <!-- File Upload -->
-      <div>
-        <label class="block text-xs font-semibold text-foreground mb-1.5">Lampiran Foto / Dokumen (Opsional)</label>
+      <div ref="uploadSection">
+        <label class="block text-xs font-semibold text-foreground mb-1.5">
+          Lampiran Foto / Dokumen
+          <span v-if="priority === 'CRITICAL'" class="text-red-500">(Wajib untuk CRITICAL)</span>
+          <span v-else class="text-muted-foreground font-normal">(Opsional)</span>
+        </label>
         <div class="border-2 border-dashed border-input rounded-lg p-5 text-center bg-muted/30 relative">
           <input 
             type="file" 
@@ -267,8 +279,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { ArrowLeft, Upload, Check, CheckCircle2, Eye, X, Shield } from 'lucide-vue-next';
+import { ref, computed, watch, nextTick } from 'vue';
+import { ArrowLeft, Upload, Check, CheckCircle2, Eye, X, Shield, AlertTriangle } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
 import { useModal } from '~/composables/useModal';
 import type { TicketPriority, Ticket, PendingAttachment } from '~/types';
@@ -317,6 +329,7 @@ const priority = ref<TicketPriority>('MEDIUM');
 const description = ref('');
 const pendingFiles = ref<PendingAttachment[]>([]);
 const createdTicketSuccess = ref<Ticket | null>(null);
+const uploadSection = ref<HTMLElement | null>(null);
 
 const currentSubcategories = computed(() => {
   const targetCatName = serviceView.value === 'SUPPORT_IT' ? 'Support IT' : 'IT Programmer';
@@ -365,6 +378,13 @@ const handleSubmit = async (shouldAssign: boolean) => {
     showError('Formulir Tidak Lengkap', 'Mohon isi Judul Tiket dan Deskripsi Masalah.');
     return;
   }
+  if (priority.value === 'CRITICAL' && pendingFiles.value.length === 0) {
+    showError('Lampiran Wajib', 'Ticket CRITICAL membutuhkan minimal 1 lampiran dokumen pendukung. Silakan tambahkan lampiran sebelum melanjutkan.');
+    nextTick(() => {
+      uploadSection.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return;
+  }
   if (shouldAssign) {
     showWorkerPicker.value = true;
     return;
@@ -389,7 +409,7 @@ const createTicket = async (shouldIssue: boolean = false) => {
       priority: priority.value,
       description: description.value.trim(),
     };
-    const newTicket = await store.addTicket(ticketPayload, shouldIssue, behalfUserId.value || null);
+    const newTicket = await store.addTicket(ticketPayload, shouldIssue, behalfUserId.value || null, pendingFiles.value.length);
     if (newTicket) {
       if (selectedWorkers.value.length > 0) {
         await $fetch(`/api/tickets/${newTicket.id}/members`, {
