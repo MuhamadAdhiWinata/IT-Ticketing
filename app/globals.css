@@ -271,3 +271,22 @@ body {
 .login-anim-fade {
   animation: login-fade-in 600ms ease-out both;
 }
+
+/* ============================================
+   TRACKING NETWORK ANIMATIONS
+   ============================================ */
+
+@keyframes tracking-node-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.tracking-node-pulse {
+  animation: tracking-node-pulse 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tracking-node-pulse {
+    animation: none;
+  }
+}
