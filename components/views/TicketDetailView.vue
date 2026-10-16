@@ -17,7 +17,7 @@
           <p class="text-[11px] sm:text-xs text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <span>Kategori: <strong class="text-gray-700 dark:text-gray-200">{{ ticket.category }}</strong></span>
             <span class=" text-muted-foreground/50 dark:text-slate-700">•</span>
-            <span>Lokasi: <strong class="text-gray-700 dark:text-gray-200">{{ ticket.location }}</strong></span>
+            <span v-if="ticket.location">Lokasi: <strong class="text-gray-700 dark:text-gray-200">{{ ticket.location }}</strong></span>
           </p>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { AppUser, Ticket, CategoryItem, SubcategoryItem, PendingAttachment } from '~/types';
+import type { AppUser, Ticket, CategoryItem, SubcategoryItem, SubmoduleItem, PendingAttachment } from '~/types';
 import { useAuthStore } from '~/stores/auth';
 
 function apiFetch<T>(url: string, opts?: any): Promise<T> {
@@ -15,8 +15,11 @@ export const useAppStore = defineStore('app', {
     selectedTicketId: null as string | null,
     currentUser: null as AppUser | null,
     tickets: [] as Ticket[],
+    myTickets: [] as Ticket[],
+    myTicketsLoading: false,
     categories: [] as CategoryItem[],
     subcategories: [] as SubcategoryItem[],
+    submodules: [] as SubmoduleItem[],
     allUsers: [] as AppUser[],
     isCreateModalOpen: false,
     selectedTicket: null as Ticket | null,
@@ -41,11 +44,12 @@ export const useAppStore = defineStore('app', {
       const authStore = useAuthStore();
       this.currentUser = authStore.user;
 
-      const [usersRes, ticketsRes, catsRes, subcatsRes, prefsRes] = await Promise.all([
+      const [usersRes, ticketsRes, catsRes, subcatsRes, submodsRes, prefsRes] = await Promise.all([
         apiFetch<{ success: boolean; data: AppUser[] }>('/api/users').catch(() => null),
         apiFetch<{ success: boolean; data: Ticket[] }>('/api/tickets').catch(() => null),
         apiFetch<{ success: boolean; data: CategoryItem[] }>('/api/categories').catch(() => null),
         apiFetch<{ success: boolean; data: SubcategoryItem[] }>('/api/subcategories').catch(() => null),
+        apiFetch<{ success: boolean; data: SubmoduleItem[] }>('/api/submodules').catch(() => null),
         apiFetch<{ success: boolean; data: { darkMode: boolean } }>('/api/user/preferences').catch(() => null),
       ]);
 
@@ -53,6 +57,7 @@ export const useAppStore = defineStore('app', {
       if (ticketsRes) this.tickets = ticketsRes.data;
       if (catsRes) this.categories = catsRes.data;
       if (subcatsRes) this.subcategories = subcatsRes.data;
+      if (submodsRes) this.submodules = submodsRes.data;
       if (prefsRes) {
         this.darkMode = prefsRes.data.darkMode;
         if (typeof document !== 'undefined') {
@@ -73,15 +78,29 @@ export const useAppStore = defineStore('app', {
       }
     },
 
+    async fetchMyTickets() {
+      this.myTicketsLoading = true;
+      try {
+        const res = await apiFetch<{ success: boolean; data: Ticket[] }>('/api/tickets/mine');
+        this.myTickets = res.data;
+      } catch (e) {
+        console.error('Failed to fetch my tickets:', e);
+      } finally {
+        this.myTicketsLoading = false;
+      }
+    },
+
     async refetchMasterData() {
       try {
-        const [catsRes, subcatsRes, allUsersRes] = await Promise.all([
+        const [catsRes, subcatsRes, submodsRes, allUsersRes] = await Promise.all([
           apiFetch<{ success: boolean; data: CategoryItem[] }>('/api/categories'),
           apiFetch<{ success: boolean; data: SubcategoryItem[] }>('/api/subcategories'),
+          apiFetch<{ success: boolean; data: SubmoduleItem[] }>('/api/submodules'),
           apiFetch<{ success: boolean; data: AppUser[] }>('/api/users'),
         ]);
         this.categories = catsRes.data;
         this.subcategories = subcatsRes.data;
+        this.submodules = submodsRes.data;
         this.allUsers = allUsersRes.data;
       } catch (e) {
         console.error('Failed to refetch master data:', e);
@@ -206,7 +225,8 @@ export const useAppStore = defineStore('app', {
           body: {
             title: ticketPayload.title,
             category: ticketPayload.category,
-            subcategory: ticketPayload.subcategory,
+            aplikasiProject: ticketPayload.aplikasiProject,
+            submodule: ticketPayload.submodule,
             location: ticketPayload.location,
             priority: ticketPayload.priority,
             description: ticketPayload.description,
@@ -379,7 +399,9 @@ export const useAppStore = defineStore('app', {
       try {
         await apiFetch(`/api/categories/${catId}`, { method: 'DELETE' });
         this.categories = this.categories.filter(c => c.id !== catId);
+        const removedSubIds = this.subcategories.filter(s => s.category_id === catId).map(s => s.id);
         this.subcategories = this.subcategories.filter(s => s.category_id !== catId);
+        this.submodules = this.submodules.filter(m => !removedSubIds.includes(m.subcategory_id));
       } catch (e) {
         console.error('Failed to delete category:', e);
       }
@@ -407,8 +429,36 @@ export const useAppStore = defineStore('app', {
       try {
         await apiFetch(`/api/subcategories/${subId}`, { method: 'DELETE' });
         this.subcategories = this.subcategories.filter(s => s.id !== subId);
+        this.submodules = this.submodules.filter(m => m.subcategory_id !== subId);
       } catch (e) {
         console.error('Failed to delete subcategory:', e);
+      }
+    },
+
+    async addSubmodule(mod: SubmoduleItem) {
+      try {
+        const res = await apiFetch<{ success: boolean; data: SubmoduleItem }>('/api/submodules', { method: 'POST', body: mod });
+        this.submodules = [...this.submodules, res.data];
+      } catch (e) {
+        console.error('Failed to add submodule:', e);
+      }
+    },
+
+    async updateSubmodule(mod: SubmoduleItem) {
+      try {
+        const res = await apiFetch<{ success: boolean; data: SubmoduleItem }>(`/api/submodules/${mod.id}`, { method: 'PUT', body: mod });
+        this.submodules = this.submodules.map(m => m.id === mod.id ? res.data : m);
+      } catch (e) {
+        console.error('Failed to update submodule:', e);
+      }
+    },
+
+    async deleteSubmodule(modId: string) {
+      try {
+        await apiFetch(`/api/submodules/${modId}`, { method: 'DELETE' });
+        this.submodules = this.submodules.filter(m => m.id !== modId);
+      } catch (e) {
+        console.error('Failed to delete submodule:', e);
       }
     },
 

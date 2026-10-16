@@ -81,6 +81,17 @@
   --z-modal-backdrop: 9990;
   --z-modal: 9999;
 
+  /* --- Tracking Hero Scoped --- */
+  --tracking-hero-bg: #e6f1f8;
+
+  /* --- Tracking Network Opacities (Light) --- */
+  --tracking-network-stroke: 0.15;
+  --tracking-network-fill: 0.03;
+  --tracking-network-core: 0.20;
+  --tracking-network-line: 0.10;
+  --tracking-network-icon: 0.14;
+  --tracking-network-led: 0.28;
+
   /* --- Login Page Scoped --- */
   --login-visual-bg: #e6f1f8;
   --login-card-bg: rgba(255, 255, 255, 0.88);
@@ -101,6 +112,24 @@
   box-shadow: var(--login-card-shadow);
 }
 
+.tracking-hero {
+  background-color: var(--tracking-hero-bg);
+}
+
+/* ============================================
+   TRACKING NETWORK OPACITIES (Light)
+   ============================================ */
+
+:root {
+  /* --- Tracking Network Opacities (Light) --- */
+  --tracking-network-stroke: 0.15;
+  --tracking-network-fill: 0.03;
+  --tracking-network-core: 0.20;
+  --tracking-network-line: 0.10;
+  --tracking-network-icon: 0.14;
+  --tracking-network-led: 0.28;
+}
+
 /* ============================================
    DARK MODE TOKENS
    ============================================ */
@@ -110,7 +139,7 @@ html.dark {
   --color-background: #0f172a;
   --color-foreground: #f1f5f9;
   --color-surface: #1e293b;
-  --color-surface-elevated: #1e293b;
+  --color-surface-elevated: #253349;
   --color-muted: #1e293b;
   --color-muted-foreground: #94a3b8;
   --color-border: #334155;
@@ -120,6 +149,17 @@ html.dark {
   --color-success-muted: #052e16;
   --color-warning-muted: #451a03;
   --color-info-muted: #0c4a6e;
+
+  /* --- Tracking Hero Scoped (Dark) --- */
+  --tracking-hero-bg: #0c1929;
+
+  /* --- Tracking Network Opacities (Dark) --- */
+  --tracking-network-stroke: 0.20;
+  --tracking-network-fill: 0.06;
+  --tracking-network-core: 0.30;
+  --tracking-network-line: 0.14;
+  --tracking-network-icon: 0.22;
+  --tracking-network-led: 0.38;
 
   /* --- Login Page Scoped (Dark) --- */
   --login-visual-bg: #0c1929;

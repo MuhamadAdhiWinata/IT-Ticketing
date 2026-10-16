@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import { sql } from 'drizzle-orm';
 import { db } from './client';
 import {
-  users, categories, subcategories,
+  users, categories, subcategories, submodules,
   tickets, ticketMembers, worklogs, auditLogs, attachments,
 } from './schema';
 
@@ -24,7 +24,7 @@ async function cleanup() {
   const tables = [
     'attachments', 'audit_logs', 'worklogs',
     'ticket_members', 'tickets',
-    'user_preferences', 'subcategories', 'categories', 'users',
+    'user_preferences', 'submodules', 'subcategories', 'categories', 'users',
   ];
   for (const table of tables) {
     await db.execute(sql.raw(`DELETE FROM ${table}`));
@@ -96,12 +96,29 @@ async function seedSubcategories() {
   console.log(`[SEED] ${data.length} subcategories berhasil.`);
 }
 
+async function seedSubmodules() {
+  console.log('[SEED] Seeding submodules...');
+  const data = [
+    { id: 'SMOD-001', subcategoryId: 'SUB-015', name: 'Modul Payroll' },
+    { id: 'SMOD-002', subcategoryId: 'SUB-015', name: 'Modul Purchasing' },
+    { id: 'SMOD-003', subcategoryId: 'SUB-015', name: 'Modul Inventory' },
+    { id: 'SMOD-004', subcategoryId: 'SUB-021', name: 'Modul Absensi' },
+    { id: 'SMOD-005', subcategoryId: 'SUB-021', name: 'Modul Reimbursement' },
+    { id: 'SMOD-006', subcategoryId: 'SUB-013', name: 'Portal Karyawan' },
+    { id: 'SMOD-007', subcategoryId: 'SUB-027', name: 'Modul Integrasi Payment Gateway' },
+    { id: 'SMOD-008', subcategoryId: 'SUB-007', name: 'Webmail Office 365' },
+    { id: 'SMOD-009', subcategoryId: 'SUB-007', name: 'Outlook Desktop Client' },
+  ];
+  for (const m of data) await db.insert(submodules).values(m);
+  console.log(`[SEED] ${data.length} submodules berhasil.`);
+}
+
 async function seedTickets() {
   console.log('[SEED] Seeding tickets...');
   const ticketsData = [
     {
       id: 'TCK-202609-001', title: 'Printer Lantai 2 Kehabisan Tinta',
-      description: 'Printer EPSON tidak dapat mencetak invoice.', category: 'Support IT', subcategory: 'Printer & Mesin Fotokopi',
+      description: 'Printer EPSON tidak dapat mencetak invoice.', category: 'Support IT', aplikasiProject: 'Printer & Mesin Fotokopi',
       location: 'Gedung A, Lantai 2', priority: 'HIGH', status: 'PROCESS',
       createdBy: 'USR-001', createdByDept: 'Finance & Accounting',
       requestedBy: 'USR-001', requestedByDept: 'Finance & Accounting', assignedTo: 'IT-001',
@@ -109,7 +126,7 @@ async function seedTickets() {
     },
     {
       id: 'TCK-202609-002', title: 'Gagal Login ERP SAP',
-      description: 'User account locked.', category: 'IT Programmer', subcategory: 'Maintenance ERP Desktop',
+      description: 'User account locked.', category: 'IT Programmer', aplikasiProject: 'Maintenance ERP Desktop',
       location: 'Gedung A, Lantai 3', priority: 'CRITICAL', status: 'SELESAI',
       createdBy: 'USR-001', createdByDept: 'Finance & Accounting',
       requestedBy: 'USR-001', requestedByDept: 'Finance & Accounting', assignedTo: 'IT-002',
@@ -118,7 +135,7 @@ async function seedTickets() {
     },
     {
       id: 'TCK-202609-003', title: 'Wifi Boardroom Drop',
-      description: 'AP sering disconnect saat video conference.', category: 'Support IT', subcategory: 'Koneksi Wifi & Jaringan Kantor',
+      description: 'AP sering disconnect saat video conference.', category: 'Support IT', aplikasiProject: 'Koneksi Wifi & Jaringan Kantor',
       location: 'Lantai 5', priority: 'HIGH', status: 'DELEGASI',
       createdBy: 'USR-002', createdByDept: 'Human Resources',
       requestedBy: 'USR-002', requestedByDept: 'Human Resources', assignedTo: 'IT-003',
@@ -128,7 +145,7 @@ async function seedTickets() {
     },
     {
       id: 'TCK-202609-004', title: 'Request Lisensi Figma',
-      description: 'Lisensi untuk 2 staff UI/UX.', category: 'IT Programmer', subcategory: 'Development Aplikasi / Sistem Baru',
+      description: 'Lisensi untuk 2 staff UI/UX.', category: 'IT Programmer', aplikasiProject: 'Development Aplikasi / Sistem Baru',
       location: 'Gedung B', priority: 'LOW', status: 'DRAFT',
       createdBy: 'USR-003', createdByDept: 'Marketing',
       requestedBy: 'USR-003', requestedByDept: 'Marketing', assignedTo: null,
@@ -136,7 +153,7 @@ async function seedTickets() {
     },
     {
       id: 'TCK-202609-005', title: 'DB Payroll High CPU',
-      description: 'Utilisasi memory 96%.', category: 'IT Programmer', subcategory: 'Pengelolaan Database dan Backup Sistem ERP',
+      description: 'Utilisasi memory 96%.', category: 'IT Programmer', aplikasiProject: 'Pengelolaan Database dan Backup Sistem ERP',
       location: 'Server Room', priority: 'CRITICAL', status: 'PROCESS',
       createdBy: 'ADMIN-001', createdByDept: 'IT Governance',
       requestedBy: 'ADMIN-001', requestedByDept: 'IT Governance', assignedTo: 'IT-004',
@@ -144,7 +161,7 @@ async function seedTickets() {
     },
     {
       id: 'TCK-202609-006', title: 'Monitor PC Bergaris',
-      description: 'Monitor Dell bergaris hijau.', category: 'Support IT', subcategory: 'Hardware Laptop, PC & Monitor',
+      description: 'Monitor Dell bergaris hijau.', category: 'Support IT', aplikasiProject: 'Hardware Laptop, PC & Monitor',
       location: 'Cabang Thamrin', priority: 'MEDIUM', status: 'SELESAI',
       createdBy: 'USR-004', createdByDept: 'Operasional',
       requestedBy: 'USR-004', requestedByDept: 'Operasional', assignedTo: 'IT-001',
@@ -153,7 +170,7 @@ async function seedTickets() {
     },
     {
       id: 'TCK-202609-007', title: 'Email Tidak Bisa Kirim',
-      description: 'Error 550 Relay.', category: 'Support IT', subcategory: 'Email Perusahaan & Office 365',
+      description: 'Error 550 Relay.', category: 'Support IT', aplikasiProject: 'Email Perusahaan & Office 365',
       location: 'Lantai 4', priority: 'HIGH', status: 'PROCESS',
       createdBy: 'USR-003', createdByDept: 'Marketing',
       requestedBy: 'USR-003', requestedByDept: 'Marketing', assignedTo: 'IT-002',
@@ -161,7 +178,7 @@ async function seedTickets() {
     },
     {
       id: 'TCK-202609-008', title: 'Instalasi ERP 10 User',
-      description: 'Client ERP untuk staf baru.', category: 'IT Programmer', subcategory: 'Release ERP Desktop Production',
+      description: 'Client ERP untuk staf baru.', category: 'IT Programmer', aplikasiProject: 'Release ERP Desktop Production',
       location: 'Gedung B', priority: 'MEDIUM', status: 'PROCESS',
       createdBy: 'ADMIN-001', createdByDept: 'IT Governance',
       requestedBy: 'ADMIN-001', requestedByDept: 'IT Governance', assignedTo: 'IT-002',
@@ -169,7 +186,7 @@ async function seedTickets() {
     },
     {
       id: 'TCK-202609-009', title: 'Lampu Ceiling Mati',
-      description: 'Lampu LED plafon mati.', category: 'Support IT', subcategory: 'CCTV & Keamanan Akses Fisik IT',
+      description: 'Lampu LED plafon mati.', category: 'Support IT', aplikasiProject: 'CCTV & Keamanan Akses Fisik IT',
       location: 'Ruang Rapat', priority: 'MEDIUM', status: 'SELESAI',
       createdBy: 'USR-002', createdByDept: 'HR',
       requestedBy: 'USR-002', requestedByDept: 'HR', assignedTo: 'IT-005',
@@ -178,7 +195,7 @@ async function seedTickets() {
     },
     {
       id: 'TCK-202609-010', title: 'Bug Payroll ERP Web',
-      description: 'Lembur salah hitung.', category: 'IT Programmer', subcategory: 'Penanganan Bug ERP Web',
+      description: 'Lembur salah hitung.', category: 'IT Programmer', aplikasiProject: 'Penanganan Bug ERP Web',
       location: 'DC Lt 1', priority: 'CRITICAL', status: 'PROCESS',
       createdBy: 'USR-004', createdByDept: 'Operasional',
       requestedBy: 'USR-004', requestedByDept: 'Operasional', assignedTo: 'IT-005',
@@ -237,6 +254,7 @@ const hash = await bcrypt.hash('password123', 10);
 await seedUsers(hash);
 await seedCategories();
 await seedSubcategories();
+await seedSubmodules();
 
 const ticketIds = (await seedTickets()).map((t: any) => t.id);
 await seedWorklogs(ticketIds);

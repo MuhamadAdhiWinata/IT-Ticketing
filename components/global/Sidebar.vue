@@ -98,7 +98,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Search, Kanban, Briefcase, CalendarDays, FileSpreadsheet, Settings, SlidersHorizontal, X } from 'lucide-vue-next';
+import { Search, Kanban, Briefcase, CalendarDays, FileSpreadsheet, Settings, SlidersHorizontal, ClipboardList, X } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
 import { useCompany } from '~/composables/useCompany';
 
@@ -108,6 +108,7 @@ const logoError = ref(false);
 
 const allNavItems = [
   { id: 'tracking', label: 'Tracking', icon: Search, group: 'workspace', roles: ['USER_NON_IT', 'IT_WORKER', 'SYSTEM_ADMIN'] },
+  { id: 'my-tickets', label: 'Tiket Saya', icon: ClipboardList, group: 'workspace', roles: ['USER_NON_IT', 'IT_WORKER', 'SYSTEM_ADMIN'] },
   { id: 'dashboard', label: 'Dashboard', icon: Kanban, group: 'workspace', roles: ['IT_WORKER', 'SYSTEM_ADMIN'] },
   { id: 'my-work', label: 'Pekerjaan Saya', icon: Briefcase, group: 'workspace', roles: ['IT_WORKER', 'SYSTEM_ADMIN'] },
   { id: 'daily-work', label: 'Log Harian', icon: CalendarDays, group: 'workspace', roles: ['IT_WORKER', 'SYSTEM_ADMIN'] },

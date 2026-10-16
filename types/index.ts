@@ -73,7 +73,8 @@ export interface Ticket {
   title: string;
   description: string;
   category: string;
-  subcategory: string;
+  aplikasiProject: string;
+  submodule?: string | null;
   location: string;
   priority: TicketPriority;
   status: TicketStatus;
@@ -121,5 +122,11 @@ export interface PendingAttachment {
 export interface SubcategoryItem {
   id: string;
   category_id: string;
+  name: string;
+}
+
+export interface SubmoduleItem {
+  id: string;
+  subcategory_id: string;
   name: string;
 }

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { subcategories } from '~/server/database/schema';
+import { subcategories, submodules } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 import { serializeSubcategory } from '~/server/utils/serialize';
 
@@ -43,6 +43,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 404, statusMessage: 'Subcategory not found' });
     }
 
+    await db.delete(submodules).where(eq(submodules.subcategoryId, id)).execute();
     await db.delete(subcategories).where(eq(subcategories.id, id)).execute();
 
     return successResponse({ success: true });

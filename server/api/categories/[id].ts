@@ -1,6 +1,6 @@
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { categories, subcategories } from '~/server/database/schema';
+import { categories, subcategories, submodules } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 
 export default defineEventHandler(async (event) => {
@@ -38,6 +38,10 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 404, statusMessage: 'Category not found' });
     }
 
+    const childIds = (await db.select({ id: subcategories.id }).from(subcategories).where(eq(subcategories.categoryId, id))).map(r => r.id);
+    if (childIds.length > 0) {
+      await db.delete(submodules).where(inArray(submodules.subcategoryId, childIds)).execute();
+    }
     await db.delete(subcategories).where(eq(subcategories.categoryId, id)).execute();
     await db.delete(categories).where(eq(categories.id, id)).execute();
 

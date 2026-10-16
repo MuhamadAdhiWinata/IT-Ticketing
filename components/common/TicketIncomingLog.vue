@@ -12,22 +12,22 @@
 
     <!-- Summary Cards -->
     <div class="grid grid-cols-3 gap-2">
-      <div class="p-2.5 bg-primary/5 border border-primary/15 rounded-lg text-center">
+      <div class="p-2.5 bg-surface-elevated border border-primary/20 shadow-xs rounded-lg text-center">
         <span class="text-[10px] text-primary font-bold block">Hari Ini</span>
         <span class="text-base font-bold text-primary font-mono">{{ summary.today }}</span>
       </div>
-      <div class="p-2.5 bg-warning/5 border border-warning/15 rounded-lg text-center">
+      <div class="p-2.5 bg-surface-elevated border border-warning/20 shadow-xs rounded-lg text-center">
         <span class="text-[10px] text-warning font-bold block">7 Hari</span>
         <span class="text-base font-bold text-warning font-mono">{{ summary.sevenDays }}</span>
       </div>
-      <div class="p-2.5 bg-muted border border-border rounded-lg text-center">
+      <div class="p-2.5 bg-surface-elevated border border-border shadow-xs rounded-lg text-center">
         <span class="text-[10px] text-muted-foreground font-bold block">Bulan Ini</span>
         <span class="text-base font-bold text-muted-foreground font-mono">{{ summary.month }}</span>
       </div>
     </div>
 
     <!-- Period Tabs -->
-    <div class="flex items-center gap-0.5 bg-muted p-0.5 rounded-lg">
+    <div class="flex items-center gap-0.5 bg-surface p-0.5 rounded-lg border border-border">
       <button
         v-for="p in periods"
         :key="p.id"
@@ -35,7 +35,7 @@
         :class="[
           'flex-1 px-2.5 py-1.5 rounded-md text-[10px] sm:text-[11px] font-bold transition-all text-center',
           period === p.id
-            ? 'bg-surface shadow-xs text-primary'
+            ? 'bg-surface-elevated shadow-xs text-primary'
             : 'text-muted-foreground hover:text-foreground'
         ]"
       >

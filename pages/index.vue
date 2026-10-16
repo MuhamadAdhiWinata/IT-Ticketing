@@ -14,6 +14,13 @@
         :onCreateTicketClick="() => store.openCreateTicket()"
       />
 
+      <MyTicketsView
+        v-else-if="store.activeTab === 'my-tickets'"
+        :tickets="store.myTickets"
+        :currentUser="store.currentUser"
+        :onSelectTicket="(ticket) => store.openTicketDetail(ticket.id)"
+      />
+
       <ITDashboard
         v-else-if="store.activeTab === 'dashboard'"
         :tickets="store.tickets"
@@ -52,6 +59,7 @@ import { onMounted, onUnmounted } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { useAuthStore } from '~/stores/auth';
 import TrackingView from '~/components/views/TrackingView.vue';
+import MyTicketsView from '~/components/views/MyTicketsView.vue';
 import ITDashboard from '~/components/dashboard/ITDashboard.vue';
 import MyWorkView from '~/components/dashboard/MyWorkView.vue';
 import DailyWorkView from '~/components/dashboard/DailyWorkView.vue';

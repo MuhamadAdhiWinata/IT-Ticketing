@@ -11,7 +11,7 @@
           Manajemen Master Data
         </h1>
         <p class="text-xs text-muted-foreground">
-          Kelola master kategori & subkategori layanan IT terpisah, prioritas tiket, serta akun pengguna sistem.
+          Kelola master kategori, Aplikasi/Project &amp; Sub Modul layanan IT terpisah, prioritas tiket, serta akun pengguna sistem.
         </p>
       </div>
 
@@ -35,7 +35,7 @@
           :class="activeTab === 'CATEGORIES' ? 'bg-surface text-primary shadow-xs' : 'text-muted-foreground hover:text-foreground'"
         >
           <FolderTree class="w-4 h-4" />
-          <span>Kategori & Subkategori ({{ store.categories.length }} Kategori, {{ store.subcategories.length }} Subkategori)</span>
+          <span>Kategori & Aplikasi/Project ({{ store.categories.length }} Kategori, {{ store.subcategories.length }} Aplikasi/Project)</span>
         </button>
 
         <button
@@ -57,7 +57,7 @@
         </button>
       </div>
 
-      <!-- TAB 1: KATEGORI & SUBKATEGORI (RELASIONAL TERPISAH) -->
+      <!-- TAB 1: KATEGORI, APLIKASI/PROJECT & SUB MODUL (RELASIONAL TERPISAH) -->
       <div v-if="activeTab === 'CATEGORIES'" class="p-5 sm:p-6 space-y-8">
         
         <!-- SECTION 1: MASTER KATEGORI INDUK -->
@@ -86,22 +86,30 @@
               class="p-4 rounded-xl border border-border bg-muted space-y-3 shadow-xs"
             >
               <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <span class="font-mono font-bold text-xs px-2.5 py-0.5 rounded bg-primary/5 text-primary border border-primary/15">
-                    {{ cat.id }}
-                  </span>
-                  <span class="font-bold text-sm text-foreground">{{ cat.name }}</span>
+                <div class="flex items-center gap-3">
+                  <!-- Logo/Icon -->
+                  <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <FolderTree class="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-mono font-bold text-xs px-2.5 py-0.5 rounded bg-primary/5 text-primary border border-primary/15">
+                        {{ cat.id }}
+                      </span>
+                      <span class="font-bold text-sm text-foreground">{{ cat.name }}</span>
+                    </div>
+                  </div>
                 </div>
                 <div class="flex items-center gap-2">
                   <button
                     @click="editCategory(cat)"
-                    class="text-xs text-blue-600 dark:text-blue-400 hover:underline font-bold"
+                    class="px-3 py-1.5 text-xs font-bold rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                   >
                     Edit
                   </button>
                   <button
                     @click="deleteCategory(cat.id)"
-                    class="text-xs text-rose-600 dark:text-rose-400 hover:underline font-bold"
+                    class="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/40 transition-colors"
                   >
                     Hapus
                   </button>
@@ -109,9 +117,9 @@
               </div>
 
               <div class="text-xs text-muted-foreground flex items-center justify-between pt-1 border-t border-border/60">
-                <span>Total Subkategori Terhubung:</span>
+                <span>Total Aplikasi/Project Terhubung:</span>
                 <span class="font-mono font-bold text-foreground px-2 py-0.5 bg-surface rounded border border-input">
-                  {{ getSubcategoriesCount(cat.id) }} Subkategori
+                  {{ getSubcategoriesCount(cat.id) }} Aplikasi/Project
                 </span>
               </div>
             </div>
@@ -120,16 +128,16 @@
 
         <hr class="border-border" />
 
-        <!-- SECTION 2: MASTER SUBKATEGORI INDIVIDU (RELASIONAL FK) -->
+        <!-- SECTION 2: MASTER APLIKASI/PROJECT INDIVIDU (RELASIONAL FK) -->
         <div class="space-y-4">
           <div class="flex items-center justify-between">
             <div>
               <h3 class="text-sm font-bold text-foreground flex items-center gap-2">
                 <Tag class="w-4 h-4 text-success" />
-                <span>Tabel Master Subkategori (Relational DB Records)</span>
+                <span>Tabel Master Aplikasi/Project (Relational DB Records)</span>
               </h3>
               <p class="text-[11px] text-muted-foreground">
-                Setiap baris adalah record subkategori terpisah yang terhubung via Foreign Key <code class="font-mono text-primary">category_id</code>
+                Setiap baris adalah record Aplikasi/Project terpisah yang terhubung via Foreign Key <code class="font-mono text-primary">category_id</code>
               </p>
             </div>
             <button
@@ -137,18 +145,28 @@
               class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs"
             >
               <Plus class="w-4 h-4" />
-              <span>Tambah Subkategori Baru</span>
+              <span>Tambah Aplikasi/Project Baru</span>
             </button>
           </div>
 
-          <!-- Filter Kategori Induk -->
+          <!-- Filter Kategori Induk + Search -->
           <div class="flex items-center gap-2 bg-muted p-3 rounded-xl border border-border text-xs">
             <span class="font-bold text-foreground shrink-0">Filter Kategori Induk:</span>
-            <div class="min-w-[200px]">
+            <div class="min-w-[200px] flex-1">
               <AppSelect
                 v-model="selectedCategoryFilter"
                 :options="categoryFilterOptions"
                 size="sm"
+                searchable
+                searchPlaceholder="Cari kategori..."
+              />
+            </div>
+            <div class="min-w-[200px] flex-1">
+              <input
+                v-model="subcategorySearch"
+                type="text"
+                placeholder="Cari nama/ID Aplikasi/Project..."
+                class="w-full px-3 py-2 rounded-xl border border-input bg-surface text-xs"
               />
             </div>
           </div>
@@ -158,9 +176,10 @@
             <table class="w-full text-left border-collapse text-xs">
               <thead>
                 <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-muted-foreground">
-                  <th class="p-3">ID Subkategori</th>
+                  <th class="p-3">ID Aplikasi/Project</th>
                   <th class="p-3">Kategori Induk (FK: category_id)</th>
-                  <th class="p-3">Nama Subkategori</th>
+                  <th class="p-3">Nama Aplikasi/Project</th>
+                  <th class="p-3">Total Sub Modul</th>
                   <th class="p-3 text-right">Aksi Record</th>
                 </tr>
               </thead>
@@ -177,14 +196,103 @@
                     </span>
                   </td>
                   <td class="p-3 font-bold text-foreground">{{ sub.name }}</td>
+                  <td class="p-3 font-mono text-muted-foreground">{{ getSubmodulesCount(sub.id) }}</td>
                   <td class="p-3 text-right space-x-2">
                     <button @click="editSubcategory(sub)" class="text-blue-600 dark:text-blue-400 hover:underline font-bold">Edit</button>
                     <button @click="deleteSubcategory(sub.id)" class="text-rose-600 dark:text-rose-400 hover:underline font-bold">Hapus</button>
                   </td>
                 </tr>
                 <tr v-if="filteredSubcategories.length === 0">
+                  <td colspan="5" class="p-8 text-center text-muted-foreground text-xs">
+                    {{ selectedCategoryFilter === 'ALL' && !subcategorySearch.value
+                      ? 'Belum ada data Aplikasi/Project. Klik "Tambah Aplikasi/Project Baru" untuk menambah.'
+                      : `Tidak ditemukan Aplikasi/Project${subcategorySearch.value ? ` untuk "${subcategorySearch.value}"` : ''}${selectedCategoryFilter.value !== 'ALL' ? ' pada kategori ini' : ''}.` }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <hr class="border-border" />
+
+        <!-- SECTION 3: MASTER SUB MODUL -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-foreground flex items-center gap-2">
+                <Layers class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span>Tabel Master Sub Modul (Relational DB Records)</span>
+              </h3>
+              <p class="text-[11px] text-muted-foreground">
+                Setiap baris adalah record Sub Modul yang terhubung via Foreign Key <code class="font-mono text-primary">subcategory_id</code>
+              </p>
+            </div>
+            <button
+              @click="openAddSubmoduleModal"
+              class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs"
+            >
+              <Plus class="w-4 h-4" />
+              <span>Tambah Sub Modul Baru</span>
+            </button>
+          </div>
+
+          <!-- Filter Aplikasi/Project Induk + Search -->
+          <div class="flex items-center gap-2 bg-muted p-3 rounded-xl border border-border text-xs">
+            <span class="font-bold text-foreground shrink-0">Filter Aplikasi/Project:</span>
+            <div class="min-w-[200px] flex-1">
+              <AppSelect
+                v-model="selectedSubcategoryFilter"
+                :options="subcategoryFilterOptions"
+                size="sm"
+                searchable
+                searchPlaceholder="Cari Aplikasi/Project..."
+              />
+            </div>
+            <div class="min-w-[200px] flex-1">
+              <input
+                v-model="submoduleSearch"
+                type="text"
+                placeholder="Cari nama/ID Sub Modul..."
+                class="w-full px-3 py-2 rounded-xl border border-input bg-surface text-xs"
+              />
+            </div>
+          </div>
+
+          <!-- Submodules Table -->
+          <div class="overflow-x-auto custom-scrollbar border border-border rounded-xl">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-muted-foreground">
+                  <th class="p-3">ID Sub Modul</th>
+                  <th class="p-3">Aplikasi/Project (FK: subcategory_id)</th>
+                  <th class="p-3">Nama Sub Modul</th>
+                  <th class="p-3 text-right">Aksi Record</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-border">
+                <tr
+                  v-for="mod in filteredSubmodules"
+                  :key="mod.id"
+                  class="hover:bg-muted/70 transition-colors"
+                >
+                  <td class="p-3 font-mono font-bold text-primary">{{ mod.id }}</td>
+                  <td class="p-3">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/5 text-primary border border-primary/15 font-mono">
+                      {{ getSubcategoryName(mod.subcategory_id) }} ({{ mod.subcategory_id }})
+                    </span>
+                  </td>
+                  <td class="p-3 font-bold text-foreground">{{ mod.name }}</td>
+                  <td class="p-3 text-right space-x-2">
+                    <button @click="editSubmodule(mod)" class="text-blue-600 dark:text-blue-400 hover:underline font-bold">Edit</button>
+                    <button @click="deleteSubmodule(mod.id)" class="text-rose-600 dark:text-rose-400 hover:underline font-bold">Hapus</button>
+                  </td>
+                </tr>
+                <tr v-if="filteredSubmodules.length === 0">
                   <td colspan="4" class="p-8 text-center text-muted-foreground text-xs">
-                    Tidak ada data subkategori untuk kategori ini.
+                    {{ selectedSubcategoryFilter === 'ALL' && !submoduleSearch.value
+                      ? 'Belum ada data Sub Modul. Klik "Tambah Sub Modul Baru" untuk menambah.'
+                      : `Tidak ditemukan Sub Modul${submoduleSearch.value ? ` untuk "${submoduleSearch.value}"` : ''}${selectedSubcategoryFilter.value !== 'ALL' ? ' pada Aplikasi/Project ini' : ''}.` }}
                   </td>
                 </tr>
               </tbody>
@@ -346,11 +454,11 @@
       <div v-if="isSubcategoryModalOpen" class="fixed inset-0 bg-foreground/40 backdrop-blur-sm z-modal flex items-center justify-center p-4">
         <div class="bg-surface rounded-lg border border-border p-6 max-w-md w-full shadow-lg space-y-4">
           <h3 class="text-base font-bold text-foreground">
-            {{ editingSubId ? 'Edit Record Subkategori' : 'Tambah Record Subkategori Baru' }}
+            {{ editingSubId ? 'Edit Record Aplikasi/Project' : 'Tambah Record Aplikasi/Project Baru' }}
           </h3>
           <form @submit.prevent="saveSubcategoryForm" class="space-y-3 text-xs">
             <div>
-              <label class="block font-bold text-foreground mb-1">ID Subkategori</label>
+              <label class="block font-bold text-foreground mb-1">ID Aplikasi/Project</label>
               <input v-model="subForm.id" required :disabled="!!editingSubId" class="w-full px-3 py-2 rounded-xl border border-input bg-surface text-xs font-mono" />
             </div>
             <div>
@@ -362,11 +470,44 @@
               />
             </div>
             <div>
-              <label class="block font-bold text-foreground mb-1">Nama Subkategori</label>
+              <label class="block font-bold text-foreground mb-1">Nama Aplikasi/Project</label>
               <input v-model="subForm.name" required placeholder="Cth: Maintenance ERP Web / Printer" class="w-full px-3 py-2 rounded-xl border border-input bg-surface text-xs font-medium" />
             </div>
             <div class="pt-2 flex justify-end gap-2">
               <button type="button" @click="isSubcategoryModalOpen = false" class="px-3 py-1.5 bg-muted rounded-xl font-bold">Batal</button>
+              <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold">Simpan Record</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- MODAL ADD / EDIT SUB MODULE (INDIVIDU RECORD) -->
+    <Teleport to="body">
+      <div v-if="isSubmoduleModalOpen" class="fixed inset-0 bg-foreground/40 backdrop-blur-sm z-modal flex items-center justify-center p-4">
+        <div class="bg-surface rounded-lg border border-border p-6 max-w-md w-full shadow-lg space-y-4">
+          <h3 class="text-base font-bold text-foreground">
+            {{ editingSmId ? 'Edit Record Sub Modul' : 'Tambah Record Sub Modul Baru' }}
+          </h3>
+          <form @submit.prevent="saveSubmoduleForm" class="space-y-3 text-xs">
+            <div>
+              <label class="block font-bold text-foreground mb-1">ID Sub Modul</label>
+              <input v-model="smForm.id" required :disabled="!!editingSmId" class="w-full px-3 py-2 rounded-xl border border-input bg-surface text-xs font-mono" />
+            </div>
+            <div>
+              <AppSelect
+                v-model="smForm.subcategory_id"
+                :options="subcategoryFormOptions"
+                label="Pilih Aplikasi/Project Induk (FK: subcategory_id)"
+                placeholder="-- Pilih Aplikasi/Project --"
+              />
+            </div>
+            <div>
+              <label class="block font-bold text-foreground mb-1">Nama Sub Modul</label>
+              <input v-model="smForm.name" required placeholder="Cth: Modul Payroll / Modul Printer" class="w-full px-3 py-2 rounded-xl border border-input bg-surface text-xs font-medium" />
+            </div>
+            <div class="pt-2 flex justify-end gap-2">
+              <button type="button" @click="isSubmoduleModalOpen = false" class="px-3 py-1.5 bg-muted rounded-xl font-bold">Batal</button>
               <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold">Simpan Record</button>
             </div>
           </form>
@@ -421,11 +562,12 @@ import {
   Settings,
   FolderTree,
   Tag,
+  Layers,
   AlertCircle,
   Users,
   Plus,
 } from 'lucide-vue-next';
-import type { CategoryItem, SubcategoryItem, UserRole } from '~/types';
+import type { CategoryItem, SubcategoryItem, SubmoduleItem, UserRole } from '~/types';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
 import AppSelect from '~/components/common/AppSelect.vue';
 
@@ -434,15 +576,28 @@ const { confirm: doConfirm } = useConfirmModal();
 
 const activeTab = ref<'CATEGORIES' | 'PRIORITIES' | 'USERS'>('CATEGORIES');
 const selectedCategoryFilter = ref('ALL');
+const selectedSubcategoryFilter = ref('ALL');
+const subcategorySearch = ref('');
+const submoduleSearch = ref('');
 
 const categoryFilterOptions = computed(() => [
   { value: 'ALL', label: `Semua Kategori (${store.subcategories.length} record)` },
   ...store.categories.map(c => ({ value: c.id, label: `[${c.id}] ${c.name}` }))
 ]);
 
+const subcategoryFilterOptions = computed(() => [
+  { value: 'ALL', label: `Semua Aplikasi/Project (${store.submodules.length} record)` },
+  ...store.subcategories.map(s => ({ value: s.id, label: `[${s.id}] ${s.name}` }))
+]);
+
 const categoryFormOptions = computed(() => store.categories.map(c => ({
   value: c.id,
   label: `[${c.id}] ${c.name}`
+})));
+
+const subcategoryFormOptions = computed(() => store.subcategories.map(s => ({
+  value: s.id,
+  label: `[${s.id}] ${s.name}`
 })));
 
 const roleFormOptions = [
@@ -467,6 +622,11 @@ const catForm = ref({ id: '', name: '' });
 const isSubcategoryModalOpen = ref(false);
 const editingSubId = ref<string | null>(null);
 const subForm = ref({ id: '', category_id: '', name: '' });
+
+// Modals: Submodule
+const isSubmoduleModalOpen = ref(false);
+const editingSmId = ref<string | null>(null);
+const smForm = ref({ id: '', subcategory_id: '', name: '' });
 
 // Modals: User
 const isUserModalOpen = ref(false);
@@ -505,7 +665,7 @@ const saveCategoryForm = async () => {
 };
 
 const deleteCategory = async (id: string) => {
-  const ok = await doConfirm('Hapus Kategori', `Hapus kategori ${id}? Semua subkategori terkait juga akan terhapus.`);
+  const ok = await doConfirm('Hapus Kategori', `Hapus kategori ${id}? Semua Aplikasi/Project & Sub Modul terkait juga akan terhapus.`);
   if (ok) {
     await store.deleteCategory(id);
   }
@@ -520,9 +680,43 @@ const getCategoryName = (catId: string) => {
   return found ? found.name : catId;
 };
 
+const getSubcategoryName = (subId: string) => {
+  const found = store.subcategories.find(s => s.id === subId);
+  return found ? found.name : subId;
+};
+
+const getSubmodulesCount = (subId: string) => {
+  return store.submodules.filter(m => m.subcategory_id === subId).length;
+};
+
 const filteredSubcategories = computed(() => {
-  if (selectedCategoryFilter.value === 'ALL') return store.subcategories;
-  return store.subcategories.filter(s => s.category_id === selectedCategoryFilter.value);
+  let result = selectedCategoryFilter.value === 'ALL'
+    ? store.subcategories
+    : store.subcategories.filter(s => s.category_id === selectedCategoryFilter.value);
+  
+  if (subcategorySearch.value.trim()) {
+    const q = subcategorySearch.value.trim().toLowerCase();
+    result = result.filter(s => 
+      s.name.toLowerCase().includes(q) || 
+      s.id.toLowerCase().includes(q)
+    );
+  }
+  return result;
+});
+
+const filteredSubmodules = computed(() => {
+  let result = selectedSubcategoryFilter.value === 'ALL'
+    ? store.submodules
+    : store.submodules.filter(m => m.subcategory_id === selectedSubcategoryFilter.value);
+  
+  if (submoduleSearch.value.trim()) {
+    const q = submoduleSearch.value.trim().toLowerCase();
+    result = result.filter(m => 
+      m.name.toLowerCase().includes(q) || 
+      m.id.toLowerCase().includes(q)
+    );
+  }
+  return result;
 });
 
 // Subcategory methods
@@ -559,9 +753,51 @@ const saveSubcategoryForm = async () => {
 };
 
 const deleteSubcategory = async (id: string) => {
-  const ok = await doConfirm('Hapus Subkategori', `Hapus subkategori ${id}?`);
+  const ok = await doConfirm('Hapus Aplikasi/Project', `Hapus Aplikasi/Project ${id}? Semua Sub Modul terkait juga akan terhapus.`);
   if (ok) {
     await store.deleteSubcategory(id);
+  }
+};
+
+// Submodule methods
+const openAddSubmoduleModal = () => {
+  editingSmId.value = null;
+  const nextNum = store.submodules.length + 1;
+  const defaultSubId = selectedSubcategoryFilter.value !== 'ALL'
+    ? selectedSubcategoryFilter.value
+    : (store.subcategories[0]?.id || '');
+  smForm.value = {
+    id: `SMOD-${String(nextNum).padStart(3, '0')}`,
+    subcategory_id: defaultSubId,
+    name: '',
+  };
+  isSubmoduleModalOpen.value = true;
+};
+
+const editSubmodule = (mod: SubmoduleItem) => {
+  editingSmId.value = mod.id;
+  smForm.value = { ...mod };
+  isSubmoduleModalOpen.value = true;
+};
+
+const saveSubmoduleForm = async () => {
+  const payload: SubmoduleItem = {
+    id: smForm.value.id,
+    subcategory_id: smForm.value.subcategory_id,
+    name: smForm.value.name.trim(),
+  };
+  if (editingSmId.value) {
+    await store.updateSubmodule(payload);
+  } else {
+    await store.addSubmodule(payload);
+  }
+  isSubmoduleModalOpen.value = false;
+};
+
+const deleteSubmodule = async (id: string) => {
+  const ok = await doConfirm('Hapus Sub Modul', `Hapus Sub Modul ${id}?`);
+  if (ok) {
+    await store.deleteSubmodule(id);
   }
 };
 

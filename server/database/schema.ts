@@ -43,10 +43,27 @@ export const subcategories = mysqlTable('subcategories', {
   idxCategory: index('idx_subcategory_category').on(table.categoryId),
 }));
 
-export const subcategoriesRelations = relations(subcategories, ({ one }) => ({
+export const subcategoriesRelations = relations(subcategories, ({ one, many }) => ({
   category: one(categories, {
     fields: [subcategories.categoryId],
     references: [categories.id],
+  }),
+  submodules: many(submodules),
+}));
+
+// ── Sub Modules (child of Aplikasi/Project) ──
+export const submodules = mysqlTable('submodules', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  subcategoryId: varchar('subcategory_id', { length: 50 }).notNull().references(() => subcategories.id),
+  name: varchar('name', { length: 255 }).notNull(),
+}, (table) => ({
+  idxSubcategory: index('idx_submodule_subcategory').on(table.subcategoryId),
+}));
+
+export const submodulesRelations = relations(submodules, ({ one }) => ({
+  subcategory: one(subcategories, {
+    fields: [submodules.subcategoryId],
+    references: [subcategories.id],
   }),
 }));
 
@@ -56,7 +73,8 @@ export const tickets = mysqlTable('tickets', {
   title: text('title').notNull(),
   description: text('description').notNull(),
   category: varchar('category', { length: 100 }).notNull(),
-  subcategory: varchar('subcategory', { length: 100 }).notNull(),
+  aplikasiProject: varchar('aplikasi_project', { length: 100 }),
+  submodule: varchar('submodule', { length: 100 }),
   location: varchar('location', { length: 500 }).notNull(),
   priority: varchar('priority', { length: 50 }).notNull(),
   status: varchar('status', { length: 50 }).notNull(),

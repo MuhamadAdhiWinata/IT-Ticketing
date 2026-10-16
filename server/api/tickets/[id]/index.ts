@@ -50,7 +50,8 @@ export default defineEventHandler(async (event) => {
       title: body.title ?? existing.title,
       description: body.description ?? existing.description,
       category: body.category ?? existing.category,
-      subcategory: body.subcategory ?? existing.subcategory,
+      aplikasiProject: body.aplikasiProject ?? existing.aplikasiProject,
+      submodule: body.submodule ?? existing.submodule,
       location: body.location ?? existing.location,
       priority: body.priority ?? existing.priority,
     }).where(eq(tickets.id, id)).execute();

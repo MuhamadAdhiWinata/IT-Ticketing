@@ -105,18 +105,25 @@
         />
       </div>
 
-      <!-- Subcategory Row -->
-      <div>
+      <!-- Aplikasi/Project & Sub Modul Row -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <AppSelect
-          v-model="subcategory"
+          v-model="aplikasiProject"
           :options="currentSubcategories"
-          label="Spesifik Kendala / Sub-Kategori"
+          label="Aplikasi/Project"
+          placeholder="-- Pilih Aplikasi/Project --"
+        />
+        <AppSelect
+          v-model="submodule"
+          :options="currentSubmodules"
+          label="Sub Modul"
+          placeholder="-- Pilih Sub Modul --"
         />
       </div>
 
       <!-- Location & Priority Row -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
+      <div :class="[serviceView === 'SUPPORT_IT' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1', 'grid gap-4']">
+        <div v-if="serviceView === 'SUPPORT_IT'">
           <label class="block text-xs font-semibold text-foreground mb-1.5">Lokasi / Ruangan Anda</label>
           <input 
             v-model="location"
@@ -323,7 +330,8 @@ const displayPelaporDept = computed(() => {
 });
 
 const title = ref('');
-const subcategory = ref('Printer');
+const aplikasiProject = ref('Printer');
+const submodule = ref('');
 const location = ref('Lantai 2');
 const priority = ref<TicketPriority>('MEDIUM');
 const description = ref('');
@@ -344,6 +352,14 @@ const currentSubcategories = computed(() => {
   return storeSubs;
 });
 
+const currentSubmodules = computed(() => {
+  const parent = store.subcategories.find(s => s.name === aplikasiProject.value);
+  if (!parent) return [];
+  return store.submodules
+    .filter(m => m.subcategory_id === parent.id)
+    .map(m => m.name);
+});
+
 const priorities: { id: TicketPriority; label: string; activeClass: string }[] = [
   { id: 'LOW', label: 'Low', activeClass: 'bg-muted border-border text-muted-foreground' },
   { id: 'MEDIUM', label: 'Med', activeClass: 'bg-primary/5 border-primary text-primary' },
@@ -353,11 +369,18 @@ const priorities: { id: TicketPriority; label: string; activeClass: string }[] =
 
 watch(serviceView, (newView) => {
   if (newView === 'SUPPORT_IT') {
-    subcategory.value = 'Printer';
+    aplikasiProject.value = 'Printer';
+    location.value = 'Lantai 2'; // Reset location for Support IT
   } else {
-    subcategory.value = 'Development Sistem Baru';
+    aplikasiProject.value = 'Development Sistem Baru';
+    location.value = ''; // Clear location for IT Programmer
   }
+  submodule.value = '';
 }, { immediate: true });
+
+watch(aplikasiProject, () => {
+  submodule.value = '';
+});
 
 const handleFileDrop = (e: Event) => {
   const target = e.target as HTMLInputElement;
@@ -404,8 +427,9 @@ const createTicket = async (shouldIssue: boolean = false) => {
     const ticketPayload: Partial<Ticket> = {
       title: title.value.trim(),
       category: serviceView.value === 'SUPPORT_IT' ? 'Support IT' : 'IT Programmer',
-      subcategory: subcategory.value,
-      location: location.value.trim(),
+      aplikasiProject: aplikasiProject.value,
+      submodule: submodule.value,
+      location: serviceView.value === 'IT_PROGRAMMER' ? '' : location.value.trim(),
       priority: priority.value,
       description: description.value.trim(),
     };

@@ -20,6 +20,10 @@ export function serializeSubcategory(s: any) {
   return { id: s.id, category_id: s.categoryId, name: s.name };
 }
 
+export function serializeSubmodule(s: any) {
+  return { id: s.id, subcategory_id: s.subcategoryId, name: s.name };
+}
+
 export function serializeTicketMember(m: any) {
   return {
     id: m.id,
@@ -99,7 +103,8 @@ export function serializeTicket(t: any) {
     title: t.title,
     description: t.description,
     category: t.category,
-    subcategory: t.subcategory,
+    aplikasi_project: t.aplikasiProject ?? '',
+    submodule: t.submodule ?? '',
     location: t.location,
     priority: t.priority,
     status: t.status,
@@ -138,6 +143,7 @@ export function serializeTicket(t: any) {
 // Batch serializers
 export function serializeTickets(list: any[]) { return list.map(serializeTicket); }
 export function serializeSubcategories(list: any[]) { return list.map(serializeSubcategory); }
+export function serializeSubmodules(list: any[]) { return list.map(serializeSubmodule); }
 export function serializeUsers(list: any[]) { return list.map(serializeUser); }
 export function serializeCategories(list: any[]) { return list.map(serializeCategory); }
 export function serializeTicketMembers(list: any[]) { return list.map(serializeTicketMember); }

@@ -37,7 +37,7 @@
             @input="onSearchInput"
           />
         </div>
-
+        
         <!-- Options list -->
         <div class="overflow-y-auto custom-scrollbar max-h-48 p-1">
           <div v-if="loading" class="px-3 py-2.5 text-[11px] text-muted-foreground text-center font-medium">

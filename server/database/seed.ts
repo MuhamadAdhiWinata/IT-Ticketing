@@ -24,7 +24,7 @@ async function cleanup() {
   const tables = [
     'attachments', 'audit_logs', 'worklogs',
     'ticket_members', 'tickets',
-    'user_preferences', 'subcategories', 'categories', 'users',
+    'user_preferences', 'submodules', 'subcategories', 'categories', 'users',
   ];
   for (const table of tables) {
     await db.execute(sql.raw(`DELETE FROM ${table}`));
@@ -102,7 +102,7 @@ async function seedTickets() {
     {
       id: 'TCK-202609-001', title: 'Printer Lantai 2 Kehabisan Tinta & Paper Jam',
       description: 'Printer EPSON L3150 tidak dapat mencetak invoice akhir bulan.',
-      category: 'Support IT', subcategory: 'Printer & Mesin Fotokopi',
+      category: 'Support IT', aplikasiProject: 'Printer & Mesin Fotokopi',
       location: 'Gedung A, Lantai 2 - Ruang Finance', priority: 'HIGH', status: 'PROCESS',
       createdBy: 'USR-001', createdByDept: 'Finance & Accounting',
       requestedBy: 'USR-001', requestedByDept: 'Finance & Accounting',
@@ -113,7 +113,7 @@ async function seedTickets() {
     {
       id: 'TCK-202609-002', title: 'Gagal Login Akun ERP SAP Keuangan',
       description: 'User account locked due to 3 incorrect password attempts.',
-      category: 'IT Programmer', subcategory: 'Maintenance ERP Desktop',
+      category: 'IT Programmer', aplikasiProject: 'Maintenance ERP Desktop',
       location: 'Gedung A, Lantai 3 - Akuntansi', priority: 'CRITICAL', status: 'SELESAI',
       createdBy: 'USR-001', createdByDept: 'Finance & Accounting',
       requestedBy: 'USR-001', requestedByDept: 'Finance & Accounting',
@@ -124,7 +124,7 @@ async function seedTickets() {
     {
       id: 'TCK-202609-003', title: 'Koneksi Wifi Boardroom Drop',
       description: 'AP Aruba sering disconnect saat video conference.',
-      category: 'Support IT', subcategory: 'Koneksi Wifi & Jaringan Kantor',
+      category: 'Support IT', aplikasiProject: 'Koneksi Wifi & Jaringan Kantor',
       location: 'Gedung Utama, Lantai 5 - Boardroom', priority: 'HIGH', status: 'DELEGASI',
       createdBy: 'USR-002', createdByDept: 'Human Resources',
       requestedBy: 'USR-002', requestedByDept: 'Human Resources',
@@ -137,7 +137,7 @@ async function seedTickets() {
     {
       id: 'TCK-202609-004', title: 'Request Lisensi Figma Professional',
       description: 'Permintaan lisensi Figma untuk 2 staff UI/UX baru.',
-      category: 'IT Programmer', subcategory: 'Development Aplikasi / Sistem Baru',
+      category: 'IT Programmer', aplikasiProject: 'Development Aplikasi / Sistem Baru',
       location: 'Gedung B, Lantai 4 - Tim Desain', priority: 'LOW', status: 'DRAFT',
       createdBy: 'USR-003', createdByDept: 'Marketing & Sales',
       requestedBy: 'USR-003', requestedByDept: 'Marketing & Sales',
@@ -148,7 +148,7 @@ async function seedTickets() {
     {
       id: 'TCK-202609-005', title: 'Server Database Payroll High CPU',
       description: 'Alert Zabbix: DB-PAYROLL utilisasi memory 96%.',
-      category: 'IT Programmer', subcategory: 'Pengelolaan Database dan Backup Sistem ERP',
+      category: 'IT Programmer', aplikasiProject: 'Pengelolaan Database dan Backup Sistem ERP',
       location: 'Data Center Lt 1 - Server Room A', priority: 'CRITICAL', status: 'PROCESS',
       createdBy: 'ADMIN-001', createdByDept: 'Enterprise IT Governance',
       requestedBy: 'ADMIN-001', requestedByDept: 'Enterprise IT Governance',
@@ -159,7 +159,7 @@ async function seedTickets() {
     {
       id: 'TCK-202609-006', title: 'Monitor PC Kasir Bergaris',
       description: 'Monitor Dell 24 inch bergaris hijau vertikal.',
-      category: 'Support IT', subcategory: 'Hardware Laptop, PC & Monitor',
+      category: 'Support IT', aplikasiProject: 'Hardware Laptop, PC & Monitor',
       location: 'Cabang Thamrin - Front Desk', priority: 'MEDIUM', status: 'SELESAI',
       createdBy: 'USR-004', createdByDept: 'Operasional',
       requestedBy: 'USR-004', requestedByDept: 'Operasional',
@@ -170,7 +170,7 @@ async function seedTickets() {
     {
       id: 'TCK-202609-007', title: 'Email Kantor Tidak Bisa Kirim Eksternal',
       description: 'Seluruh divisi Marketing tidak bisa kirim email ke domain eksternal.',
-      category: 'Support IT', subcategory: 'Email Perusahaan & Office 365',
+      category: 'Support IT', aplikasiProject: 'Email Perusahaan & Office 365',
       location: 'Gedung A, Lantai 4 - Marketing', priority: 'HIGH', status: 'PROCESS',
       createdBy: 'USR-003', createdByDept: 'Marketing & Sales',
       requestedBy: 'USR-003', requestedByDept: 'Marketing & Sales',
@@ -181,7 +181,7 @@ async function seedTickets() {
     {
       id: 'TCK-202609-008', title: 'Instalasi ERP Desktop untuk 10 User',
       description: 'Instalasi ERP Desktop client untuk 10 staf baru.',
-      category: 'IT Programmer', subcategory: 'Release ERP Desktop Production',
+      category: 'IT Programmer', aplikasiProject: 'Release ERP Desktop Production',
       location: 'Gedung B, Lantai 2 - Purchasing', priority: 'MEDIUM', status: 'PROCESS',
       createdBy: 'ADMIN-001', createdByDept: 'Enterprise IT Governance',
       requestedBy: 'ADMIN-001', requestedByDept: 'Enterprise IT Governance',
@@ -192,7 +192,7 @@ async function seedTickets() {
     {
       id: 'TCK-202609-009', title: 'Lampu Ceiling AC Mati Ruang Rapat',
       description: 'Lampu LED di plafon ruang rapat mati total.',
-      category: 'Support IT', subcategory: 'CCTV & Keamanan Akses Fisik IT',
+      category: 'Support IT', aplikasiProject: 'CCTV & Keamanan Akses Fisik IT',
       location: 'Gedung Utama, Lantai 3 - Ruang Rapat', priority: 'MEDIUM', status: 'SELESAI',
       createdBy: 'USR-002', createdByDept: 'Human Resources',
       requestedBy: 'USR-002', requestedByDept: 'Human Resources',
@@ -203,7 +203,7 @@ async function seedTickets() {
     {
       id: 'TCK-202609-010', title: 'Bug Modul Payroll ERP Web',
       description: 'Perhitungan lembur tidak sesuai formula.',
-      category: 'IT Programmer', subcategory: 'Penanganan Bug ERP Web',
+      category: 'IT Programmer', aplikasiProject: 'Penanganan Bug ERP Web',
       location: 'Data Center Lt 1', priority: 'CRITICAL', status: 'PROCESS',
       createdBy: 'USR-004', createdByDept: 'Operasional',
       requestedBy: 'USR-004', requestedByDept: 'Operasional',

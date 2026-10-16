@@ -189,11 +189,11 @@
               </td>
               <td class="px-4 py-3">
                 <div class="font-bold text-foreground">{{ t.title }}</div>
-                <div class="text-[10px] text-muted-foreground">{{ t.category }} · {{ t.subcategory }}</div>
+                <div class="text-[10px] text-muted-foreground">{{ t.category }} · {{ t.aplikasiProject }}<template v-if="t.submodule"> · {{ t.submodule }}</template></div>
               </td>
               <td class="px-4 py-3">
                 <div class="font-semibold text-foreground">{{ t.requestedByName }}</div>
-                <div class="text-[10px] text-muted-foreground">{{ t.location }}</div>
+                <div class="text-[10px] text-muted-foreground">{{ t.location || '-' }}</div>
               </td>
               <td class="px-4 py-3">
                 <UiStatusBadge :status="t.status" size="xs" />

@@ -9,21 +9,31 @@ export const CreateTicketSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
   description: z.string().min(1, 'Deskripsi wajib diisi'),
   category: z.enum(['Support IT', 'IT Programmer']),
-  subcategory: z.string().min(1),
-  location: z.string().min(1, 'Lokasi wajib diisi'),
+  aplikasiProject: z.string().min(1),
+  submodule: z.string().max(500).nullable().optional(),
+  location: z.string().max(500).nullable().optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
   shouldIssue: z.boolean().optional(),
   behalfUserId: z.string().nullable().optional(),
   requestedByName: z.string().optional(),
   requestedByDept: z.string().optional(),
   attachmentCount: z.number().optional(),
+}).superRefine((data, ctx) => {
+  if (data.category === 'Support IT' && (!data.location || data.location.trim() === '')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Lokasi wajib diisi',
+      path: ['location'],
+    });
+  }
 });
 
 export const UpdateTicketSchema = z.object({
   title: z.string().min(1).optional(),
   description: z.string().min(1).optional(),
   category: z.enum(['Support IT', 'IT Programmer']).optional(),
-  subcategory: z.string().optional(),
+  aplikasiProject: z.string().optional(),
+  submodule: z.string().max(500).nullable().optional(),
   location: z.string().optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional(),
 });
