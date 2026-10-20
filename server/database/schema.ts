@@ -65,7 +65,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   memberships: many(ticketMembers),
 }));
 
-// ── Categories & Subcategories ──
+// ── Categories & Project/Kendala ──
 export const categories = mysqlTable('categories', {
   id: varchar('id', { length: 50 }).primaryKey(),
   name: varchar('name', { length: 255 }).notNull().unique(),
@@ -76,20 +76,20 @@ export const categories = mysqlTable('categories', {
 });
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
-  subcategories: many(subcategories),
+  projectKendala: many(projectKendala),
 }));
 
-export const subcategories = mysqlTable('subcategories', {
+export const projectKendala = mysqlTable('project_kendala', {
   id: varchar('id', { length: 50 }).primaryKey(),
   categoryId: varchar('category_id', { length: 50 }).notNull().references(() => categories.id),
   name: varchar('name', { length: 255 }).notNull(),
 }, (table) => ({
-  idxCategory: index('idx_subcategory_category').on(table.categoryId),
+  idxCategory: index('idx_project_kendala_category').on(table.categoryId),
 }));
 
-export const subcategoriesRelations = relations(subcategories, ({ one, many }) => ({
+export const projectKendalaRelations = relations(projectKendala, ({ one, many }) => ({
   category: one(categories, {
-    fields: [subcategories.categoryId],
+    fields: [projectKendala.categoryId],
     references: [categories.id],
   }),
   submodules: many(submodules),
@@ -129,19 +129,19 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   ticket: one(tickets, { fields: [notifications.ticketId], references: [tickets.id] }),
 }));
 
-// ── Sub Modules (child of Aplikasi/Project) ──
+// ── Sub Modules (child of Project/Kendala) ──
 export const submodules = mysqlTable('submodules', {
   id: varchar('id', { length: 50 }).primaryKey(),
-  subcategoryId: varchar('subcategory_id', { length: 50 }).notNull().references(() => subcategories.id),
+  projectKendalaId: varchar('project_kendala_id', { length: 50 }).notNull().references(() => projectKendala.id),
   name: varchar('name', { length: 255 }).notNull(),
 }, (table) => ({
-  idxSubcategory: index('idx_submodule_subcategory').on(table.subcategoryId),
+  idxProjectKendala: index('idx_submodule_project_kendala').on(table.projectKendalaId),
 }));
 
 export const submodulesRelations = relations(submodules, ({ one }) => ({
-  subcategory: one(subcategories, {
-    fields: [submodules.subcategoryId],
-    references: [subcategories.id],
+  projectKendala: one(projectKendala, {
+    fields: [submodules.projectKendalaId],
+    references: [projectKendala.id],
   }),
 }));
 
@@ -151,7 +151,7 @@ export const tickets = mysqlTable('tickets', {
   title: text('title').notNull(),
   description: text('description').notNull(),
   category: varchar('category', { length: 100 }).notNull(),
-  aplikasiProject: varchar('aplikasi_project', { length: 100 }),
+  projectKendala: varchar('project_kendala', { length: 100 }),
   submodule: varchar('submodule', { length: 100 }),
   location: varchar('location', { length: 500 }).notNull(),
   priority: varchar('priority', { length: 50 }).notNull(),

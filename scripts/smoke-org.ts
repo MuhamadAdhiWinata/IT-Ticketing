@@ -145,11 +145,12 @@ async function main() {
 
   const ticket = await req('/api/tickets', 'POST', {
     title: 'Smoke test tiket', description: 'Uji identitas pelapor',
-    category: 'IT Programmer', aplikasiProject: 'Development Aplikasi / Sistem Baru',
+    category: 'IT Programmer', project_kendala: 'Development Aplikasi / Sistem Baru',
     priority: 'LOW', shouldIssue: false,
   });
   check('POST /api/tickets sukses', ticket.status === 200 && !!ticket.data?.data?.id, ticket.status === 200 ? ticket.data?.data?.id : ticket);
   const tk = ticket.data?.data;
+  check('tiket memuat project_kendala', tk?.project_kendala === 'Development Aplikasi / Sistem Baru', tk?.project_kendala);
   check('tiket memuat requested_by_company', tk?.requested_by_company === 'PT IONS', tk?.requested_by_company);
   check('tiket memuat requested_by_division', tk?.requested_by_division === 'Finance', tk?.requested_by_division);
 

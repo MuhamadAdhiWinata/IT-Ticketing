@@ -87,3 +87,16 @@ CREATE TABLE IF NOT EXISTS `internal_notes` (
   CONSTRAINT `fk_internal_notes_ticket` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`),
   CONSTRAINT `fk_internal_notes_author` FOREIGN KEY (`author_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ── Rename master "Aplikasi/Project" -> "Project/Kendala" ──
+-- Jalankan via skrip idempoten (dicek dulu lewat information_schema, backup otomatis):
+--   npx tsx -r dotenv/config scripts/apply-project-kendala-migration.ts
+-- Perintah mentahnya setara dengan:
+--   ALTER TABLE `submodules` DROP FOREIGN KEY `fk_submodule_subcategory`;
+--   ALTER TABLE `submodules` RENAME INDEX `idx_submodule_subcategory` TO `idx_submodule_project_kendala`;
+--   ALTER TABLE `submodules` CHANGE COLUMN `subcategory_id` `project_kendala_id` VARCHAR(50) NOT NULL;
+--   RENAME TABLE `subcategories` TO `project_kendala`;
+--   ALTER TABLE `project_kendala` RENAME INDEX `idx_subcategory_category` TO `idx_project_kendala_category`;
+--   ALTER TABLE `tickets` CHANGE COLUMN `aplikasi_project` `project_kendala` VARCHAR(100) NULL AFTER `category`;
+--   ALTER TABLE `submodules` ADD CONSTRAINT `fk_submodule_project_kendala`
+--     FOREIGN KEY (`project_kendala_id`) REFERENCES `project_kendala` (`id`) ON DELETE CASCADE;

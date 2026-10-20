@@ -45,12 +45,12 @@
     {
       "name": "baris identitas tampil walau belum ada perusahaan (fallback Dept:)",
       "ok": true,
-      "detail": "Administrator IT SYSTEM ADMIN Dept: Keuangan Mode Terang Keluar"
+      "detail": "Administrator IT SYSTEM ADMIN Dept: Keuangan Mode Gelap Keluar"
     },
     {
       "name": "tombol ganti tema ada di dropdown",
       "ok": true,
-      "detail": "Administrator IT SYSTEM ADMIN Dept: Keuangan Mode Terang Keluar"
+      "detail": "Administrator IT SYSTEM ADMIN Dept: Keuangan Mode Gelap Keluar"
     },
     {
       "name": "kartu profil Sidebar menampilkan identitas",
@@ -197,7 +197,17 @@
     {
       "name": "tiket uji dibuat",
       "ok": true,
-      "detail": "TCK-202610-773"
+      "detail": "TCK-202610-110"
+    },
+    {
+      "name": "respons tiket memuat project_kendala",
+      "ok": true,
+      "detail": "Development Aplikasi / Sistem Baru"
+    },
+    {
+      "name": "/api/project-kendala mengembalikan project_kendala_id",
+      "ok": false,
+      "detail": "n=28"
     },
     {
       "name": "aplikasi dimuat ulang",
@@ -210,7 +220,7 @@
     {
       "name": "label identitas \"PT Maju Bersama - Divisi Keuangan\"",
       "ok": true,
-      "detail": "Administrator IT SYSTEM ADMIN PT Maju Bersama - Divisi Keuangan Mode Terang Keluar"
+      "detail": "Administrator IT SYSTEM ADMIN PT Maju Bersama - Divisi Keuangan Mode Gelap Keluar"
     },
     {
       "name": "Sidebar menampilkan identitas lengkap",
@@ -310,7 +320,7 @@
     {
       "name": "label Pelapor memuat identitas PT + Divisi",
       "ok": true,
-      "detail": "Pelapor:Administrator IT•PT Maju Bersama - Divisi Keuangan TIKSP-960353 Buat Atas Nama (Opsional) Pi"
+      "detail": "Pelapor:Administrator IT•PT Maju Bersama - Divisi Keuangan TIKSP-289405 Buat Atas Nama (Opsional) Pi"
     },
     {
       "name": "dropdown \"buat untuk diri sendiri\" membuka daftar pelapor",
@@ -335,7 +345,7 @@
     {
       "name": "kartu tracking menampilkan identitas lengkap",
       "ok": true,
-      "detail": "Kembali ke Tracking TCK-202610-773 Draft Tiket uji identitas pelapor Administrator IT • PT Maju Bersama - Divisi Keuangan Detail Lengkap Des"
+      "detail": "Kembali ke Tracking TCK-202610-110 Draft Tiket uji identitas pelapor Administrator IT • PT Maju Bersama - Divisi Keuangan Detail Lengkap Des"
     },
     {
       "name": "buka Detail Lengkap",
@@ -351,16 +361,16 @@
       "ok": true
     },
     {
-      "name": "klik \"Mode Terang\"",
+      "name": "klik \"Mode Gelap\"",
       "ok": true
     },
     {
       "name": "tema berubah",
       "ok": true,
-      "detail": "awal=true sesudah=false"
+      "detail": "awal=false sesudah=true"
     },
     {
-      "name": "klik \"Mode Gelap\" (kembali)",
+      "name": "klik \"Mode Terang\" (kembali)",
       "ok": true
     },
     {
@@ -370,7 +380,7 @@
     {
       "name": "tema dipaksa gelap untuk uji mobile",
       "ok": true,
-      "detail": "awal=true"
+      "detail": "awal=false"
     },
     {
       "name": "tracking tanpa horizontal overflow di 375px",
@@ -389,7 +399,7 @@
     {
       "name": "tema dikembalikan ke kondisi awal",
       "ok": true,
-      "detail": "kembali=true"
+      "detail": "kembali=false"
     },
     {
       "name": "tangkapan layar terang + gelap selesai",
@@ -399,7 +409,7 @@
     {
       "name": "tema dikembalikan setelah tangkapan",
       "ok": true,
-      "detail": "kembali=true"
+      "detail": "kembali=false"
     },
     {
       "name": "snapshot seluruh pengguna dipulihkan",

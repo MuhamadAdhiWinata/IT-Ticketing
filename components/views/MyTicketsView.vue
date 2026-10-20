@@ -82,7 +82,7 @@
             <td class="p-3">
               <div class="font-bold text-foreground">{{ t.title }}</div>
               <div class="text-[10px] text-muted-foreground mt-0.5">
-                {{ t.category }} · {{ t.aplikasiProject }}<template v-if="t.submodule"> · {{ t.submodule }}</template>
+                {{ t.category }} · {{ t.project_kendala }}<template v-if="t.submodule"> · {{ t.submodule }}</template>
                 <template v-if="t.location"> · {{ t.location }}</template>
               </div>
             </td>

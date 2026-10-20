@@ -26,11 +26,11 @@ export default defineEventHandler(async (event) => {
   if (method === 'PUT') {
     await requireRole(event, 'SYSTEM_ADMIN');
     const body = await readBody(event);
-    const subcategoryId = body.subcategoryId ?? body.subcategory_id;
+    const projectKendalaId = body.projectKendalaId ?? body.project_kendala_id;
 
     await db.update(submodules).set({
       name: body.name,
-      subcategoryId,
+      projectKendalaId,
     }).where(eq(submodules.id, id)).execute();
 
     const result = await db.query.submodules.findFirst({

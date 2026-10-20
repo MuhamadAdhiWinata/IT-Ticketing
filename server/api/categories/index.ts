@@ -19,7 +19,9 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
     if (!body.name) throw createError({ statusCode: 400, statusMessage: 'Nama kategori wajib diisi' });
 
-    const id = `CAT-${Date.now()}`;
+    const id = body.id || `CAT-${Date.now()}`;
+    const idTaken = await db.query.categories.findFirst({ where: (c, { eq: e }) => e(c.id, id) });
+    if (idTaken) throw createError({ statusCode: 409, statusMessage: 'ID kategori sudah dipakai' });
     await db.insert(categories).values({
       id,
       name: body.name,

@@ -17,14 +17,16 @@ export default defineEventHandler(async (event) => {
   if (method === 'POST') {
     await requireRole(event, 'SYSTEM_ADMIN');
     const body = await readBody(event);
-    const subcategoryId = body.subcategoryId ?? body.subcategory_id;
-    if (!body.name || !subcategoryId) throw createError({ statusCode: 400, statusMessage: 'Nama dan ID Subkategori wajib diisi' });
+    const projectKendalaId = body.projectKendalaId ?? body.project_kendala_id;
+    if (!body.name || !projectKendalaId) throw createError({ statusCode: 400, statusMessage: 'Nama dan ID Project/Kendala wajib diisi' });
 
     const id = body.id || `SMOD-${Date.now()}`;
+    const idTaken = await db.query.submodules.findFirst({ where: (sm, { eq: e }) => e(sm.id, id) });
+    if (idTaken) throw createError({ statusCode: 409, statusMessage: 'ID Sub Modul sudah dipakai' });
     await db.insert(submodules).values({
       id,
       name: body.name,
-      subcategoryId,
+      projectKendalaId,
     }).execute();
 
     const created = await db.query.submodules.findFirst({

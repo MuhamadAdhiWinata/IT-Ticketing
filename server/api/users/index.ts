@@ -46,6 +46,8 @@ export default defineEventHandler(async (event) => {
     if (!body.id || !body.name || !body.email || !body.role) {
       throw createError({ statusCode: 400, statusMessage: 'Required fields: id, name, email, role' });
     }
+    const idTaken = await db.query.users.findFirst({ where: (u, { eq: e }) => e(u.id, body.id) });
+    if (idTaken) throw createError({ statusCode: 409, statusMessage: 'ID pengguna sudah dipakai' });
 
     const companyId: string | null = typeof body.companyId === 'string' && body.companyId.trim() ? body.companyId.trim() : null;
     const divisionId: string | null = typeof body.divisionId === 'string' && body.divisionId.trim() ? body.divisionId.trim() : null;

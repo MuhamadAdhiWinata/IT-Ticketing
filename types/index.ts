@@ -107,7 +107,7 @@ export interface Ticket {
   title: string;
   description: string;
   category: string;
-  aplikasiProject: string;
+  project_kendala: string;
   submodule?: string | null;
   location: string;
   priority: TicketPriority;
@@ -159,7 +159,7 @@ export interface PendingAttachment {
   preview?: string;
 }
 
-export interface SubcategoryItem {
+export interface ProjectKendalaItem {
   id: string;
   category_id: string;
   name: string;
@@ -167,7 +167,7 @@ export interface SubcategoryItem {
 
 export interface SubmoduleItem {
   id: string;
-  subcategory_id: string;
+  project_kendala_id: string;
   name: string;
 }
 

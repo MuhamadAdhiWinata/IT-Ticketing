@@ -4,7 +4,7 @@ import {
   serializeWorklog,
   serializeAuditLog,
   serializeAttachment,
-  serializeSubcategory,
+  serializeProjectKendala,
   serializeSubmodule,
   serializeTicketMember,
 } from '../utils/serialize';
@@ -17,7 +17,7 @@ describe('Serializers', () => {
         title: 'Test',
         description: 'Desc',
         category: 'Support IT',
-        aplikasiProject: 'Printer',
+        projectKendala: 'Printer',
         submodule: 'Modul Printer',
         location: 'L1',
         priority: 'MEDIUM',
@@ -62,7 +62,7 @@ describe('Serializers', () => {
 
       expect(result.id).toBe('TCK-001');
       expect(result.created_by).toBe('USR-001');
-      expect(result.aplikasi_project).toBe('Printer');
+      expect(result.project_kendala).toBe('Printer');
       expect(result.submodule).toBe('Modul Printer');
       expect(result.created_at).toBe('2026-09-21 10:00:00');
       expect(result.ticket_number).toBe('TIKSP-123456');
@@ -77,7 +77,7 @@ describe('Serializers', () => {
         title: 'Test',
         description: 'Desc',
         category: 'Support IT',
-        aplikasiProject: 'Printer',
+        projectKendala: 'Printer',
         submodule: 'Modul Printer',
         location: 'L1',
         priority: 'MEDIUM',
@@ -135,7 +135,7 @@ describe('Serializers', () => {
         title: 'Test',
         description: 'Desc',
         category: 'Support IT',
-        aplikasiProject: 'Printer',
+        projectKendala: 'Printer',
         location: 'L1',
         priority: 'MEDIUM',
         status: 'DRAFT',
@@ -166,7 +166,7 @@ describe('Serializers', () => {
         title: 'Test',
         description: 'Desc',
         category: 'Support IT',
-        aplikasiProject: 'Printer',
+        projectKendala: 'Printer',
         location: 'L1',
         priority: 'MEDIUM',
         status: 'DRAFT',
@@ -189,17 +189,17 @@ describe('Serializers', () => {
     });
   });
 
-  describe('serializeSubcategory', () => {
+  describe('serializeProjectKendala', () => {
     it('maps categoryId to category_id', () => {
-      const result = serializeSubcategory({ id: 'SUB-001', categoryId: 'CAT-01', name: 'Printer' });
+      const result = serializeProjectKendala({ id: 'SUB-001', categoryId: 'CAT-01', name: 'Printer' });
       expect(result).toEqual({ id: 'SUB-001', category_id: 'CAT-01', name: 'Printer' });
     });
   });
 
   describe('serializeSubmodule', () => {
-    it('maps subcategoryId to subcategory_id', () => {
-      const result = serializeSubmodule({ id: 'SMOD-001', subcategoryId: 'SUB-015', name: 'Modul Payroll' });
-      expect(result).toEqual({ id: 'SMOD-001', subcategory_id: 'SUB-015', name: 'Modul Payroll' });
+    it('maps projectKendalaId to project_kendala_id', () => {
+      const result = serializeSubmodule({ id: 'SMOD-001', projectKendalaId: 'SUB-015', name: 'Modul Payroll' });
+      expect(result).toEqual({ id: 'SMOD-001', project_kendala_id: 'SUB-015', name: 'Modul Payroll' });
     });
   });
 

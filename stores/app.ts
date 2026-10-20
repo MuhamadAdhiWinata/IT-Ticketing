@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { AppUser, Ticket, CategoryItem, SubcategoryItem, SubmoduleItem, CompanyItem, DivisionItem, PendingAttachment } from '~/types';
+import type { AppUser, Ticket, CategoryItem, ProjectKendalaItem, SubmoduleItem, CompanyItem, DivisionItem, PendingAttachment } from '~/types';
 import { useAuthStore } from '~/stores/auth';
 import { refreshThemeTokens } from '~/composables/useCompany';
 import { apiFetch } from '~/services/api';
@@ -16,7 +16,7 @@ export const useAppStore = defineStore('app', {
     myTickets: [] as Ticket[],
     myTicketsLoading: false,
     categories: [] as CategoryItem[],
-    subcategories: [] as SubcategoryItem[],
+    projectKendala: [] as ProjectKendalaItem[],
     submodules: [] as SubmoduleItem[],
     companies: [] as CompanyItem[],
     divisions: [] as DivisionItem[],
@@ -44,11 +44,11 @@ export const useAppStore = defineStore('app', {
       const authStore = useAuthStore();
       this.currentUser = authStore.user;
 
-      const [usersRes, ticketsRes, catsRes, subcatsRes, submodsRes, prefsRes, companiesRes, divisionsRes] = await Promise.all([
+      const [usersRes, ticketsRes, catsRes, projectKendalaRes, submodsRes, prefsRes, companiesRes, divisionsRes] = await Promise.all([
         apiFetch<{ success: boolean; data: AppUser[] }>('/api/users').catch(() => null),
         apiFetch<{ success: boolean; data: Ticket[] }>('/api/tickets').catch(() => null),
         apiFetch<{ success: boolean; data: CategoryItem[] }>('/api/categories').catch(() => null),
-        apiFetch<{ success: boolean; data: SubcategoryItem[] }>('/api/subcategories').catch(() => null),
+        apiFetch<{ success: boolean; data: ProjectKendalaItem[] }>('/api/project-kendala').catch(() => null),
         apiFetch<{ success: boolean; data: SubmoduleItem[] }>('/api/submodules').catch(() => null),
         apiFetch<{ success: boolean; data: { darkMode: boolean | null } }>('/api/user/preferences').catch(() => null),
         apiFetch<{ success: boolean; data: CompanyItem[] }>('/api/companies').catch(() => null),
@@ -58,7 +58,7 @@ export const useAppStore = defineStore('app', {
       if (usersRes) this.allUsers = usersRes.data;
       if (ticketsRes) this.tickets = ticketsRes.data;
       if (catsRes) this.categories = catsRes.data;
-      if (subcatsRes) this.subcategories = subcatsRes.data;
+      if (projectKendalaRes) this.projectKendala = projectKendalaRes.data;
       if (submodsRes) this.submodules = submodsRes.data;
       if (companiesRes) this.companies = companiesRes.data;
       if (divisionsRes) this.divisions = divisionsRes.data;
@@ -111,16 +111,16 @@ export const useAppStore = defineStore('app', {
 
     async refetchMasterData() {
       try {
-        const [catsRes, subcatsRes, submodsRes, allUsersRes, companiesRes, divisionsRes] = await Promise.all([
+        const [catsRes, projectKendalaRes, submodsRes, allUsersRes, companiesRes, divisionsRes] = await Promise.all([
           apiFetch<{ success: boolean; data: CategoryItem[] }>('/api/categories'),
-          apiFetch<{ success: boolean; data: SubcategoryItem[] }>('/api/subcategories'),
+          apiFetch<{ success: boolean; data: ProjectKendalaItem[] }>('/api/project-kendala'),
           apiFetch<{ success: boolean; data: SubmoduleItem[] }>('/api/submodules'),
           apiFetch<{ success: boolean; data: AppUser[] }>('/api/users'),
           apiFetch<{ success: boolean; data: CompanyItem[] }>('/api/companies'),
           apiFetch<{ success: boolean; data: DivisionItem[] }>('/api/divisions'),
         ]);
         this.categories = catsRes.data;
-        this.subcategories = subcatsRes.data;
+        this.projectKendala = projectKendalaRes.data;
         this.submodules = submodsRes.data;
         this.allUsers = allUsersRes.data;
         this.companies = companiesRes.data;
@@ -249,7 +249,7 @@ export const useAppStore = defineStore('app', {
           body: {
             title: ticketPayload.title,
             category: ticketPayload.category,
-            aplikasiProject: ticketPayload.aplikasiProject,
+            project_kendala: ticketPayload.project_kendala,
             submodule: ticketPayload.submodule,
             location: ticketPayload.location,
             priority: ticketPayload.priority,
@@ -423,39 +423,39 @@ export const useAppStore = defineStore('app', {
       try {
         await apiFetch(`/api/categories/${catId}`, { method: 'DELETE' });
         this.categories = this.categories.filter(c => c.id !== catId);
-        const removedSubIds = this.subcategories.filter(s => s.category_id === catId).map(s => s.id);
-        this.subcategories = this.subcategories.filter(s => s.category_id !== catId);
-        this.submodules = this.submodules.filter(m => !removedSubIds.includes(m.subcategory_id));
+        const removedSubIds = this.projectKendala.filter(s => s.category_id === catId).map(s => s.id);
+        this.projectKendala = this.projectKendala.filter(s => s.category_id !== catId);
+        this.submodules = this.submodules.filter(m => !removedSubIds.includes(m.project_kendala_id));
       } catch (e) {
         console.error('Failed to delete category:', e);
       }
     },
 
-    async addSubcategory(sub: SubcategoryItem) {
+    async addProjectKendala(sub: ProjectKendalaItem) {
       try {
-        const res = await apiFetch<{ success: boolean; data: SubcategoryItem }>('/api/subcategories', { method: 'POST', body: sub });
-        this.subcategories = [...this.subcategories, res.data];
+        const res = await apiFetch<{ success: boolean; data: ProjectKendalaItem }>('/api/project-kendala', { method: 'POST', body: sub });
+        this.projectKendala = [...this.projectKendala, res.data];
       } catch (e) {
-        console.error('Failed to add subcategory:', e);
+        console.error('Failed to add project/kendala:', e);
       }
     },
 
-    async updateSubcategory(sub: SubcategoryItem) {
+    async updateProjectKendala(sub: ProjectKendalaItem) {
       try {
-        const res = await apiFetch<{ success: boolean; data: SubcategoryItem }>(`/api/subcategories/${sub.id}`, { method: 'PUT', body: sub });
-        this.subcategories = this.subcategories.map(s => s.id === sub.id ? res.data : s);
+        const res = await apiFetch<{ success: boolean; data: ProjectKendalaItem }>(`/api/project-kendala/${sub.id}`, { method: 'PUT', body: sub });
+        this.projectKendala = this.projectKendala.map(s => s.id === sub.id ? res.data : s);
       } catch (e) {
-        console.error('Failed to update subcategory:', e);
+        console.error('Failed to update project/kendala:', e);
       }
     },
 
-    async deleteSubcategory(subId: string) {
+    async deleteProjectKendala(subId: string) {
       try {
-        await apiFetch(`/api/subcategories/${subId}`, { method: 'DELETE' });
-        this.subcategories = this.subcategories.filter(s => s.id !== subId);
-        this.submodules = this.submodules.filter(m => m.subcategory_id !== subId);
+        await apiFetch(`/api/project-kendala/${subId}`, { method: 'DELETE' });
+        this.projectKendala = this.projectKendala.filter(s => s.id !== subId);
+        this.submodules = this.submodules.filter(m => m.project_kendala_id !== subId);
       } catch (e) {
-        console.error('Failed to delete subcategory:', e);
+        console.error('Failed to delete project/kendala:', e);
       }
     },
 

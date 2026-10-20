@@ -346,8 +346,24 @@ async function main() {
     record('identitas akun diatur via API', setResult === 200, `status=${setResult}`);
 
     // Tiket uji dibuat SEBELUM muat ulang supaya ikut terbawa ke store (dipakai panel tracking).
-    const newTicket = await evalJS(page, `fetch('/api/tickets',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({title:'Tiket uji identitas pelapor',description:'Dibuat untuk verifikasi label identitas',category:'IT Programmer',aplikasiProject:'Development Aplikasi / Sistem Baru',priority:'LOW',shouldIssue:false})}).then(r=>r.json()).then(j=>j.data)`).catch(() => null);
+    const newTicket = await evalJS(page, `fetch('/api/tickets',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({title:'Tiket uji identitas pelapor',description:'Dibuat untuk verifikasi label identitas',category:'IT Programmer',project_kendala:'Development Aplikasi / Sistem Baru',priority:'LOW',shouldIssue:false})}).then(r=>r.json()).then(j=>j.data)`).catch(() => null);
     record('tiket uji dibuat', !!newTicket?.id, newTicket?.id || 'gagal');
+    record('respons tiket memuat project_kendala',
+      newTicket?.project_kendala === 'Development Aplikasi / Sistem Baru',
+      newTicket?.project_kendala || 'kosong');
+
+    // Jaring pengaman kontrak: handler API memakai `body: any`, jadi penamaan field
+    // yang salah tidak pernah tertangkap typecheck — hanya terlihat lewat asersi ini.
+    const projectKendalaList = await evalJS(page, `fetch('/api/project-kendala',{credentials:'include'}).then(r=>r.json()).then(j=>j.data)`).catch(() => null);
+    record('/api/project-kendala mengembalikan category_id & name',
+      Array.isArray(projectKendalaList) && projectKendalaList.length > 0
+      && !!projectKendalaList[0]?.category_id && !!projectKendalaList[0]?.name,
+      Array.isArray(projectKendalaList) ? `n=${projectKendalaList.length}` : 'gagal');
+
+    const submoduleList = await evalJS(page, `fetch('/api/submodules',{credentials:'include'}).then(r=>r.json()).then(j=>j.data)`).catch(() => null);
+    record('/api/submodules mengembalikan project_kendala_id',
+      Array.isArray(submoduleList) && submoduleList.length > 0 && !!submoduleList[0]?.project_kendala_id,
+      Array.isArray(submoduleList) ? `n=${submoduleList.length}` : 'gagal');
 
     await page.send('Page.reload', { ignoreCache: false });
     await sleep(1500);

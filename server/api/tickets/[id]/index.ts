@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
       title: body.title ?? existing.title,
       description: body.description ?? existing.description,
       category: body.category ?? existing.category,
-      aplikasiProject: body.aplikasiProject ?? existing.aplikasiProject,
+      projectKendala: body.project_kendala ?? existing.projectKendala,
       submodule: body.submodule ?? existing.submodule,
       location: body.location ?? existing.location,
       priority: body.priority ?? existing.priority,

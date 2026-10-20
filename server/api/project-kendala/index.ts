@@ -1,17 +1,17 @@
 import { db } from '~/server/database/client';
-import { subcategories } from '~/server/database/schema';
+import { projectKendala } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 import { requireRole } from '~/server/utils/authorize';
-import { serializeSubcategories, serializeSubcategory } from '~/server/utils/serialize';
+import { serializeProjectKendalas, serializeProjectKendala } from '~/server/utils/serialize';
 
 export default defineEventHandler(async (event) => {
   const method = event.method;
 
   if (method === 'GET') {
-    const results = await db.query.subcategories.findMany({
+    const results = await db.query.projectKendala.findMany({
       orderBy: (s, { asc }) => [asc(s.name)],
     });
-    return successResponse(serializeSubcategories(results));
+    return successResponse(serializeProjectKendalas(results));
   }
 
   if (method === 'POST') {
@@ -21,15 +21,17 @@ export default defineEventHandler(async (event) => {
     if (!body.name || !categoryId) throw createError({ statusCode: 400, statusMessage: 'Nama dan ID Kategori wajib diisi' });
 
     const id = body.id || `SCAT-${Date.now()}`;
-    await db.insert(subcategories).values({
+    const idTaken = await db.query.projectKendala.findFirst({ where: (pk, { eq: e }) => e(pk.id, id) });
+    if (idTaken) throw createError({ statusCode: 409, statusMessage: 'ID Project/Kendala sudah dipakai' });
+    await db.insert(projectKendala).values({
       id,
       name: body.name,
       categoryId,
     }).execute();
 
-    const created = await db.query.subcategories.findFirst({
+    const created = await db.query.projectKendala.findFirst({
       where: (s, { eq: e }) => e(s.id, id),
     });
-    return successResponse(serializeSubcategory(created));
+    return successResponse(serializeProjectKendala(created));
   }
 });

@@ -11,7 +11,7 @@
           Manajemen Master Data
         </h1>
         <p class="text-xs text-muted-foreground">
-          Kelola master kategori, Aplikasi/Project &amp; Sub Modul layanan IT terpisah, prioritas tiket, serta akun pengguna sistem.
+          Kelola master kategori, Project/Kendala &amp; Sub Modul layanan IT terpisah, prioritas tiket, serta akun pengguna sistem.
         </p>
       </div>
 
@@ -35,7 +35,7 @@
           :class="activeTab === 'CATEGORIES' ? 'bg-surface text-primary shadow-xs' : 'text-muted-foreground hover:text-foreground'"
         >
           <FolderTree class="w-4 h-4" />
-          <span>Kategori & Aplikasi/Project ({{ store.categories.length }} Kategori, {{ store.subcategories.length }} Aplikasi/Project)</span>
+          <span>Kategori & Project/Kendala ({{ store.categories.length }} Kategori, {{ store.projectKendala.length }} Project/Kendala)</span>
         </button>
 
         <button
@@ -126,9 +126,9 @@
               </div>
 
               <div class="text-xs text-muted-foreground flex items-center justify-between pt-1 border-t border-border/60">
-                <span>Total Aplikasi/Project Terhubung:</span>
+                <span>Total Project/Kendala Terhubung:</span>
                 <span class="font-mono font-bold text-foreground px-2 py-0.5 bg-surface rounded border border-border">
-                  {{ getSubcategoriesCount(cat.id) }} Aplikasi/Project
+                  {{ getProjectKendalaCount(cat.id) }} Project/Kendala
                 </span>
               </div>
             </div>
@@ -143,18 +143,18 @@
             <div>
               <h3 class="text-sm font-bold text-foreground flex items-center gap-2">
                 <Tag class="w-4 h-4 text-success" />
-                <span>Tabel Master Aplikasi/Project (Relational DB Records)</span>
+                <span>Tabel Master Project/Kendala (Relational DB Records)</span>
               </h3>
               <p class="text-[11px] text-muted-foreground">
-                Setiap baris adalah record Aplikasi/Project terpisah yang terhubung via Foreign Key <code class="font-mono text-primary">category_id</code>
+                Setiap baris adalah record Project/Kendala terpisah yang terhubung via Foreign Key <code class="font-mono text-primary">category_id</code>
               </p>
             </div>
             <button
-              @click="openAddSubcategoryModal"
+              @click="openAddProjectKendalaModal"
               class="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs"
             >
               <Plus class="w-4 h-4" />
-              <span>Tambah Aplikasi/Project Baru</span>
+              <span>Tambah Project/Kendala Baru</span>
             </button>
           </div>
 
@@ -172,29 +172,29 @@
             </div>
             <div class="min-w-[200px] flex-1">
               <input
-                v-model="subcategorySearch"
+                v-model="projectKendalaSearch"
                 type="text"
-                placeholder="Cari nama/ID Aplikasi/Project..."
+                placeholder="Cari nama/ID Project/Kendala..."
                 class="w-full px-3 py-2 rounded-xl border border-border bg-surface text-xs"
               />
             </div>
           </div>
 
-          <!-- Subcategories Table -->
+          <!-- ProjectKendala Table -->
           <div class="overflow-x-auto custom-scrollbar border border-border rounded-xl">
             <table class="w-full text-left border-collapse text-xs">
               <thead>
                 <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-muted-foreground">
-                  <th class="p-3">ID Aplikasi/Project</th>
+                  <th class="p-3">ID Project/Kendala</th>
                   <th class="p-3">Kategori Induk (FK: category_id)</th>
-                  <th class="p-3">Nama Aplikasi/Project</th>
+                  <th class="p-3">Nama Project/Kendala</th>
                   <th class="p-3">Total Sub Modul</th>
                   <th class="p-3 text-right">Aksi Record</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-border">
                 <tr
-                  v-for="sub in filteredSubcategories"
+                  v-for="sub in filteredProjectKendala"
                   :key="sub.id"
                   class="hover:bg-muted/70 transition-colors"
                 >
@@ -207,15 +207,15 @@
                   <td class="p-3 font-bold text-foreground">{{ sub.name }}</td>
                   <td class="p-3 font-mono text-muted-foreground">{{ getSubmodulesCount(sub.id) }}</td>
                   <td class="p-3 text-right space-x-2">
-                    <button @click="editSubcategory(sub)" class="text-blue-600 dark:text-blue-400 hover:underline font-bold">Edit</button>
-                    <button @click="deleteSubcategory(sub.id)" class="text-rose-700 dark:text-rose-400 hover:underline font-bold">Hapus</button>
+                    <button @click="editProjectKendala(sub)" class="text-blue-600 dark:text-blue-400 hover:underline font-bold">Edit</button>
+                    <button @click="deleteProjectKendala(sub.id)" class="text-rose-700 dark:text-rose-400 hover:underline font-bold">Hapus</button>
                   </td>
                 </tr>
-                <tr v-if="filteredSubcategories.length === 0">
+                <tr v-if="filteredProjectKendala.length === 0">
                   <td colspan="5" class="p-8 text-center text-muted-foreground text-xs">
-                    {{ selectedCategoryFilter === 'ALL' && !subcategorySearch
-                      ? 'Belum ada data Aplikasi/Project. Klik "Tambah Aplikasi/Project Baru" untuk menambah.'
-                      : `Tidak ditemukan Aplikasi/Project${subcategorySearch ? ` untuk "${subcategorySearch}"` : ''}${selectedCategoryFilter !== 'ALL' ? ' pada kategori ini' : ''}.` }}
+                    {{ selectedCategoryFilter === 'ALL' && !projectKendalaSearch
+                      ? 'Belum ada data Project/Kendala. Klik "Tambah Project/Kendala Baru" untuk menambah.'
+                      : `Tidak ditemukan Project/Kendala${projectKendalaSearch ? ` untuk "${projectKendalaSearch}"` : ''}${selectedCategoryFilter !== 'ALL' ? ' pada kategori ini' : ''}.` }}
                   </td>
                 </tr>
               </tbody>
@@ -234,7 +234,7 @@
                 <span>Tabel Master Sub Modul (Relational DB Records)</span>
               </h3>
               <p class="text-[11px] text-muted-foreground">
-                Setiap baris adalah record Sub Modul yang terhubung via Foreign Key <code class="font-mono text-primary">subcategory_id</code>
+                Setiap baris adalah record Sub Modul yang terhubung via Foreign Key <code class="font-mono text-primary">project_kendala_id</code>
               </p>
             </div>
             <button
@@ -246,16 +246,16 @@
             </button>
           </div>
 
-          <!-- Filter Aplikasi/Project Induk + Search -->
+          <!-- Filter Project/Kendala Induk + Search -->
           <div class="flex items-center gap-2 bg-muted p-3 rounded-xl border border-border text-xs">
-            <span class="font-bold text-foreground shrink-0">Filter Aplikasi/Project:</span>
+            <span class="font-bold text-foreground shrink-0">Filter Project/Kendala:</span>
             <div class="min-w-[200px] flex-1">
               <AppSelect
-                v-model="selectedSubcategoryFilter"
-                :options="subcategoryFilterOptions"
+                v-model="selectedProjectKendalaFilter"
+                :options="projectKendalaFilterOptions"
                 size="sm"
                 searchable
-                searchPlaceholder="Cari Aplikasi/Project..."
+                searchPlaceholder="Cari Project/Kendala..."
               />
             </div>
             <div class="min-w-[200px] flex-1">
@@ -274,7 +274,7 @@
               <thead>
                 <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-muted-foreground">
                   <th class="p-3">ID Sub Modul</th>
-                  <th class="p-3">Aplikasi/Project (FK: subcategory_id)</th>
+                  <th class="p-3">Project/Kendala (FK: project_kendala_id)</th>
                   <th class="p-3">Nama Sub Modul</th>
                   <th class="p-3 text-right">Aksi Record</th>
                 </tr>
@@ -288,7 +288,7 @@
                   <td class="p-3 font-mono font-bold text-primary">{{ mod.id }}</td>
                   <td class="p-3">
                     <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/5 text-primary border border-primary/15 font-mono">
-                      {{ getSubcategoryName(mod.subcategory_id) }} ({{ mod.subcategory_id }})
+                      {{ getProjectKendalaName(mod.project_kendala_id) }} ({{ mod.project_kendala_id }})
                     </span>
                   </td>
                   <td class="p-3 font-bold text-foreground">{{ mod.name }}</td>
@@ -299,9 +299,9 @@
                 </tr>
                 <tr v-if="filteredSubmodules.length === 0">
                   <td colspan="4" class="p-8 text-center text-muted-foreground text-xs">
-                    {{ selectedSubcategoryFilter === 'ALL' && !submoduleSearch
+                    {{ selectedProjectKendalaFilter === 'ALL' && !submoduleSearch
                       ? 'Belum ada data Sub Modul. Klik "Tambah Sub Modul Baru" untuk menambah.'
-                      : `Tidak ditemukan Sub Modul${submoduleSearch ? ` untuk "${submoduleSearch}"` : ''}${selectedSubcategoryFilter !== 'ALL' ? ' pada Aplikasi/Project ini' : ''}.` }}
+                      : `Tidak ditemukan Sub Modul${submoduleSearch ? ` untuk "${submoduleSearch}"` : ''}${selectedProjectKendalaFilter !== 'ALL' ? ' pada Project/Kendala ini' : ''}.` }}
                   </td>
                 </tr>
               </tbody>
@@ -624,14 +624,14 @@
 
     <!-- MODAL ADD / EDIT SUBCATEGORY (INDIVIDU RECORD) -->
     <Teleport to="body">
-      <div v-if="isSubcategoryModalOpen" class="fixed inset-0 bg-foreground/40 backdrop-blur-sm z-modal flex items-center justify-center p-4">
+      <div v-if="isProjectKendalaModalOpen" class="fixed inset-0 bg-foreground/40 backdrop-blur-sm z-modal flex items-center justify-center p-4">
         <div class="bg-surface rounded-lg border border-border p-6 max-w-md w-full shadow-lg space-y-4">
           <h3 class="text-base font-bold text-foreground">
-            {{ editingSubId ? 'Edit Record Aplikasi/Project' : 'Tambah Record Aplikasi/Project Baru' }}
+            {{ editingSubId ? 'Edit Record Project/Kendala' : 'Tambah Record Project/Kendala Baru' }}
           </h3>
-          <form @submit.prevent="saveSubcategoryForm" class="space-y-3 text-xs">
+          <form @submit.prevent="saveProjectKendalaForm" class="space-y-3 text-xs">
             <div>
-              <label class="block font-bold text-foreground mb-1">ID Aplikasi/Project</label>
+              <label class="block font-bold text-foreground mb-1">ID Project/Kendala</label>
               <input v-model="subForm.id" required :disabled="!!editingSubId" class="w-full px-3 py-2 rounded-xl border border-border bg-surface text-xs font-mono" />
             </div>
             <div>
@@ -643,11 +643,11 @@
               />
             </div>
             <div>
-              <label class="block font-bold text-foreground mb-1">Nama Aplikasi/Project</label>
+              <label class="block font-bold text-foreground mb-1">Nama Project/Kendala</label>
               <input v-model="subForm.name" required placeholder="Cth: Maintenance ERP Web / Printer" class="w-full px-3 py-2 rounded-xl border border-border bg-surface text-xs font-medium" />
             </div>
             <div class="pt-2 flex justify-end gap-2">
-              <button type="button" @click="isSubcategoryModalOpen = false" class="px-3 py-1.5 bg-muted rounded-xl font-bold">Batal</button>
+              <button type="button" @click="isProjectKendalaModalOpen = false" class="px-3 py-1.5 bg-muted rounded-xl font-bold">Batal</button>
               <button type="submit" class="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold">Simpan Record</button>
             </div>
           </form>
@@ -669,10 +669,10 @@
             </div>
             <div>
               <AppSelect
-                v-model="smForm.subcategory_id"
-                :options="subcategoryFormOptions"
-                label="Pilih Aplikasi/Project Induk (FK: subcategory_id)"
-                placeholder="-- Pilih Aplikasi/Project --"
+                v-model="smForm.project_kendala_id"
+                :options="projectKendalaFormOptions"
+                label="Pilih Project/Kendala Induk (FK: project_kendala_id)"
+                placeholder="-- Pilih Project/Kendala --"
               />
             </div>
             <div>
@@ -841,8 +841,9 @@ import {
   Plus,
   Building2,
 } from 'lucide-vue-next';
-import type { CategoryItem, SubcategoryItem, SubmoduleItem, CompanyItem, DivisionItem, AppUser, UserRole } from '~/types';
+import type { CategoryItem, ProjectKendalaItem, SubmoduleItem, CompanyItem, DivisionItem, AppUser, UserRole } from '~/types';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
+import { nextId } from '~/utils/id';
 import { useToast } from '~/composables/useToast';
 import AppSelect from '~/components/common/AppSelect.vue';
 
@@ -852,19 +853,19 @@ const { toast } = useToast();
 
 const activeTab = ref<'CATEGORIES' | 'PRIORITIES' | 'ORG' | 'USERS'>('CATEGORIES');
 const selectedCategoryFilter = ref('ALL');
-const selectedSubcategoryFilter = ref('ALL');
+const selectedProjectKendalaFilter = ref('ALL');
 const selectedDivisionCompanyFilter = ref('ALL');
-const subcategorySearch = ref('');
+const projectKendalaSearch = ref('');
 const submoduleSearch = ref('');
 
 const categoryFilterOptions = computed(() => [
-  { value: 'ALL', label: `Semua Kategori (${store.subcategories.length} record)` },
+  { value: 'ALL', label: `Semua Kategori (${store.projectKendala.length} record)` },
   ...store.categories.map(c => ({ value: c.id, label: `[${c.id}] ${c.name}` }))
 ]);
 
-const subcategoryFilterOptions = computed(() => [
-  { value: 'ALL', label: `Semua Aplikasi/Project (${store.submodules.length} record)` },
-  ...store.subcategories.map(s => ({ value: s.id, label: `[${s.id}] ${s.name}` }))
+const projectKendalaFilterOptions = computed(() => [
+  { value: 'ALL', label: `Semua Project/Kendala (${store.submodules.length} record)` },
+  ...store.projectKendala.map(s => ({ value: s.id, label: `[${s.id}] ${s.name}` }))
 ]);
 
 const categoryFormOptions = computed(() => store.categories.map(c => ({
@@ -872,7 +873,7 @@ const categoryFormOptions = computed(() => store.categories.map(c => ({
   label: `[${c.id}] ${c.name}`
 })));
 
-const subcategoryFormOptions = computed(() => store.subcategories.map(s => ({
+const projectKendalaFormOptions = computed(() => store.projectKendala.map(s => ({
   value: s.id,
   label: `[${s.id}] ${s.name}`
 })));
@@ -905,15 +906,15 @@ const isCategoryModalOpen = ref(false);
 const editingCatId = ref<string | null>(null);
 const catForm = ref({ id: '', name: '' });
 
-// Modals: Subcategory
-const isSubcategoryModalOpen = ref(false);
+// Modals: ProjectKendala
+const isProjectKendalaModalOpen = ref(false);
 const editingSubId = ref<string | null>(null);
 const subForm = ref({ id: '', category_id: '', name: '' });
 
 // Modals: Submodule
 const isSubmoduleModalOpen = ref(false);
 const editingSmId = ref<string | null>(null);
-const smForm = ref({ id: '', subcategory_id: '', name: '' });
+const smForm = ref({ id: '', project_kendala_id: '', name: '' });
 
 // Modals: User
 const isUserModalOpen = ref(false);
@@ -967,7 +968,7 @@ const divisionForm = ref({ id: '', company_id: '', name: '' });
 // Category methods
 const openAddCategoryModal = () => {
   editingCatId.value = null;
-  catForm.value = { id: `CAT-0${store.categories.length + 1}`, name: '' };
+  catForm.value = { id: nextId(store.categories, 'CAT'), name: '' };
   isCategoryModalOpen.value = true;
 };
 
@@ -991,14 +992,14 @@ const saveCategoryForm = async () => {
 };
 
 const deleteCategory = async (id: string) => {
-  const ok = await doConfirm('Hapus Kategori', `Hapus kategori ${id}? Semua Aplikasi/Project & Sub Modul terkait juga akan terhapus.`);
+  const ok = await doConfirm('Hapus Kategori', `Hapus kategori ${id}? Semua Project/Kendala & Sub Modul terkait juga akan terhapus.`);
   if (ok) {
     await store.deleteCategory(id);
   }
 };
 
-const getSubcategoriesCount = (catId: string) => {
-  return store.subcategories.filter(s => s.category_id === catId).length;
+const getProjectKendalaCount = (catId: string) => {
+  return store.projectKendala.filter(s => s.category_id === catId).length;
 };
 
 const getCategoryName = (catId: string) => {
@@ -1006,22 +1007,22 @@ const getCategoryName = (catId: string) => {
   return found ? found.name : catId;
 };
 
-const getSubcategoryName = (subId: string) => {
-  const found = store.subcategories.find(s => s.id === subId);
+const getProjectKendalaName = (subId: string) => {
+  const found = store.projectKendala.find(s => s.id === subId);
   return found ? found.name : subId;
 };
 
 const getSubmodulesCount = (subId: string) => {
-  return store.submodules.filter(m => m.subcategory_id === subId).length;
+  return store.submodules.filter(m => m.project_kendala_id === subId).length;
 };
 
-const filteredSubcategories = computed(() => {
+const filteredProjectKendala = computed(() => {
   let result = selectedCategoryFilter.value === 'ALL'
-    ? store.subcategories
-    : store.subcategories.filter(s => s.category_id === selectedCategoryFilter.value);
+    ? store.projectKendala
+    : store.projectKendala.filter(s => s.category_id === selectedCategoryFilter.value);
   
-  if (subcategorySearch.value.trim()) {
-    const q = subcategorySearch.value.trim().toLowerCase();
+  if (projectKendalaSearch.value.trim()) {
+    const q = projectKendalaSearch.value.trim().toLowerCase();
     result = result.filter(s => 
       s.name.toLowerCase().includes(q) || 
       s.id.toLowerCase().includes(q)
@@ -1031,9 +1032,9 @@ const filteredSubcategories = computed(() => {
 });
 
 const filteredSubmodules = computed(() => {
-  let result = selectedSubcategoryFilter.value === 'ALL'
+  let result = selectedProjectKendalaFilter.value === 'ALL'
     ? store.submodules
-    : store.submodules.filter(m => m.subcategory_id === selectedSubcategoryFilter.value);
+    : store.submodules.filter(m => m.project_kendala_id === selectedProjectKendalaFilter.value);
   
   if (submoduleSearch.value.trim()) {
     const q = submoduleSearch.value.trim().toLowerCase();
@@ -1045,56 +1046,54 @@ const filteredSubmodules = computed(() => {
   return result;
 });
 
-// Subcategory methods
-const openAddSubcategoryModal = () => {
+// ProjectKendala methods
+const openAddProjectKendalaModal = () => {
   editingSubId.value = null;
-  const nextNum = store.subcategories.length + 1;
   const defaultCatId = store.categories[0]?.id || 'CAT-01';
   subForm.value = {
-    id: `SUB-${String(nextNum).padStart(3, '0')}`,
+    id: nextId(store.projectKendala, 'SUB'),
     category_id: selectedCategoryFilter.value !== 'ALL' ? selectedCategoryFilter.value : defaultCatId,
     name: '',
   };
-  isSubcategoryModalOpen.value = true;
+  isProjectKendalaModalOpen.value = true;
 };
 
-const editSubcategory = (sub: SubcategoryItem) => {
+const editProjectKendala = (sub: ProjectKendalaItem) => {
   editingSubId.value = sub.id;
   subForm.value = { ...sub };
-  isSubcategoryModalOpen.value = true;
+  isProjectKendalaModalOpen.value = true;
 };
 
-const saveSubcategoryForm = async () => {
-  const payload: SubcategoryItem = {
+const saveProjectKendalaForm = async () => {
+  const payload: ProjectKendalaItem = {
     id: subForm.value.id,
     category_id: subForm.value.category_id,
     name: subForm.value.name.trim(),
   };
   if (editingSubId.value) {
-    await store.updateSubcategory(payload);
+    await store.updateProjectKendala(payload);
   } else {
-    await store.addSubcategory(payload);
+    await store.addProjectKendala(payload);
   }
-  isSubcategoryModalOpen.value = false;
+  isProjectKendalaModalOpen.value = false;
 };
 
-const deleteSubcategory = async (id: string) => {
-  const ok = await doConfirm('Hapus Aplikasi/Project', `Hapus Aplikasi/Project ${id}? Semua Sub Modul terkait juga akan terhapus.`);
+const deleteProjectKendala = async (id: string) => {
+  const ok = await doConfirm('Hapus Project/Kendala', `Hapus Project/Kendala ${id}? Semua Sub Modul terkait juga akan terhapus.`);
   if (ok) {
-    await store.deleteSubcategory(id);
+    await store.deleteProjectKendala(id);
   }
 };
 
 // Submodule methods
 const openAddSubmoduleModal = () => {
   editingSmId.value = null;
-  const nextNum = store.submodules.length + 1;
-  const defaultSubId = selectedSubcategoryFilter.value !== 'ALL'
-    ? selectedSubcategoryFilter.value
-    : (store.subcategories[0]?.id || '');
+  const defaultSubId = selectedProjectKendalaFilter.value !== 'ALL'
+    ? selectedProjectKendalaFilter.value
+    : (store.projectKendala[0]?.id || '');
   smForm.value = {
-    id: `SMOD-${String(nextNum).padStart(3, '0')}`,
-    subcategory_id: defaultSubId,
+    id: nextId(store.submodules, 'SMOD'),
+    project_kendala_id: defaultSubId,
     name: '',
   };
   isSubmoduleModalOpen.value = true;
@@ -1109,7 +1108,7 @@ const editSubmodule = (mod: SubmoduleItem) => {
 const saveSubmoduleForm = async () => {
   const payload: SubmoduleItem = {
     id: smForm.value.id,
-    subcategory_id: smForm.value.subcategory_id,
+    project_kendala_id: smForm.value.project_kendala_id,
     name: smForm.value.name.trim(),
   };
   if (editingSmId.value) {
@@ -1130,9 +1129,8 @@ const deleteSubmodule = async (id: string) => {
 // User methods
 const openAddUserModal = () => {
   editingUserId.value = null;
-  const nextNum = store.allUsers.length + 1;
   userForm.value = {
-    id: `USR-${String(nextNum).padStart(3, '0')}`,
+    id: nextId(store.allUsers, 'USR'),
     name: '',
     email: '',
     department: '',
@@ -1188,7 +1186,7 @@ const saveUserForm = async () => {
 // Company methods
 const openAddCompanyModal = () => {
   editingCompanyId.value = null;
-  companyForm.value = { id: '', name: '' };
+  companyForm.value = { id: nextId(store.companies, 'COMP'), name: '' };
   isCompanyModalOpen.value = true;
 };
 
@@ -1246,9 +1244,8 @@ const filteredDivisions = computed(() => {
 
 const openAddDivisionModal = () => {
   editingDivisionId.value = null;
-  const nextNum = store.divisions.length + 1;
   divisionForm.value = {
-    id: `DIV-${String(nextNum).padStart(3, '0')}`,
+    id: nextId(store.divisions, 'DIV'),
     company_id: selectedDivisionCompanyFilter.value !== 'ALL'
       ? selectedDivisionCompanyFilter.value
       : (store.companies[0]?.id || ''),
@@ -1301,7 +1298,7 @@ function closeOpenModal(): boolean {
   if (isCompanyModalOpen.value) { isCompanyModalOpen.value = false; return true; }
   if (isDivisionModalOpen.value) { isDivisionModalOpen.value = false; return true; }
   if (isSubmoduleModalOpen.value) { isSubmoduleModalOpen.value = false; return true; }
-  if (isSubcategoryModalOpen.value) { isSubcategoryModalOpen.value = false; return true; }
+  if (isProjectKendalaModalOpen.value) { isProjectKendalaModalOpen.value = false; return true; }
   if (isCategoryModalOpen.value) { isCategoryModalOpen.value = false; return true; }
   return false;
 }

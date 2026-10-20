@@ -30,7 +30,7 @@ describe('Validation', () => {
         title: 'Test',
         description: 'Desc',
         category: 'Support IT',
-        aplikasiProject: 'Printer',
+        project_kendala: 'Printer',
         submodule: 'Inkjet Lantai 2',
         location: 'L1',
         priority: 'MEDIUM',
@@ -43,7 +43,7 @@ describe('Validation', () => {
         title: 'Programmer Request',
         description: 'Need new feature',
         category: 'IT Programmer',
-        aplikasiProject: 'Development Sistem Baru',
+        project_kendala: 'Development Sistem Baru',
         priority: 'MEDIUM',
         submodule: null,
         location: null,
@@ -58,7 +58,7 @@ describe('Validation', () => {
         title: 'Programmer Request',
         description: 'Need new feature',
         category: 'IT Programmer',
-        aplikasiProject: 'Development Sistem Baru',
+        project_kendala: 'Development Sistem Baru',
         priority: 'MEDIUM',
         location: '',
       });
@@ -70,7 +70,7 @@ describe('Validation', () => {
         title: 'Test',
         description: 'Desc',
         category: 'Support IT',
-        aplikasiProject: 'Printer',
+        project_kendala: 'Printer',
         submodule: 'Inkjet Lantai 2',
         priority: 'MEDIUM',
       });
@@ -84,7 +84,7 @@ describe('Validation', () => {
         title: 'Test',
         description: 'Desc',
         category: 'Support IT',
-        aplikasiProject: 'Printer',
+        project_kendala: 'Printer',
         submodule: 'Inkjet Lantai 2',
         location: '',
         priority: 'MEDIUM',
@@ -94,7 +94,7 @@ describe('Validation', () => {
       expect(result.error).toContain('Lokasi wajib diisi');
     });
 
-    it('rejects missing aplikasiProject', () => {
+    it('rejects missing project_kendala', () => {
       const result = validate(CreateTicketSchema, {
         title: 'Test',
         description: 'Desc',
@@ -109,7 +109,7 @@ describe('Validation', () => {
       const result = validate(CreateTicketSchema, {
         description: 'Desc',
         category: 'Support IT',
-        aplikasiProject: 'Printer',
+        project_kendala: 'Printer',
         submodule: 'Inkjet Lantai 2',
         location: 'L1',
         priority: 'MEDIUM',
@@ -122,7 +122,7 @@ describe('Validation', () => {
         title: 'Test',
         description: 'Desc',
         category: 'Invalid',
-        aplikasiProject: 'Printer',
+        project_kendala: 'Printer',
         location: 'L1',
         priority: 'MEDIUM',
       });
@@ -134,7 +134,7 @@ describe('Validation', () => {
         title: 'Test',
         description: 'Desc',
         category: 'Support IT',
-        aplikasiProject: 'Printer',
+        project_kendala: 'Printer',
         submodule: 'Inkjet Lantai 2',
         location: 'L1',
         priority: 'URGENT',

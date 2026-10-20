@@ -74,7 +74,7 @@ export default defineEventHandler(async (event) => {
       title: body.title || '',
       description: body.description || '',
       category: body.category || 'Support IT',
-      aplikasiProject: body.aplikasiProject || '',
+      projectKendala: body.project_kendala || '',
       submodule: body.submodule || null,
       location: body.location?.trim() || (body.category === 'IT Programmer' ? '' : 'Lantai 1'),
       priority: body.priority || 'MEDIUM',

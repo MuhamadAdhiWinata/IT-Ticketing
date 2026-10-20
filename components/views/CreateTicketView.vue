@@ -106,15 +106,16 @@
         />
       </div>
 
-      <!-- Aplikasi/Project & Sub Modul Row -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <!-- Project/Kendala & Sub Modul Row -->
+      <div :class="[serviceView === 'SUPPORT_IT' ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2', 'grid gap-4']">
         <AppSelect
-          v-model="aplikasiProject"
-          :options="currentSubcategories"
-          label="Aplikasi/Project"
-          placeholder="-- Pilih Aplikasi/Project --"
+          v-model="projectKendala"
+          :options="currentProjectKendala"
+          :label="serviceView === 'SUPPORT_IT' ? 'Kendala' : 'Project'"
+          :placeholder="serviceView === 'SUPPORT_IT' ? '-- Pilih Kendala --' : '-- Pilih Project --'"
         />
         <AppSelect
+          v-if="serviceView === 'IT_PROGRAMMER'"
           v-model="submodule"
           :options="currentSubmodules"
           label="Sub Modul"
@@ -328,7 +329,7 @@ const displayPelaporName = computed(() => pelaporIdentity.value?.name || 'User')
 const displayPelaporOrg = computed(() => formatOrgLabel(pelaporIdentity.value ?? {}));
 
 const title = ref('');
-const aplikasiProject = ref('Printer');
+const projectKendala = ref('');
 const submodule = ref('');
 const location = ref('Lantai 2');
 const priority = ref<TicketPriority>('MEDIUM');
@@ -337,13 +338,13 @@ const pendingFiles = ref<PendingAttachment[]>([]);
 const createdTicketSuccess = ref<Ticket | null>(null);
 const uploadSection = ref<HTMLElement | null>(null);
 
-const currentSubcategories = computed(() => {
+const currentProjectKendala = computed(() => {
   const targetCatName = serviceView.value === 'SUPPORT_IT' ? 'Support IT' : 'IT Programmer';
   const targetCategory = store.categories.find(c => c.name.toLowerCase() === targetCatName.toLowerCase());
   
   if (!targetCategory) return [];
 
-  const storeSubs = store.subcategories
+  const storeSubs = store.projectKendala
     .filter(s => s.category_id === targetCategory.id)
     .map(s => s.name);
 
@@ -351,10 +352,10 @@ const currentSubcategories = computed(() => {
 });
 
 const currentSubmodules = computed(() => {
-  const parent = store.subcategories.find(s => s.name === aplikasiProject.value);
+  const parent = store.projectKendala.find(s => s.name === projectKendala.value);
   if (!parent) return [];
   return store.submodules
-    .filter(m => m.subcategory_id === parent.id)
+    .filter(m => m.project_kendala_id === parent.id)
     .map(m => m.name);
 });
 
@@ -366,17 +367,16 @@ const priorities: { id: TicketPriority; label: string; activeClass: string }[] =
 ];
 
 watch(serviceView, (newView) => {
+  projectKendala.value = '';
+  submodule.value = '';
   if (newView === 'SUPPORT_IT') {
-    aplikasiProject.value = 'Printer';
     location.value = 'Lantai 2'; // Reset location for Support IT
   } else {
-    aplikasiProject.value = 'Development Sistem Baru';
     location.value = ''; // Clear location for IT Programmer
   }
-  submodule.value = '';
 }, { immediate: true });
 
-watch(aplikasiProject, () => {
+watch(projectKendala, () => {
   submodule.value = '';
 });
 
@@ -397,6 +397,15 @@ const removePendingFile = (index: number) => {
 const handleSubmit = async (shouldAssign: boolean) => {
   if (!title.value.trim() || !description.value.trim()) {
     showError('Formulir Tidak Lengkap', 'Mohon isi Judul Tiket dan Deskripsi Masalah.');
+    return;
+  }
+  if (!projectKendala.value.trim()) {
+    showError(
+      'Formulir Tidak Lengkap',
+      serviceView.value === 'SUPPORT_IT'
+        ? 'Mohon pilih Kendala yang dialami.'
+        : 'Mohon pilih Project yang sedang dikerjakan.'
+    );
     return;
   }
   if (priority.value === 'CRITICAL' && pendingFiles.value.length === 0) {
@@ -425,7 +434,7 @@ const createTicket = async (shouldIssue: boolean = false) => {
     const ticketPayload: Partial<Ticket> = {
       title: title.value.trim(),
       category: serviceView.value === 'SUPPORT_IT' ? 'Support IT' : 'IT Programmer',
-      aplikasiProject: aplikasiProject.value,
+      project_kendala: projectKendala.value,
       submodule: submodule.value,
       location: serviceView.value === 'IT_PROGRAMMER' ? '' : location.value.trim(),
       priority: priority.value,
