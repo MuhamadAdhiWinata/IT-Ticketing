@@ -128,6 +128,65 @@ describe('Serializers', () => {
         returned_notes: null,
       });
     });
+
+    it('memetakan identitas perusahaan & divisi pelapor', () => {
+      const result = serializeTicket({
+        id: 'TCK-003',
+        title: 'Test',
+        description: 'Desc',
+        category: 'Support IT',
+        aplikasiProject: 'Printer',
+        location: 'L1',
+        priority: 'MEDIUM',
+        status: 'DRAFT',
+        createdBy: 'USR-001',
+        createdByDept: 'Finance',
+        creator: { name: 'Rina', companyName: 'PT IONS', divisionName: 'Finance' },
+        requestedBy: 'USR-001',
+        requestedByDept: 'Finance',
+        requester: { name: 'Rina', companyName: 'PT IONS', divisionName: 'Finance' },
+        assignedTo: null,
+        members: [],
+        attachments: [],
+        worklogs: [],
+        auditLogs: [],
+        createdAt: '2026-09-21 10:00:00',
+      });
+
+      expect(result.requested_by_company).toBe('PT IONS');
+      expect(result.requested_by_division).toBe('Finance');
+      expect(result.created_by_company).toBe('PT IONS');
+      expect(result.created_by_division).toBe('Finance');
+      expect(result.requestedByName).toBe('Rina');
+    });
+
+    it('string kosong saat user belum punya perusahaan/divisi', () => {
+      const result = serializeTicket({
+        id: 'TCK-004',
+        title: 'Test',
+        description: 'Desc',
+        category: 'Support IT',
+        aplikasiProject: 'Printer',
+        location: 'L1',
+        priority: 'MEDIUM',
+        status: 'DRAFT',
+        createdBy: 'USR-001',
+        createdByDept: 'Finance',
+        creator: { name: 'Rina' },
+        requestedBy: 'USR-001',
+        requestedByDept: 'Finance',
+        requester: { name: 'Rina' },
+        assignedTo: null,
+        members: [],
+        attachments: [],
+        worklogs: [],
+        auditLogs: [],
+        createdAt: '2026-09-21 10:00:00',
+      });
+
+      expect(result.requested_by_company).toBe('');
+      expect(result.requested_by_division).toBe('');
+    });
   });
 
   describe('serializeSubcategory', () => {

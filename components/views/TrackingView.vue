@@ -1,7 +1,7 @@
 <template>
   <div class="mx-auto space-y-6 px-2 sm:px-0">
     <!-- Header Banner -->
-    <div class="tracking-hero text-foreground rounded-lg p-5 sm:p-8 relative overflow-hidden">
+    <div class="tracking-hero text-foreground rounded-lg p-5 sm:p-8 relative overflow-hidden border border-border">
       <div class="absolute right-0 top-0 translate-x-12 -translate-y-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
       <NetworkTopology class="absolute inset-0 w-full h-full z-0" />
       <!-- Decorative IT infrastructure icons -->
@@ -15,8 +15,8 @@
       <div class="absolute inset-0 bg-gradient-to-r from-primary/[0.10] via-primary/[0.04] to-transparent pointer-events-none z-[1]" />
       <div class="relative z-10 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-foreground/[0.18] backdrop-blur-md text-[11px] sm:text-xs font-semibold border border-foreground/25 text-foreground shadow-xs">
-            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 flex items-center justify-center shrink-0 ring-2 ring-white shadow-xs">
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-surface/80 backdrop-blur-md text-[11px] sm:text-xs font-semibold border border-border text-foreground shadow-xs">
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 flex items-center justify-center shrink-0 ring-2 ring-border-strong shadow-xs">
               <img :src="settings.logoUrl || '/images/IO.png'" alt="Logo" class="w-5 h-5 sm:w-6 sm:h-6 object-contain rounded-full" />
             </div>
             <span class="truncate">Tracking Tiket IT {{ settings.companyName }}</span>
@@ -47,7 +47,7 @@
               v-model="searchQuery"
               type="text"
               placeholder="Cari kode, judul, atau nama pembuat..."
-              class="w-full pl-10 pr-4 py-3 rounded-lg bg-surface text-foreground placeholder-muted-foreground font-medium text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-md border border-input"
+              class="w-full pl-10 pr-4 py-3 rounded-lg bg-surface text-foreground placeholder-muted-foreground font-medium text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary shadow-md border border-border"
               @focus="onFocus"
               @keydown="onKeydown"
               autocomplete="off"
@@ -107,9 +107,9 @@
                       </div>
                       <p class="text-xs font-semibold text-foreground mt-1 line-clamp-1">{{ s.title }}</p>
                       <div class="flex items-center gap-2 mt-1.5 text-[11px] text-muted-foreground">
-                        <span class="flex items-center gap-1">
-                          <User class="w-3 h-3" />
-                          {{ s.requestedByName }}
+                        <span class="flex items-center gap-1 min-w-0">
+                          <User class="w-3 h-3 shrink-0" />
+                          <span class="truncate">{{ requesterIdentity(s) }}</span>
                         </span>
                         <span>•</span>
                         <UiStatusBadge :status="s.status" size="xs" />
@@ -154,7 +154,7 @@
           <h2 class="text-base sm:text-lg font-bold text-foreground break-words">{{ activeTicket.title }}</h2>
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span v-if="activeTicket.location" class="flex items-center gap-1"><MapPin class="w-3.5 h-3.5 shrink-0" /> {{ activeTicket.location }}</span>
-            <span class="flex items-center gap-1"><User class="w-3.5 h-3.5 shrink-0" /> {{ activeTicket.requestedByName }} ({{ activeTicket.requestedByDept }})</span>
+            <span class="flex items-center gap-1"><User class="w-3.5 h-3.5 shrink-0" /> {{ requesterIdentity(activeTicket) }}</span>
             <span v-if="activeTicket.created_by_admin_name && activeTicket.created_by_admin_id !== activeTicket.requestedBy" class="flex items-center gap-1 text-warning">
               <Shield class="w-3.5 h-3.5 shrink-0" />
               Dibuat oleh Admin: {{ activeTicket.created_by_admin_name }}
@@ -218,12 +218,29 @@ import {
   Cloud, Server, Database, Monitor, Ticket as TicketIcon
 } from 'lucide-vue-next';
 import type { AppUser, Ticket } from '~/types';
+import { apiFetch } from '~/services/api';
 import { useCompany } from '~/composables/useCompany';
 import NetworkTopology from '~/components/common/NetworkTopology.vue';
 import { debounce } from '~/utils/debounce';
+import { formatRequesterIdentity } from '~/utils/identity';
 import TicketIncomingLog from '~/components/common/TicketIncomingLog.vue';
 
 const { settings } = useCompany();
+
+// Identitas pelapor untuk daftar saran & kartu tiket aktif.
+function requesterIdentity(t: {
+  requestedByName?: string | null;
+  requested_by_company?: string | null;
+  requested_by_division?: string | null;
+  requestedByDept?: string | null;
+}) {
+  return formatRequesterIdentity({
+    name: t.requestedByName,
+    company: t.requested_by_company,
+    division: t.requested_by_division,
+    department: t.requestedByDept,
+  }, '-');
+}
 
 const props = defineProps<{
   tickets: Ticket[];
@@ -273,8 +290,7 @@ const fetchSuggestions = debounce(async (q: string) => {
 
   try {
     const params = new URLSearchParams({ q, limit: '8' });
-    const res = await $fetch<{ success: boolean; data: any[] }>(`/api/tickets/search?${params}`, {
-      credentials: 'include',
+    const res = await apiFetch<{ success: boolean; data: any[] }>(`/api/tickets/search?${params}`, {
       signal: abortController.signal,
     });
     suggestions.value = res.success ? res.data : [];

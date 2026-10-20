@@ -6,7 +6,7 @@
       v-model="search"
       type="text"
       placeholder="Cari worker..."
-      class="w-full px-3 py-2 rounded-lg border border-input bg-surface text-xs font-medium text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+      class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs font-medium text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
     />
 
     <div class="max-h-60 overflow-y-auto space-y-1 custom-scrollbar mt-3">

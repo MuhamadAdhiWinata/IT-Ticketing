@@ -77,7 +77,7 @@
                   placeholder="email@company.co.id"
                   required
                   autocomplete="email"
-                  class="w-full pl-10 pr-3 py-2.5 rounded-xl border border-input bg-surface text-foreground text-sm font-medium placeholder:text-muted-foreground/50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-transparent"
+                  class="w-full pl-10 pr-3 py-2.5 rounded-xl border border-border bg-surface text-foreground text-sm font-medium placeholder:text-muted-foreground/50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
               </div>
             </div>
@@ -101,7 +101,7 @@
                   placeholder="Masukkan password"
                   required
                   autocomplete="current-password"
-                  class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-input bg-surface text-foreground text-sm font-medium placeholder:text-muted-foreground/50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-transparent"
+                  class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-border bg-surface text-foreground text-sm font-medium placeholder:text-muted-foreground/50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 <button
                   type="button"

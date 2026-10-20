@@ -1,4 +1,11 @@
-/** @type {import('tailwindcss').Config} */
+﻿/** @type {import('tailwindcss').Config} */
+
+// Token tema disimpan sebagai hex (var(--color-*)). Modifikasi alpha Tailwind
+// (bg-primary/5) butuh <alpha-value>; color-mix membaca nilai var saat runtime,
+// jadi varian transparan tetap mengikuti merek perusahaan & mode gelap.
+const alpha = (token) =>
+  `color-mix(in srgb, var(${token}) calc(<alpha-value> * 100%), transparent)`;
+
 export default {
   content: [
     "./components/**/*.{js,vue,ts}",
@@ -11,69 +18,72 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      // `border`/`divide` tanpa warna harus ikut mode tema (bawaan v3: gray-200 statis di
+      // kedua mode sehingga tampak putih di dark). divideColor Turunan dari borderColor.
+      borderColor: { DEFAULT: alpha("--color-border") },
       colors: {
         primary: {
-          DEFAULT: 'var(--color-primary)',
-          hover: 'var(--color-primary-hover)',
-          active: 'var(--color-primary-active)',
-          muted: 'var(--color-primary-muted)',
-          foreground: 'var(--color-primary-foreground)',
+          DEFAULT: alpha("--color-primary"),
+          hover: alpha("--color-primary-hover"),
+          active: alpha("--color-primary-active"),
+          muted: alpha("--color-primary-muted"),
+          foreground: alpha("--color-primary-foreground"),
         },
         secondary: {
-          DEFAULT: 'var(--color-secondary)',
-          hover: 'var(--color-secondary-hover)',
-          foreground: 'var(--color-secondary-foreground)',
+          DEFAULT: alpha("--color-secondary"),
+          hover: alpha("--color-secondary-hover"),
+          foreground: alpha("--color-secondary-foreground"),
         },
         accent: {
-          DEFAULT: 'var(--color-accent)',
-          foreground: 'var(--color-accent-foreground)',
+          DEFAULT: alpha("--color-accent"),
+          foreground: alpha("--color-accent-foreground"),
         },
-        background: 'var(--color-background)',
-        foreground: 'var(--color-foreground)',
+        background: alpha("--color-background"),
+        foreground: alpha("--color-foreground"),
         surface: {
-          DEFAULT: 'var(--color-surface)',
-          elevated: 'var(--color-surface-elevated)',
+          DEFAULT: alpha("--color-surface"),
+          elevated: alpha("--color-surface-elevated"),
         },
         muted: {
-          DEFAULT: 'var(--color-muted)',
-          foreground: 'var(--color-muted-foreground)',
+          DEFAULT: alpha("--color-muted"),
+          foreground: alpha("--color-muted-foreground"),
         },
         border: {
-          DEFAULT: 'var(--color-border)',
-          strong: 'var(--color-border-strong)',
+          DEFAULT: alpha("--color-border"),
+          strong: alpha("--color-border-strong"),
         },
-        input: 'var(--color-input)',
+        input: alpha("--color-input"),
         destructive: {
-          DEFAULT: 'var(--color-destructive)',
-          hover: 'var(--color-destructive-hover)',
-          foreground: 'var(--color-destructive-foreground)',
+          DEFAULT: alpha("--color-destructive"),
+          hover: alpha("--color-destructive-hover"),
+          foreground: alpha("--color-destructive-foreground"),
         },
         success: {
-          DEFAULT: 'var(--color-success)',
-          muted: 'var(--color-success-muted)',
-          foreground: 'var(--color-success-foreground)',
+          DEFAULT: alpha("--color-success"),
+          muted: alpha("--color-success-muted"),
+          foreground: alpha("--color-success-foreground"),
         },
         warning: {
-          DEFAULT: 'var(--color-warning)',
-          muted: 'var(--color-warning-muted)',
-          foreground: 'var(--color-warning-foreground)',
+          DEFAULT: alpha("--color-warning"),
+          muted: alpha("--color-warning-muted"),
+          foreground: alpha("--color-warning-foreground"),
         },
         info: {
-          DEFAULT: 'var(--color-info)',
-          muted: 'var(--color-info-muted)',
-          foreground: 'var(--color-info-foreground)',
+          DEFAULT: alpha("--color-info"),
+          muted: alpha("--color-info-muted"),
+          foreground: alpha("--color-info-foreground"),
         },
         status: {
-          draft: 'var(--color-status-draft)',
-          process: 'var(--color-status-process)',
-          delegasi: 'var(--color-status-delegasi)',
-          selesai: 'var(--color-status-selesai)',
+          draft: alpha("--color-status-draft"),
+          process: alpha("--color-status-process"),
+          delegasi: alpha("--color-status-delegasi"),
+          selesai: alpha("--color-status-selesai"),
         },
         priority: {
-          low: 'var(--color-priority-low)',
-          medium: 'var(--color-priority-medium)',
-          high: 'var(--color-priority-high)',
-          critical: 'var(--color-priority-critical)',
+          low: alpha("--color-priority-low"),
+          medium: alpha("--color-priority-medium"),
+          high: alpha("--color-priority-high"),
+          critical: alpha("--color-priority-critical"),
         },
       },
       fontFamily: {

@@ -6,7 +6,7 @@
       type="button"
       @click="toggleOpen"
       :class="[
-        'w-full rounded-lg border border-input bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all flex items-center justify-between',
+        'w-full rounded-lg border border-border bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all flex items-center justify-between',
         size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-3 py-2.5 text-xs',
       ]"
       :aria-haspopup="true"
@@ -33,7 +33,7 @@
             v-model="searchQuery"
             type="text"
             :placeholder="searchPlaceholder"
-            class="w-full px-2.5 py-1.5 rounded-md border border-input bg-surface text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/30"
+            class="w-full px-2.5 py-1.5 rounded-md border border-border bg-surface text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary"
             @input="onSearchInput"
           />
         </div>
@@ -49,6 +49,7 @@
           <button
             v-for="option in displayOptions"
             :key="option.value"
+            type="button"
             @click="selectOption(option.value)"
             :class="[
               'w-full rounded-md cursor-pointer transition-colors flex items-center justify-between text-left',
@@ -71,6 +72,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { apiFetch } from '~/services/api';
 import { ChevronDown, Check } from 'lucide-vue-next';
 
 const props = withDefaults(
@@ -156,9 +158,7 @@ const fetchRemote = async (search: string) => {
     if (search.trim()) params.set('search', search.trim());
     params.set('limit', '30');
 
-    const res = await $fetch<{ success: boolean; data: any[] }>(`${props.searchUrl}?${params}`, {
-      credentials: 'include',
-    });
+    const res = await apiFetch<{ success: boolean; data: any[] }>(`${props.searchUrl}?${params}`);
 
     if (res.success && Array.isArray(res.data)) {
       remoteOptions.value = props.formatResult

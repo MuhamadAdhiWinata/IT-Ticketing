@@ -17,7 +17,9 @@ export default defineEventHandler(async (event) => {
       where: (p, { eq: e }) => e(p.userId, userId),
     });
 
-    return successResponse({ darkMode: prefs?.darkMode ? true : false });
+    // null = pengguna belum pernah memilih: klien boleh ikuti prefers-color-scheme,
+    // bukan dipaksa terang oleh default false.
+    return successResponse({ darkMode: prefs ? (prefs.darkMode ? true : false) : null });
   }
 
   if (method === 'PUT') {

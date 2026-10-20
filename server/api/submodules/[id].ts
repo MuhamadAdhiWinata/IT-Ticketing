@@ -1,8 +1,9 @@
-import { eq } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { submodules } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
+import { requireRole } from '~/server/utils/authorize';
 import { serializeSubmodule } from '~/server/utils/serialize';
+import { eq } from 'drizzle-orm';
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
@@ -12,40 +13,36 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Submodule ID required' });
   }
 
-  if (method === 'PUT') {
-    const body = await readBody(event);
-    const subcategoryId = body.subcategoryId || body.subcategory_id;
-
-    const existing = await db.query.submodules.findFirst({
+  if (method === 'GET') {
+    const row = await db.query.submodules.findFirst({
       where: (s, { eq: e }) => e(s.id, id),
     });
-    if (!existing) {
+    if (!row) {
       throw createError({ statusCode: 404, statusMessage: 'Submodule not found' });
     }
+    return successResponse(serializeSubmodule(row));
+  }
+
+  if (method === 'PUT') {
+    await requireRole(event, 'SYSTEM_ADMIN');
+    const body = await readBody(event);
+    const subcategoryId = body.subcategoryId ?? body.subcategory_id;
 
     await db.update(submodules).set({
-      subcategoryId: subcategoryId ?? existing.subcategoryId,
-      name: body.name ?? existing.name,
+      name: body.name,
+      subcategoryId,
     }).where(eq(submodules.id, id)).execute();
 
     const result = await db.query.submodules.findFirst({
       where: (s, { eq: e }) => e(s.id, id),
     });
-
-    return successResponse(result ? serializeSubmodule(result) : null);
+    return successResponse(serializeSubmodule(result));
   }
 
   if (method === 'DELETE') {
-    const existing = await db.query.submodules.findFirst({
-      where: (s, { eq: e }) => e(s.id, id),
-    });
-    if (!existing) {
-      throw createError({ statusCode: 404, statusMessage: 'Submodule not found' });
-    }
-
+    await requireRole(event, 'SYSTEM_ADMIN');
     await db.delete(submodules).where(eq(submodules.id, id)).execute();
-
-    return successResponse({ success: true });
+    return successResponse({ id, deleted: true });
   }
 
   throw createError({ statusCode: 405, statusMessage: 'Method not allowed' });

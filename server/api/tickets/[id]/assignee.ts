@@ -20,8 +20,19 @@ export default defineEventHandler(async (event) => {
 
   await db.update(tickets).set({
     assignedTo: body.userId,
-    assignedToName: body.userName || body.userId,
   }).where(eq(tickets.id, id)).execute();
+
+  const { createNotification } = await import('~/server/utils/notifications');
+  const worker = await db.query.users.findFirst({ where: (u, { eq: e }) => e(u.id, body.userId) });
+  if (worker) {
+    await createNotification({
+      userId: body.userId,
+      ticketId: id,
+      type: 'ASSIGNED',
+      title: 'Tiket Ditugaskan',
+      message: `Anda ditugaskan untuk menangani tiket ${existing.ticketNumber || id}: ${existing.title}`,
+    });
+  }
 
   const result = await db.query.tickets.findFirst({
     where: (t, { eq: e }) => e(t.id, id),

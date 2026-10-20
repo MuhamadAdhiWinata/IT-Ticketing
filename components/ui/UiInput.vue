@@ -16,9 +16,9 @@
         :disabled="disabled"
         :required="required"
         :class="[
-          'w-full bg-surface text-foreground border border-input rounded-lg text-xs font-medium',
+          'w-full bg-surface text-foreground border border-border rounded-lg text-xs font-medium',
           'placeholder:text-muted-foreground/60',
-          'focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary',
+          'focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           'transition-colors duration-150',
           $slots.prefix ? 'pl-9' : 'pl-3',

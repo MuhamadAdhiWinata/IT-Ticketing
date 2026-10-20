@@ -79,13 +79,9 @@
             <p class="text-xs font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
               {{ item.title }}
             </p>
-            <div class="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <div class="flex items-center gap-1.5 text-[10px] text-muted-foreground min-w-0">
               <User class="w-3 h-3 shrink-0" />
-              <span class="truncate">{{ item.requestedByName }}</span>
-              <template v-if="item.requestedByDept">
-                <span>-</span>
-                <span class="truncate">{{ item.requestedByDept }}</span>
-              </template>
+              <span class="truncate">{{ requesterIdentity(item) }}</span>
             </div>
           </div>
         </div>
@@ -97,16 +93,18 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import { Inbox, Loader2, User } from 'lucide-vue-next';
+import type { IncomingTicket } from '~/types';
+import { apiFetch } from '~/services/api';
+import { formatRequesterIdentity } from '~/utils/identity';
 
-interface IncomingTicket {
-  id: string;
-  title: string;
-  status: string;
-  priority: string;
-  category: string;
-  requestedByName: string;
-  requestedByDept: string;
-  created_at: string;
+// Identitas pelapor memakai satu format dengan halaman tiket lain.
+function requesterIdentity(item: IncomingTicket) {
+  return formatRequesterIdentity({
+    name: item.requestedByName,
+    company: item.requested_by_company,
+    division: item.requested_by_division,
+    department: item.requestedByDept,
+  }, '-');
 }
 
 const emit = defineEmits<{
@@ -132,9 +130,8 @@ const formatTime = (dateStr: string) => {
 const fetchData = async () => {
   loading.value = true;
   try {
-    const res = await $fetch<{ success: boolean; data: { summary: any; period: string; log: IncomingTicket[] } }>(
-      `/api/tickets/incoming-log?period=${period.value}`,
-      { credentials: 'include' }
+    const res = await apiFetch<{ success: boolean; data: { summary: any; period: string; log: IncomingTicket[] } }>(
+      `/api/tickets/incoming-log?period=${period.value}`
     );
     if (res.success) {
       summary.value = res.data.summary;

@@ -3,6 +3,7 @@ import { db } from '~/server/database/client';
 import { tickets } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 import { getCurrentUserId, getCurrentUser } from '~/server/utils/user-context';
+import { loadOrgMaps, resolveCompanyOf, resolveDivisionOf } from '~/server/utils/org';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -53,24 +54,29 @@ export default defineEventHandler(async (event) => {
     limit,
   });
 
-  // Resolve requester names
+  // Resolve requester identity (name + company/division)
   const userIds = [...new Set(periodTickets.map(t => t.requestedBy))];
   const userList = userIds.length > 0
     ? await db.query.users.findMany({ where: (u, { inArray: i }) => i(u.id, userIds) })
     : [];
-  const userMap = new Map(userList.map(u => [u.id, u.name]));
-  const deptMap = new Map(userList.map(u => [u.id, u.department]));
+  const maps = await loadOrgMaps(userList.map(u => u.companyId), userList.map(u => u.divisionId));
+  const userMap = new Map(userList.map(u => [u.id, u]));
 
-  const log = periodTickets.map(t => ({
-    id: t.id,
-    title: t.title,
-    status: t.status,
-    priority: t.priority,
-    category: t.category,
-    requestedByName: userMap.get(t.requestedBy) || '',
-    requestedByDept: deptMap.get(t.requestedBy) || t.requestedByDept || '',
-    created_at: t.createdAt,
-  }));
+  const log = periodTickets.map(t => {
+    const requester = userMap.get(t.requestedBy);
+    return {
+      id: t.id,
+      title: t.title,
+      status: t.status,
+      priority: t.priority,
+      category: t.category,
+      requestedByName: requester?.name || '',
+      requestedByDept: requester?.department || t.requestedByDept || '',
+      requested_by_company: requester ? (resolveCompanyOf(requester, maps) || '') : '',
+      requested_by_division: requester ? (resolveDivisionOf(requester, maps) || '') : '',
+      created_at: t.createdAt,
+    };
+  });
 
   return successResponse({
     summary: { today: todayCount, sevenDays: sevenDayCount, month: monthCount },

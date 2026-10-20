@@ -127,7 +127,6 @@ export default defineEventHandler(async (event) => {
   let newStatus = finalTargetStatus;
   let completedAt = existing.completedAt;
   let assignedTo = existing.assignedTo;
-  let assignedToName = existing.assignedToName;
   let issuedAt = existing.issuedAt;
   let processStartedAt = existing.processStartedAt;
 
@@ -143,7 +142,6 @@ export default defineEventHandler(async (event) => {
   await db.update(tickets).set({
     status: newStatus,
     assignedTo,
-    assignedToName,
     completedAt,
     issuedAt,
     processStartedAt,
@@ -163,7 +161,6 @@ export default defineEventHandler(async (event) => {
     action: `TAHAP_${stageKey}_SELESAI`,
     performedAt: ts,
     performedBy: userId,
-    performedByName: user?.name || userId,
     notes: notes || '',
   }).execute();
 
@@ -173,8 +170,7 @@ export default defineEventHandler(async (event) => {
       ticketId: id,
       stageKey,
       workerId: userId,
-      workerName: user?.name || userId,
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().slice(0, 10),
       startAt: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }),
       finishAt: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }),
       durationMinutes: 0,
@@ -184,11 +180,11 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    if (files.length > 0 && files[0].filepath) {
+    if (files[0]?.filepath) {
       await uploadFiles(files, id, stageKey, stageVisibility, userId, ts);
     }
   } finally {
-    if (files.length > 0 && files[0].filepath) {
+    if (files[0]?.filepath) {
       await cleanupTempFiles(files);
     }
   }

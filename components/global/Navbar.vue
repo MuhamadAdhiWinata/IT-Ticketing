@@ -60,6 +60,7 @@
             <div class="px-3 py-2 border-b border-border">
               <p class="text-xs font-bold text-foreground">{{ authStore.user?.name }}</p>
               <p class="text-[10px] text-muted-foreground">{{ authStore.user?.role.replace('_', ' ') }}</p>
+              <p v-if="profileOrgLabel" class="text-[10px] text-primary font-semibold mt-0.5">{{ profileOrgLabel }}</p>
             </div>
             <button
               @click="store.toggleDarkMode"
@@ -86,11 +87,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { PlusCircle, Sun, Moon, Menu, LogOut, ChevronDown } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
 import { useAuthStore } from '~/stores/auth';
 import { useConfirmModal } from '~/composables/useConfirmModal';
+import { formatOrgLabel } from '~/utils/identity';
 
 const store = useAppStore();
 const authStore = useAuthStore();
@@ -98,6 +100,8 @@ const { confirm } = useConfirmModal();
 
 const isProfileOpen = ref(false);
 const profileDropdownRef = ref<HTMLElement | null>(null);
+
+const profileOrgLabel = computed(() => formatOrgLabel(authStore.user ?? {}));
 
 const handleLogout = async () => {
   isProfileOpen.value = false;

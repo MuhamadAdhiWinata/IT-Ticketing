@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { ticketMembers } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const existing = await db.query.ticketMembers.findFirst({
-    where: (m, { eq: e }) => (e(m.ticketId, ticketId) as any) && (e(m.userId, userId) as any),
+    where: (m, { eq: e, and: a }) => a(e(m.ticketId, ticketId), e(m.userId, userId)),
   });
 
   if (!existing) {
@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   }
 
   await db.delete(ticketMembers)
-    .where((m, { eq: e }) => (e(m.ticketId, ticketId) as any) && (e(m.userId, userId) as any))
+    .where(and(eq(ticketMembers.ticketId, ticketId), eq(ticketMembers.userId, userId)))
     .execute();
 
   return successResponse({ success: true });

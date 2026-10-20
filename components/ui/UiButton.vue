@@ -71,7 +71,7 @@ const variantClasses = computed(() => {
     ghost: 'text-muted-foreground hover:bg-muted hover:text-foreground',
     danger: 'bg-destructive text-destructive-foreground hover:bg-destructive-hover shadow-xs',
     success: 'bg-success text-success-foreground hover:opacity-90 shadow-xs',
-    glass: 'bg-foreground/[0.18] border border-foreground/25 text-foreground backdrop-blur-md hover:bg-foreground/[0.25]',
+    glass: 'bg-surface/80 border border-border text-foreground backdrop-blur-md hover:bg-surface',
   };
   return variants[props.variant];
 });

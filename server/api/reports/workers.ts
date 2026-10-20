@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     const workersOnTicket = new Set<string>();
     if (ticket.assignedTo && workerMap[ticket.assignedTo]) workersOnTicket.add(ticket.assignedTo);
 
-    ticket.worklogs?.forEach(wl => {
+    ticket.worklogs?.forEach((wl: any) => {
       if (workerMap[wl.workerId]) {
         workersOnTicket.add(wl.workerId);
         workerMap[wl.workerId].totalHours += (wl.durationMinutes || 0) / 60;

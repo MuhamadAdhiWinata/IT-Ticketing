@@ -1,4 +1,4 @@
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin(async () => {
   if (import.meta.server) return;
 
   // Apply dark mode from localStorage BEFORE any Vue component renders
@@ -8,14 +8,14 @@ export default defineNuxtPlugin(() => {
   } else if (stored === '0') {
     document.documentElement.classList.remove('dark');
   } else {
-    // Default to light mode when no saved preference exists
-    document.documentElement.classList.remove('dark');
+    // Belum ada pilihan tersimpan: ikuti preferensi sistem, bukan paksa terang.
+    // Perbaikan penuh = skrip inline dari server sebelum paint pertama;
+    // plugin ini masih berjalan setelah HTML digarap, jadi kedipan tetap mungkin.
+    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+    document.documentElement.classList.toggle('dark', !!prefersDark);
   }
 
-  // Sync dark mode class with Pinia store when it's ready
-  const syncDarkMode = () => {
-    // Do not persist on first visit — let appStore.initApp() fetch
-    // the server-stored preference after login and persist then.
-  };
-  syncDarkMode();
+  // Token warna dihitung ulang untuk mode yang baru dipilih (kontras AA).
+  const { refreshThemeTokens } = await import('~/composables/useCompany');
+  refreshThemeTokens();
 });

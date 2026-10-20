@@ -3,6 +3,7 @@ import { db } from '~/server/database/client';
 import { tickets, users } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 import { getCurrentUserId, getCurrentUser } from '~/server/utils/user-context';
+import { loadOrgMaps, resolveCompanyOf, resolveDivisionOf } from '~/server/utils/org';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -86,14 +87,20 @@ async function enrichTickets(ticketList: any[]) {
   const userList = await db.query.users.findMany({
     where: (u, { inArray: i }) => i(u.id, userIds),
   });
-  const userMap = new Map(userList.map(u => [u.id, u.name]));
+  const maps = await loadOrgMaps(userList.map(u => u.companyId), userList.map(u => u.divisionId));
+  const userMap = new Map(userList.map(u => [u.id, u]));
 
-  return ticketList.map(t => ({
-    id: t.id,
-    title: t.title,
-    status: t.status,
-    priority: t.priority,
-    requestedByName: userMap.get(t.requestedBy) || '',
-    requestedByDept: t.requestedByDept || '',
-  }));
+  return ticketList.map(t => {
+    const requester = userMap.get(t.requestedBy);
+    return {
+      id: t.id,
+      title: t.title,
+      status: t.status,
+      priority: t.priority,
+      requestedByName: requester?.name || '',
+      requestedByDept: t.requestedByDept || '',
+      requested_by_company: requester ? (resolveCompanyOf(requester, maps) || '') : '',
+      requested_by_division: requester ? (resolveDivisionOf(requester, maps) || '') : '',
+    };
+  });
 }

@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   if (method === 'GET') {
     const query = getQuery(event);
 
-    const results = await getTicketsWithRelations((t, { eq: e, or: o, like: l, and: a }: any) => {
+    const results = await getTicketsWithRelations((t: any, { eq: e, or: o, like: l, and: a }: any) => {
       const conditions: any[] = [];
       if (query.status) conditions.push(e(t.status, query.status as string));
       if (query.search) conditions.push(o(l(t.id, `%${query.search}%`), l(t.title, `%${query.search}%`)));
@@ -56,7 +56,6 @@ export default defineEventHandler(async (event) => {
     let requestedByName = user?.name || body.requestedByName || userId;
     let requestedByDept = user?.department || body.requestedByDept || '';
     let createdByAdminId: string | null = null;
-    let createdByAdminName: string | null = null;
 
     if (body.behalfUserId && user?.role === 'SYSTEM_ADMIN') {
       const behalfUser = await db.query.users.findFirst({
@@ -67,7 +66,6 @@ export default defineEventHandler(async (event) => {
         requestedByName = behalfUser.name;
         requestedByDept = behalfUser.department;
         createdByAdminId = userId;
-        createdByAdminName = user?.name || userId;
       }
     }
 
@@ -82,15 +80,11 @@ export default defineEventHandler(async (event) => {
       priority: body.priority || 'MEDIUM',
       status: 'DRAFT',
       createdBy: userId,
-      createdByName: requestedByName,
       createdByDept: requestedByDept,
       createdByAdminId,
-      createdByAdminName,
       requestedBy,
-      requestedByName,
       requestedByDept,
       assignedTo: null,
-      assignedToName: null,
       delegationType: null,
       vendorId: null,
       vendorName: null,
@@ -107,8 +101,6 @@ export default defineEventHandler(async (event) => {
       issuedAt: shouldIssue ? ts : null,
       processStartedAt: null,
       completedAt: null,
-      resolutionSummary: null,
-      confirmedByUser: 0,
     }).execute();
 
     const { auditLogs } = await import('~/server/database/schema');
@@ -118,7 +110,6 @@ export default defineEventHandler(async (event) => {
       action: shouldIssue ? 'TIKET_DITERBITKAN' : 'TIKET_DRAFT_DISIMPAN',
       performedAt: ts,
       performedBy: userId,
-      performedByName: requestedByName,
     }).execute();
 
     if (body.behalfUserId && user?.role === 'SYSTEM_ADMIN') {
@@ -129,7 +120,6 @@ export default defineEventHandler(async (event) => {
         detail: `Dibuat oleh ${user?.name || userId} atas nama ${requestedByName}`,
         performedAt: ts,
         performedBy: userId,
-        performedByName: user?.name || userId,
       }).execute();
     }
 

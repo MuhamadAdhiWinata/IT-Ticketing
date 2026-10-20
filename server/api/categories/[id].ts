@@ -1,7 +1,8 @@
-import { eq, inArray } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { categories, subcategories, submodules } from '~/server/database/schema';
+import { categories } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
+import { requireRole } from '~/server/utils/authorize';
+import { eq } from 'drizzle-orm';
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
@@ -11,41 +12,38 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Category ID required' });
   }
 
-  if (method === 'PUT') {
-    const body = await readBody(event);
-
-    const existing = await db.query.categories.findFirst({
+  if (method === 'GET') {
+    const category = await db.query.categories.findFirst({
       where: (c, { eq: e }) => e(c.id, id),
     });
-    if (!existing) {
+    if (!category) {
       throw createError({ statusCode: 404, statusMessage: 'Category not found' });
     }
+    return successResponse(category);
+  }
 
-    await db.update(categories).set({ name: body.name }).where(eq(categories.id, id)).execute();
+  if (method === 'PUT') {
+    await requireRole(event, 'SYSTEM_ADMIN');
+    const body = await readBody(event);
 
-    const result = await db.query.categories.findFirst({
+    await db.update(categories).set({
+      name: body.name,
+      slaCritical: body.slaCritical,
+      slaHigh: body.slaHigh,
+      slaMedium: body.slaMedium,
+      slaLow: body.slaLow,
+    }).where(eq(categories.id, id)).execute();
+
+    const updatedCategory = await db.query.categories.findFirst({
       where: (c, { eq: e }) => e(c.id, id),
     });
-
-    return successResponse(result);
+    return successResponse(updatedCategory);
   }
 
   if (method === 'DELETE') {
-    const existing = await db.query.categories.findFirst({
-      where: (c, { eq: e }) => e(c.id, id),
-    });
-    if (!existing) {
-      throw createError({ statusCode: 404, statusMessage: 'Category not found' });
-    }
-
-    const childIds = (await db.select({ id: subcategories.id }).from(subcategories).where(eq(subcategories.categoryId, id))).map(r => r.id);
-    if (childIds.length > 0) {
-      await db.delete(submodules).where(inArray(submodules.subcategoryId, childIds)).execute();
-    }
-    await db.delete(subcategories).where(eq(subcategories.categoryId, id)).execute();
+    await requireRole(event, 'SYSTEM_ADMIN');
     await db.delete(categories).where(eq(categories.id, id)).execute();
-
-    return successResponse({ success: true });
+    return successResponse({ id, deleted: true });
   }
 
   throw createError({ statusCode: 405, statusMessage: 'Method not allowed' });

@@ -25,6 +25,7 @@ async function cleanup() {
     'attachments', 'audit_logs', 'worklogs',
     'ticket_members', 'tickets',
     'user_preferences', 'submodules', 'subcategories', 'categories', 'users',
+    'divisions', 'companies',
   ];
   for (const table of tables) {
     await db.execute(sql.raw(`DELETE FROM ${table}`));
@@ -210,10 +211,10 @@ async function seedTickets() {
 async function seedWorklogs(ticketIds: string[]) {
   console.log('[SEED] Seeding worklogs...');
   const data = [
-    { ticketId: ticketIds[0], stageKey: 'IN_PROGRESS', workerId: 'IT-001', date: '2026-09-01', startAt: '09:15', finishAt: '09:45', durationMinutes: 30, description: 'Pengecekan fisik printer.' },
-    { ticketId: ticketIds[1], stageKey: 'IN_PROGRESS', workerId: 'IT-002', date: '2026-09-02', startAt: '14:10', finishAt: '14:45', durationMinutes: 35, description: 'Unlock user SAP.' },
-    { ticketId: ticketIds[4], stageKey: 'IN_PROGRESS', workerId: 'IT-004', date: '2026-09-05', startAt: '08:00', finishAt: '09:15', durationMinutes: 75, description: 'Kill transactions.' },
-    { ticketId: ticketIds[5], stageKey: 'IN_PROGRESS', workerId: 'IT-001', date: '2026-09-06', startAt: '10:30', finishAt: '11:45', durationMinutes: 75, description: 'Ganti kabel HDMI.' },
+    { ticketId: ticketIds[0]!, stageKey: 'IN_PROGRESS', workerId: 'IT-001', date: '2026-09-01', startAt: '09:15', finishAt: '09:45', durationMinutes: 30, description: 'Pengecekan fisik printer.' },
+    { ticketId: ticketIds[1]!, stageKey: 'IN_PROGRESS', workerId: 'IT-002', date: '2026-09-02', startAt: '14:10', finishAt: '14:45', durationMinutes: 35, description: 'Unlock user SAP.' },
+    { ticketId: ticketIds[4]!, stageKey: 'IN_PROGRESS', workerId: 'IT-004', date: '2026-09-05', startAt: '08:00', finishAt: '09:15', durationMinutes: 75, description: 'Kill transactions.' },
+    { ticketId: ticketIds[5]!, stageKey: 'IN_PROGRESS', workerId: 'IT-001', date: '2026-09-06', startAt: '10:30', finishAt: '11:45', durationMinutes: 75, description: 'Ganti kabel HDMI.' },
   ];
   for (const w of data) await db.insert(worklogs).values({ id: randomId('WL'), ...w, createdAt: ts(w.date, w.finishAt) });
   console.log(`[SEED] ${data.length} worklogs berhasil.`);
@@ -222,11 +223,11 @@ async function seedWorklogs(ticketIds: string[]) {
 async function seedAuditLogs(ticketIds: string[]) {
   console.log('[SEED] Seeding audit logs...');
   const data = [
-    { ticketId: ticketIds[0], action: 'TIKET_DITERBITKAN', performedBy: 'USR-001' },
-    { ticketId: ticketIds[0], action: 'TAHAP_ASSIGN_SELESAI', performedBy: 'IT-001' },
-    { ticketId: ticketIds[1], action: 'TIKET_DITERBITKAN', performedBy: 'USR-001' },
-    { ticketId: ticketIds[1], action: 'TAHAP_IN_PROGRESS_SELESAI', performedBy: 'IT-002' },
-    { ticketId: ticketIds[4], action: 'TIKET_DITERBITKAN', performedBy: 'ADMIN-001' },
+    { ticketId: ticketIds[0]!, action: 'TIKET_DITERBITKAN', performedBy: 'USR-001' },
+    { ticketId: ticketIds[0]!, action: 'TAHAP_ASSIGN_SELESAI', performedBy: 'IT-001' },
+    { ticketId: ticketIds[1]!, action: 'TIKET_DITERBITKAN', performedBy: 'USR-001' },
+    { ticketId: ticketIds[1]!, action: 'TAHAP_IN_PROGRESS_SELESAI', performedBy: 'IT-002' },
+    { ticketId: ticketIds[4]!, action: 'TIKET_DITERBITKAN', performedBy: 'ADMIN-001' },
   ];
   for (const a of data) await db.insert(auditLogs).values({ id: randomId('AUD'), ...a, performedAt: ts('2026-09-08'), detail: null, notes: null });
   console.log(`[SEED] ${data.length} audit logs berhasil.`);
@@ -235,10 +236,10 @@ async function seedAuditLogs(ticketIds: string[]) {
 async function seedTicketMembers(ticketIds: string[]) {
   console.log('[SEED] Seeding ticket members...');
   const data = [
-    { ticketId: ticketIds[0], userId: 'IT-001' },
-    { ticketId: ticketIds[0], userId: 'IT-002' },
-    { ticketId: ticketIds[1], userId: 'IT-002' },
-    { ticketId: ticketIds[4], userId: 'IT-004' },
+    { ticketId: ticketIds[0]!, userId: 'IT-001' },
+    { ticketId: ticketIds[0]!, userId: 'IT-002' },
+    { ticketId: ticketIds[1]!, userId: 'IT-002' },
+    { ticketId: ticketIds[4]!, userId: 'IT-004' },
   ];
   for (const m of data) await db.insert(ticketMembers).values({ id: randomId('TM'), ...m, createdAt: ts('2026-09-08') });
   console.log(`[SEED] ${data.length} ticket members berhasil.`);

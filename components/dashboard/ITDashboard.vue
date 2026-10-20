@@ -1,6 +1,50 @@
 <template>
   <div class="space-y-5">
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-surface rounded-lg border border-border p-4 shadow-xs flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <LayoutGrid class="w-5 h-5" />
+        </div>
+        <div>
+          <p class="text-[10px] font-bold text-muted-foreground uppercase">Total Tiket</p>
+          <p class="text-xl font-bold text-foreground">{{ stats.total }}</p>
+        </div>
+      </div>
+
+      <div class="bg-surface rounded-lg border border-border p-4 shadow-xs flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 flex items-center justify-center shrink-0">
+          <UserCheck class="w-5 h-5" />
+        </div>
+        <div>
+          <p class="text-[10px] font-bold text-muted-foreground uppercase">Unassigned</p>
+          <p class="text-xl font-bold text-foreground">{{ stats.unassigned }}</p>
+        </div>
+      </div>
+
+      <div class="bg-surface rounded-lg border border-border p-4 shadow-xs flex items-center gap-4">
+        <div :class="['w-10 h-10 rounded-full flex items-center justify-center shrink-0', stats.slaBreached > 0 ? 'bg-red-100 dark:bg-red-900/40 text-red-600 animate-pulse' : 'bg-muted text-muted-foreground']">
+          <AlertTriangle class="w-5 h-5" />
+        </div>
+        <div>
+          <p class="text-[10px] font-bold text-muted-foreground uppercase">SLA Breach</p>
+          <p :class="['text-xl font-bold', stats.slaBreached > 0 ? 'text-red-600' : 'text-foreground']">{{ stats.slaBreached }}</p>
+        </div>
+      </div>
+
+      <div class="bg-surface rounded-lg border border-border p-4 shadow-xs flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full bg-info/10 text-info flex items-center justify-center shrink-0">
+          <Inbox class="w-5 h-5" />
+        </div>
+        <div>
+          <p class="text-[10px] font-bold text-muted-foreground uppercase">Incoming</p>
+          <p class="text-xl font-bold text-foreground">{{ stats.incoming }}</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Header -->
+
     <div class="bg-surface rounded-lg border border-border p-4 shadow-xs space-y-3">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div class="space-y-1">
@@ -57,13 +101,23 @@
             v-model="searchQuery"
             type="text"
             placeholder="Cari Tiket, Pelapor, atau Judul..."
-            class="w-full pl-9 pr-3 py-2 rounded-lg border border-input bg-surface text-xs font-medium text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+            class="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-surface text-xs font-medium text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
           />
           <Search class="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
         </div>
 
         <AppSelect v-model="statusFilter" :options="statusOptions" size="sm" />
         <AppSelect v-model="priorityFilter" :options="priorityOptions" size="sm" />
+      </div>
+
+      <!-- Technician Workload Summary -->
+      <div class="flex items-center gap-3 overflow-x-auto no-scrollbar pt-2">
+        <span class="text-[10px] font-bold text-muted-foreground uppercase shrink-0">Workload:</span>
+        <div v-for="w in technicianWorkload" :key="w.id" class="flex items-center gap-1.5 px-2 py-1 rounded-md border border-border bg-muted/30 shrink-0">
+          <div class="w-1.5 h-1.5 rounded-full" :class="w.activeCount > 3 ? 'bg-red-500' : w.activeCount > 0 ? 'bg-amber-500' : 'bg-emerald-500'" />
+          <span class="text-[10px] font-semibold text-foreground">{{ w.name }}</span>
+          <span class="text-[10px] font-bold px-1 rounded bg-surface border border-border text-primary">{{ w.activeCount }}</span>
+        </div>
       </div>
     </div>
 
@@ -125,16 +179,25 @@
           >
             <div class="flex items-center justify-between text-[10px] font-semibold text-muted-foreground">
               <span class="font-mono text-primary font-bold">{{ t.id }}</span>
-              <UiStatusBadge :priority="t.priority" size="xs" />
+              <div class="flex items-center gap-1.5">
+                <div v-if="t.isSLABreached && t.status !== 'SELESAI'" class="flex items-center gap-0.5 text-red-600 animate-pulse" title="SLA Breached!">
+                  <AlertTriangle class="w-3 h-3" />
+                  <span class="font-bold">SLA</span>
+                </div>
+                <UiStatusBadge :priority="t.priority" size="xs" />
+              </div>
             </div>
 
             <h3 class="text-xs font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">
               {{ t.title }}
             </h3>
 
-            <div class="pt-2 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
-              <span class="truncate max-w-[120px]">{{ t.requestedByName }}</span>
-              <div class="flex items-center gap-1" @click.stop>
+            <div class="pt-2 border-t border-border flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+              <div class="min-w-0">
+                <span class="block truncate text-foreground/80 font-semibold">{{ t.requestedByName }}</span>
+                <span class="block truncate" :title="requesterIdentity(t)">{{ orgLabel(t) || t.requestedByDept || '-' }}</span>
+              </div>
+              <div class="flex items-center gap-1 shrink-0" @click.stop>
                 <button
                   v-if="!t.assignedTo && t.status !== 'SELESAI'"
                   @click="onTakeTicket(t)"
@@ -193,6 +256,7 @@
               </td>
               <td class="px-4 py-3">
                 <div class="font-semibold text-foreground">{{ t.requestedByName }}</div>
+                <div class="text-[10px] text-muted-foreground truncate max-w-[220px]" :title="requesterIdentity(t)">{{ requesterIdentity(t) }}</div>
                 <div class="text-[10px] text-muted-foreground">{{ t.location || '-' }}</div>
               </td>
               <td class="px-4 py-3">
@@ -220,17 +284,70 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Columns, Table as TableIcon, Search, LayoutGrid, Activity } from 'lucide-vue-next';
+import {
+  Columns,
+  Table as TableIcon,
+  Search,
+  LayoutGrid,
+  Activity,
+  AlertTriangle,
+  UserCheck,
+  Inbox,
+  Clock
+} from 'lucide-vue-next';
 import type { AppUser, Ticket, TicketStatus } from '~/types';
 import TicketIncomingLog from '~/components/common/TicketIncomingLog.vue';
+import AppSelect from '~/components/common/AppSelect.vue';
+import { formatOrgLabel, formatRequesterIdentity } from '~/utils/identity';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   tickets: Ticket[];
+  allUsers: AppUser[];
   currentUser: AppUser;
   onSelectTicket: (ticket: Ticket) => void;
   onTakeTicket: (ticket: Ticket) => void;
   onMoveStatus: (ticketId: string, newStatus: TicketStatus) => void;
-}>();
+  activityCount?: number;
+}>(), {
+  activityCount: 0,
+});
+
+// Stats
+const stats = computed(() => {
+  const all = props.tickets;
+  return {
+    total: all.length,
+    unassigned: all.filter(t => !t.assignedTo && t.status !== 'SELESAI').length,
+    slaBreached: all.filter(t => t.isSLABreached && t.status !== 'SELESAI').length,
+    incoming: all.filter(t => t.status === 'DRAFT').length,
+  };
+});
+
+const technicianWorkload = computed(() => {
+  const itWorkers = props.allUsers?.filter(u => u.role === 'IT_WORKER') || [];
+  return itWorkers.map(w => {
+    const active = props.tickets.filter(t => t.assignedTo === w.id && t.status === 'PROCESS').length;
+    return { ...w, activeCount: active };
+  }).sort((a, b) => b.activeCount - a.activeCount);
+});
+
+// Identitas pelapor pada kartu & tabel dashboard.
+function orgLabel(t: Ticket) {
+  return formatOrgLabel({
+    company: t.requested_by_company,
+    division: t.requested_by_division,
+    department: t.requestedByDept,
+  });
+}
+
+function requesterIdentity(t: Ticket) {
+  return formatRequesterIdentity({
+    name: t.requestedByName,
+    company: t.requested_by_company,
+    division: t.requested_by_division,
+    department: t.requestedByDept,
+  }, '-');
+}
 
 const viewMode = ref<'kanban' | 'table'>('kanban');
 const searchQuery = ref('');
@@ -276,7 +393,12 @@ const kanbanColumns = [
 const filteredTickets = computed(() => {
   return props.tickets.filter(t => {
     const q = searchQuery.value.toLowerCase();
-    const matchSearch = t.id.toLowerCase().includes(q) || t.title.toLowerCase().includes(q) || t.requestedByName.toLowerCase().includes(q);
+    const matchSearch = t.id.toLowerCase().includes(q)
+      || t.title.toLowerCase().includes(q)
+      || t.requestedByName.toLowerCase().includes(q)
+      || (t.requested_by_company || '').toLowerCase().includes(q)
+      || (t.requested_by_division || '').toLowerCase().includes(q)
+      || (t.requestedByDept || '').toLowerCase().includes(q);
     const matchStatus = statusFilter.value === 'ALL' || t.status === statusFilter.value;
     const matchPriority = priorityFilter.value === 'ALL' || t.priority === priorityFilter.value;
     return matchSearch && matchStatus && matchPriority;

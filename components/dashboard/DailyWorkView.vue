@@ -19,7 +19,7 @@
       <div class="flex flex-wrap items-center gap-2.5">
         <button
           @click="isAddModalOpen = true"
-          class="px-3.5 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all"
+          class="px-3.5 py-2 bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all"
         >
           <PlusCircle class="w-4 h-4" />
           <span>Catat Log Kerja</span>
@@ -62,7 +62,7 @@
               :class="[
                 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border shrink-0',
                 activePreset === preset.id
-                  ? 'bg-primary text-white border-primary shadow-xs'
+                  ? 'bg-primary text-primary-foreground border-primary shadow-xs'
                   : 'bg-muted text-foreground border-border hover:bg-muted'
               ]"
             >
@@ -106,7 +106,7 @@
                 v-model="startDate"
                 type="date"
                 @change="onDateInputChange"
-                class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
 
@@ -117,7 +117,7 @@
                 v-model="endDate"
                 type="date"
                 @change="onDateInputChange"
-                class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>
@@ -200,51 +200,55 @@
         </span>
       </div>
 
-      <!-- Worklogs List / Timeline -->
-      <div v-if="rangeWorklogs.length > 0" class="space-y-3 pt-2">
-        <div
-          v-for="item in rangeWorklogs"
-          :key="item.wl.id"
-          class="p-4 rounded-lg border border-border bg-muted/60 hover:bg-surface transition-all space-y-2.5 shadow-xs group"
-        >
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-            <div class="flex flex-wrap items-center gap-2">
-              <!-- Date Badge -->
-              <span class="font-semibold px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border text-[11px] flex items-center gap-1">
-                <Calendar class="w-3 h-3 text-muted-foreground" />
-                {{ formatItemDate(item.wl.date || item.wl.created_at) }}
-              </span>
-
-              <span class="font-mono font-bold px-2 py-0.5 rounded bg-primary/5 text-primary border border-primary/15">
-                {{ item.ticket.id }}
-              </span>
-              <span class="font-bold text-foreground">{{ item.ticket.title }}</span>
-              <span class="text-muted-foreground/50">•</span>
-              <span class="text-muted-foreground">{{ item.ticket.category }}</span>
+      <!-- Worklogs List / Timeline (Grouped by Date) -->
+      <div v-if="groupedWorklogs.length > 0" class="space-y-6 pt-2">
+        <div v-for="group in groupedWorklogs" :key="group.date" class="space-y-3">
+          <div class="flex items-center gap-2">
+            <div class="px-2 py-1 bg-primary text-primary-foreground text-[10px] font-bold rounded flex items-center gap-1.5 shadow-xs">
+              <Calendar class="w-3 h-3" />
+              {{ group.date }}
             </div>
-
-            <div class="flex items-center gap-2 text-[11px]">
-              <span class="font-bold px-2 py-0.5 rounded bg-info/10 text-info flex items-center gap-1">
-                <Clock class="w-3 h-3 text-info" />
-                {{ item.wl.start_at }} - {{ item.wl.finish_at }} ({{ item.wl.duration_minutes }} mnt)
-              </span>
-              <button
-                @click="store.openTicketDetail(item.ticket.id)"
-                class="text-primary hover:underline font-bold transition-all"
-              >
-                Lihat Tiket &rarr;
-              </button>
-            </div>
+            <div class="h-px bg-border flex-1"></div>
           </div>
+          
+          <div
+            v-for="item in group.items"
+            :key="item.wl.id"
+            class="p-4 rounded-lg border border-border bg-muted/60 hover:bg-surface transition-all space-y-2.5 shadow-xs group"
+          >
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-mono font-bold px-2 py-0.5 rounded bg-primary/5 text-primary border border-primary/15">
+                  {{ item.ticket.id }}
+                </span>
+                <span class="font-bold text-foreground">{{ item.ticket.title }}</span>
+                <span class="text-muted-foreground/50">•</span>
+                <span class="text-muted-foreground">{{ item.ticket.category }}</span>
+              </div>
 
-          <!-- Description and Worker -->
-          <div class="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-border/50">
-            <p class="text-xs text-foreground font-medium whitespace-pre-line leading-relaxed">
-              {{ item.wl.description }}
-            </p>
-            <div class="flex items-center gap-1.5 shrink-0 text-[11px] text-muted-foreground">
-              <User class="w-3.5 h-3.5" />
-              <span>Teknisi: <strong class="text-foreground">{{ item.wl.worker_name }}</strong></span>
+              <div class="flex items-center gap-2 text-[11px]">
+                <span class="font-bold px-2 py-0.5 rounded bg-info/10 text-info flex items-center gap-1">
+                  <Clock class="w-3 h-3 text-info" />
+                  {{ item.wl.start_at }} - {{ item.wl.finish_at }} ({{ item.wl.duration_minutes }} mnt)
+                </span>
+                <button
+                  @click="store.openTicketDetail(item.ticket.id)"
+                  class="text-primary hover:underline font-bold transition-all"
+                >
+                  Lihat Tiket &rarr;
+                </button>
+              </div>
+            </div>
+
+            <!-- Description and Worker -->
+            <div class="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-border/50">
+              <p class="text-xs text-foreground font-medium whitespace-pre-line leading-relaxed">
+                {{ item.wl.description }}
+              </p>
+              <div class="flex items-center gap-1.5 shrink-0 text-[11px] text-muted-foreground">
+                <User class="w-3.5 h-3.5" />
+                <span>Teknisi: <strong class="text-foreground">{{ item.wl.worker_name }}</strong></span>
+              </div>
             </div>
           </div>
         </div>
@@ -255,7 +259,7 @@
         <p>Belum ada catatan log aktivitas pengerjaan pada periode {{ formattedDateRangeDisplay }}.</p>
         <button
           @click="isAddModalOpen = true"
-          class="px-3.5 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary-hover transition-all"
+          class="px-3.5 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:bg-primary-hover transition-all"
         >
           + Catat Log Pekerjaan
         </button>
@@ -344,7 +348,7 @@
                 rows="3"
                 required
                 placeholder="Jelaskan tindakan teknis yang telah dilakukan..."
-                class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+                class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary resize-none"
               ></textarea>
             </div>
 
@@ -358,7 +362,7 @@
               </button>
               <button
                 type="submit"
-                class="px-5 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg shadow-xs cursor-pointer"
+                class="px-5 py-2 bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold rounded-lg shadow-xs cursor-pointer"
               >
                 Simpan Log
               </button>
@@ -498,7 +502,7 @@ const formattedDateRangeDisplay = computed(() => {
   if (startDate.value === endDate.value) {
     return formatDateIndo(startDate.value);
   }
-  return `${formatDateIndo(startDate.value)} — ${formatDateIndo(endDate.value)}`;
+  return `${formatDateIndo(startDate.value)} - ${formatDateIndo(endDate.value)}`;
 });
 
 // All worklogs within the date range
@@ -527,6 +531,20 @@ const rangeWorklogs = computed(() => {
     }
     return (b.wl.start_at || '').localeCompare(a.wl.start_at || '');
   });
+});
+
+const groupedWorklogs = computed(() => {
+  const groups: { date: string, items: any[] }[] = [];
+  rangeWorklogs.value.forEach(item => {
+    const d = formatItemDate(item.wl.date || item.wl.created_at);
+    let group = groups.find(g => g.date === d);
+    if (!group) {
+      group = { date: d, items: [] };
+      groups.push(group);
+    }
+    group.items.push(item);
+  });
+  return groups;
 });
 
 // KPI Calculations

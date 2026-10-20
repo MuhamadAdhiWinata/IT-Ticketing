@@ -19,7 +19,7 @@
       <div class="flex flex-wrap items-center gap-2.5">
         <button
           @click="handleExportActiveTab"
-          class="px-3.5 py-2 bg-success hover:bg-success-hover text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+          class="px-3.5 py-2 bg-success hover:bg-success-hover text-success-foreground text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
         >
           <Download class="w-4 h-4" />
           <span>Download Excel</span>
@@ -27,7 +27,7 @@
 
         <button
           @click="handlePrintPDF"
-          class="px-3.5 py-2 border border-input bg-surface text-foreground hover:bg-gray-50 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all cursor-pointer"
+          class="px-3.5 py-2 border border-border bg-surface text-foreground hover:bg-muted text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all cursor-pointer"
         >
           <Printer class="w-4 h-4" />
           <span>Cetak PDF</span>
@@ -46,7 +46,7 @@
         </div>
         <button
           @click="resetFilters"
-          class="text-xs font-bold text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 underline cursor-pointer"
+          class="text-xs font-bold text-muted-foreground hover:text-foreground dark:hover:text-foreground underline cursor-pointer"
         >
           Reset Filter
         </button>
@@ -113,7 +113,7 @@
           <input
             v-model="customStartDate"
             type="date"
-            class="w-full px-3 py-1.5 rounded-lg border border-input bg-surface text-xs text-foreground font-bold"
+            class="w-full px-3 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground font-bold"
           />
         </div>
         <div>
@@ -121,7 +121,7 @@
           <input
             v-model="customEndDate"
             type="date"
-            class="w-full px-3 py-1.5 rounded-lg border border-input bg-surface text-xs text-foreground font-bold"
+            class="w-full px-3 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground font-bold"
           />
         </div>
       </div>
@@ -137,8 +137,8 @@
       </div>
 
       <div class="bg-surface rounded-lg border border-border p-4 shadow-xs">
-        <span class="text-[10px] font-bold text-emerald-600 uppercase">Selesai Ditangani</span>
-        <div class="text-2xl font-bold text-emerald-600 font-mono mt-1">
+        <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase">Selesai Ditangani</span>
+        <div class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 font-mono mt-1">
           {{ countFilteredStatus('SELESAI') }}
         </div>
       </div>
@@ -153,7 +153,7 @@
       <div class="bg-surface rounded-lg border border-border p-4 shadow-xs">
         <span class="text-[10px] font-bold text-info uppercase">Total Jam Kerja</span>
         <div class="text-2xl font-bold text-info font-mono mt-1">
-          {{ totalFilteredHours }} <span class="text-xs font-normal text-gray-500">Jam</span>
+          {{ totalFilteredHours }} <span class="text-xs font-normal text-muted-foreground">Jam</span>
         </div>
       </div>
     </div>
@@ -164,7 +164,7 @@
         <button
           @click="activeReportTab = 'TICKETS'"
           class="px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
-          :class="activeReportTab === 'TICKETS' ? 'bg-surface text-primary shadow-xs' : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'"
+          :class="activeReportTab === 'TICKETS' ? 'bg-surface text-primary shadow-xs' : 'text-muted-foreground hover:text-foreground dark:hover:text-foreground'"
         >
           <TicketIcon class="w-4 h-4" />
           <span>Rekapitulasi Tiket ({{ filteredTickets.length }})</span>
@@ -173,7 +173,7 @@
         <button
           @click="activeReportTab = 'WORKLOGS'"
           class="px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
-          :class="activeReportTab === 'WORKLOGS' ? 'bg-surface text-primary shadow-xs' : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'"
+          :class="activeReportTab === 'WORKLOGS' ? 'bg-surface text-primary shadow-xs' : 'text-muted-foreground hover:text-foreground dark:hover:text-foreground'"
         >
           <Clock class="w-4 h-4" />
           <span>Log Pekerjaan Rinci ({{ filteredWorklogs.length }})</span>
@@ -182,7 +182,7 @@
         <button
           @click="activeReportTab = 'WORKERS'"
           class="px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
-          :class="activeReportTab === 'WORKERS' ? 'bg-surface text-primary shadow-xs' : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'"
+          :class="activeReportTab === 'WORKERS' ? 'bg-surface text-primary shadow-xs' : 'text-muted-foreground hover:text-foreground dark:hover:text-foreground'"
         >
           <Users class="w-4 h-4" />
           <span>Ringkasan Per Worker</span>
@@ -194,7 +194,7 @@
         <div class="overflow-x-auto custom-scrollbar">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
-              <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-gray-500">
+              <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-muted-foreground">
                 <th class="p-3">No. Tiket</th>
                 <th class="p-3">Judul Masalah</th>
                 <th class="p-3">Kategori</th>
@@ -218,12 +218,12 @@
                 <td class="p-3 font-semibold text-foreground max-w-xs truncate">
                   {{ t.title }}
                 </td>
-                <td class="p-3 text-gray-600 dark:text-gray-300">
+                <td class="p-3 text-muted-foreground">
                   {{ t.category }}
                 </td>
                 <td class="p-3">
                   <span class="font-medium text-foreground block">{{ t.requestedByName }}</span>
-                  <span class="text-[10px] text-muted-foreground">{{ t.requestedByDept || t.created_by_dept }}</span>
+                  <span class="text-[10px] text-muted-foreground block">{{ formatOrgLabel({ company: t.requested_by_company, division: t.requested_by_division, department: t.requestedByDept || t.created_by_dept }) || '-' }}</span>
                 </td>
                 <td class="p-3 text-[11px] text-foreground font-medium">
                   {{ getTicketContributors(t) }}
@@ -246,7 +246,7 @@
                     {{ t.status }}
                   </span>
                 </td>
-                <td class="p-3 text-[11px] text-gray-500 font-mono">
+                <td class="p-3 text-[11px] text-muted-foreground font-mono">
                   {{ t.completed_at ? t.completed_at.split('T')[0] : '-' }}
                 </td>
                 <td class="p-3 text-right">
@@ -273,7 +273,7 @@
         <div class="overflow-x-auto custom-scrollbar">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
-              <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-gray-500">
+              <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-muted-foreground">
                 <th class="p-3">Tanggal</th>
                 <th class="p-3">Teknisi</th>
                 <th class="p-3">No. Tiket</th>
@@ -289,7 +289,7 @@
                 :key="item.wl.id"
                 class="hover:bg-muted/50 transition-colors"
               >
-                <td class="p-3 font-mono text-[11px] text-gray-600 dark:text-muted-foreground">
+                <td class="p-3 font-mono text-[11px] text-muted-foreground">
                   {{ item.wl.date || (item.wl.created_at ? item.wl.created_at.split('T')[0] : '-') }}
                 </td>
                 <td class="p-3 font-bold text-foreground">
@@ -301,7 +301,7 @@
                 <td class="p-3 font-semibold text-foreground max-w-xs truncate">
                   {{ item.ticket.title }}
                 </td>
-                <td class="p-3 font-mono text-[11px] text-gray-500">
+                <td class="p-3 font-mono text-[11px] text-muted-foreground">
                   {{ item.wl.start_at }} - {{ item.wl.finish_at }}
                 </td>
                 <td class="p-3 text-center font-mono font-bold text-info">
@@ -326,7 +326,7 @@
         <div class="overflow-x-auto custom-scrollbar">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
-              <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-gray-500">
+              <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-muted-foreground">
                 <th class="p-3">Nama Teknisi</th>
                 <th class="p-3">Departemen</th>
                 <th class="p-3 text-center">Tiket Dikontribusikan</th>
@@ -345,13 +345,13 @@
                 <td class="p-3 font-bold text-foreground">
                   {{ w.user.name }}
                 </td>
-                <td class="p-3 text-gray-500">
+                <td class="p-3 text-muted-foreground">
                   {{ w.user.department }}
                 </td>
                 <td class="p-3 text-center font-mono font-bold">
                   {{ w.totalContributed }}
                 </td>
-                <td class="p-3 text-center font-mono font-bold text-emerald-600">
+                <td class="p-3 text-center font-mono font-bold text-emerald-700 dark:text-emerald-400">
                   {{ w.completedCount }}
                 </td>
                 <td class="p-3 text-center font-mono font-bold text-primary">
@@ -360,7 +360,7 @@
                 <td class="p-3 text-center font-mono font-bold text-info">
                   {{ w.totalHours }} Jam
                 </td>
-                <td class="p-3 text-center font-mono text-gray-600 dark:text-muted-foreground">
+                <td class="p-3 text-center font-mono text-muted-foreground">
                   {{ w.avgDuration }} mnt
                 </td>
               </tr>
@@ -391,6 +391,7 @@ import {
 } from 'lucide-vue-next';
 import { exportTicketsToExcel, exportWorklogsToExcel, triggerPrintPDF } from '~/utils/export';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
+import { formatOrgLabel } from '~/utils/identity';
 import AppSelect from '~/components/common/AppSelect.vue';
 import type { Ticket } from '~/types';
 

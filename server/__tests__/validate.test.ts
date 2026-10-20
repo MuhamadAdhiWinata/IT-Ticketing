@@ -75,6 +75,7 @@ describe('Validation', () => {
         priority: 'MEDIUM',
       });
       expect(result.success).toBe(false);
+      if (result.success) throw new Error('seharusnya gagal validasi');
       expect(result.error).toContain('Lokasi wajib diisi');
     });
 
@@ -89,6 +90,7 @@ describe('Validation', () => {
         priority: 'MEDIUM',
       });
       expect(result.success).toBe(false);
+      if (result.success) throw new Error('seharusnya gagal validasi');
       expect(result.error).toContain('Lokasi wajib diisi');
     });
 
