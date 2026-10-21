@@ -126,9 +126,9 @@
               </div>
 
               <div class="text-xs text-muted-foreground flex items-center justify-between pt-1 border-t border-border/60">
-                <span>Total Project/Kendala Terhubung:</span>
+                <span>Total {{ getProjectKendalaLabel(cat.name) }} Terhubung:</span>
                 <span class="font-mono font-bold text-foreground px-2 py-0.5 bg-surface rounded border border-border">
-                  {{ getProjectKendalaCount(cat.id) }} Project/Kendala
+                  {{ getProjectKendalaCount(cat.id) }} {{ getProjectKendalaLabel(cat.name) }}
                 </span>
               </div>
             </div>
@@ -627,11 +627,11 @@
       <div v-if="isProjectKendalaModalOpen" class="fixed inset-0 bg-foreground/40 backdrop-blur-sm z-modal flex items-center justify-center p-4">
         <div class="bg-surface rounded-lg border border-border p-6 max-w-md w-full shadow-lg space-y-4">
           <h3 class="text-base font-bold text-foreground">
-            {{ editingSubId ? 'Edit Record Project/Kendala' : 'Tambah Record Project/Kendala Baru' }}
+            {{ editingSubId ? `Edit Record ${projectKendalaModalLabel}` : `Tambah Record ${projectKendalaModalLabel} Baru` }}
           </h3>
           <form @submit.prevent="saveProjectKendalaForm" class="space-y-3 text-xs">
             <div>
-              <label class="block font-bold text-foreground mb-1">ID Project/Kendala</label>
+              <label class="block font-bold text-foreground mb-1">ID {{ projectKendalaModalLabel }}</label>
               <input v-model="subForm.id" required :disabled="!!editingSubId" class="w-full px-3 py-2 rounded-xl border border-border bg-surface text-xs font-mono" />
             </div>
             <div>
@@ -643,7 +643,7 @@
               />
             </div>
             <div>
-              <label class="block font-bold text-foreground mb-1">Nama Project/Kendala</label>
+              <label class="block font-bold text-foreground mb-1">Nama {{ projectKendalaModalLabel }}</label>
               <input v-model="subForm.name" required placeholder="Cth: Maintenance ERP Web / Printer" class="w-full px-3 py-2 rounded-xl border border-border bg-surface text-xs font-medium" />
             </div>
             <div class="pt-2 flex justify-end gap-2">
@@ -842,7 +842,7 @@ import {
   Building2,
 } from 'lucide-vue-next';
 import type { CategoryItem, ProjectKendalaItem, SubmoduleItem, CompanyItem, DivisionItem, AppUser, UserRole } from '~/types';
-import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
+import { getTicketPriorityLabel, getTicketPriorityBadgeClass, getProjectKendalaLabel } from '~/utils/ticketHelpers';
 import { nextId } from '~/utils/id';
 import { useToast } from '~/composables/useToast';
 import AppSelect from '~/components/common/AppSelect.vue';
@@ -992,7 +992,8 @@ const saveCategoryForm = async () => {
 };
 
 const deleteCategory = async (id: string) => {
-  const ok = await doConfirm('Hapus Kategori', `Hapus kategori ${id}? Semua Project/Kendala & Sub Modul terkait juga akan terhapus.`);
+  const itemLabel = getProjectKendalaLabel(getCategoryName(id));
+  const ok = await doConfirm('Hapus Kategori', `Hapus kategori ${id}? Semua ${itemLabel} & Sub Modul terkait juga akan terhapus.`);
   if (ok) {
     await store.deleteCategory(id);
   }
@@ -1006,6 +1007,13 @@ const getCategoryName = (catId: string) => {
   const found = store.categories.find(c => c.id === catId);
   return found ? found.name : catId;
 };
+
+// Nama benda untuk isi modal Project/Kendala, mengikuti kategori induk yang
+// sedang dipilih di form. Masih kosong saat modal baru dibuka (sebelum kategori
+// terpilih) dan nama kategori tak dikenal — keduanya jatuh ke label gabungan.
+const projectKendalaModalLabel = computed(() =>
+  getProjectKendalaLabel(getCategoryName(subForm.value.category_id))
+);
 
 const getProjectKendalaName = (subId: string) => {
   const found = store.projectKendala.find(s => s.id === subId);

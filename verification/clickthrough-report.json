@@ -197,7 +197,7 @@
     {
       "name": "tiket uji dibuat",
       "ok": true,
-      "detail": "TCK-202610-110"
+      "detail": "TCK-202610-612"
     },
     {
       "name": "respons tiket memuat project_kendala",
@@ -205,9 +205,14 @@
       "detail": "Development Aplikasi / Sistem Baru"
     },
     {
-      "name": "/api/project-kendala mengembalikan project_kendala_id",
-      "ok": false,
+      "name": "/api/project-kendala mengembalikan category_id & name",
+      "ok": true,
       "detail": "n=28"
+    },
+    {
+      "name": "/api/submodules mengembalikan project_kendala_id",
+      "ok": true,
+      "detail": "n=9"
     },
     {
       "name": "aplikasi dimuat ulang",
@@ -320,7 +325,7 @@
     {
       "name": "label Pelapor memuat identitas PT + Divisi",
       "ok": true,
-      "detail": "Pelapor:Administrator IT•PT Maju Bersama - Divisi Keuangan TIKSP-289405 Buat Atas Nama (Opsional) Pi"
+      "detail": "Pelapor:Administrator IT•PT Maju Bersama - Divisi Keuangan TIKSP-704252 Buat Atas Nama (Opsional) Pi"
     },
     {
       "name": "dropdown \"buat untuk diri sendiri\" membuka daftar pelapor",
@@ -345,7 +350,7 @@
     {
       "name": "kartu tracking menampilkan identitas lengkap",
       "ok": true,
-      "detail": "Kembali ke Tracking TCK-202610-110 Draft Tiket uji identitas pelapor Administrator IT • PT Maju Bersama - Divisi Keuangan Detail Lengkap Des"
+      "detail": "Kembali ke Tracking TCK-202610-612 Draft Tiket uji identitas pelapor Administrator IT • PT Maju Bersama - Divisi Keuangan Detail Lengkap Des"
     },
     {
       "name": "buka Detail Lengkap",
