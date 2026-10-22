@@ -1,5 +1,6 @@
 <template>
   <div>
+    <NuxtPwaAssets />
     <!-- Splash: tampil saat app init -->
     <AppLoading v-if="!ready" />
 

@@ -158,6 +158,9 @@
             </button>
           </form>
 
+          <!-- PWA Install -->
+          <PwaInstallButton />
+
           <!-- Demo Credentials -->
           <div
             class="p-4 rounded-xl border border-primary/15 bg-primary-muted/50 login-anim-fade mt-5"
@@ -201,6 +204,7 @@ import { useAppStore } from '~/stores/app';
 import { useCompany } from '~/composables/useCompany';
 import { Shield, User, Lock, Eye, EyeOff, AlertTriangle } from 'lucide-vue-next';
 import LoginVisual from '~/components/login/LoginVisual.vue';
+import PwaInstallButton from '~/components/common/PwaInstallButton.vue';
 
 definePageMeta({
   layout: 'flat',

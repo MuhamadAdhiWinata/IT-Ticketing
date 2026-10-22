@@ -1,0 +1,66 @@
+{
+  "login.status": 200,
+  "manifest.http": {
+    "status": 200,
+    "ct": "application/manifest+json"
+  },
+  "manifest.cdp": {
+    "url": "",
+    "errors": [],
+    "parsed": false
+  },
+  "icon /icons/icon-192.png": {
+    "status": 200,
+    "ct": "image/png",
+    "declared": "192x192"
+  },
+  "icon /icons/icon-512.png": {
+    "status": 200,
+    "ct": "image/png",
+    "declared": "512x512"
+  },
+  "installability.errors": [
+    {
+      "errorId": "in-incognito",
+      "errorArguments": []
+    },
+    {
+      "errorId": "no-manifest",
+      "errorArguments": []
+    }
+  ],
+  "sw.registrations": [
+    {
+      "scope": "http://127.0.0.1:4000/",
+      "active": "activated",
+      "script": "http://127.0.0.1:4000/sw.js"
+    }
+  ],
+  "sw.controller": "http://127.0.0.1:4000/sw.js",
+  "caches": {
+    "workbox-precache-v2-http://127.0.0.1:4000/": [
+      "/_nuxt/builds/latest.json",
+      "/_nuxt/builds/meta/4cf9ee45-7f83-40d3-8713-a8c5f6479cc5.json",
+      "/manifest.webmanifest"
+    ]
+  },
+  "offline /login": {
+    "status": null,
+    "err": "page.goto: net::ERR_INTERNET_DISCONNECTED at http://127.0.0.1:4000/login",
+    "hasApp": false,
+    "body": ""
+  },
+  "offline /": {
+    "status": null,
+    "err": "page.goto: net::ERR_INTERNET_DISCONNECTED at http://127.0.0.1:4000/",
+    "hasApp": false,
+    "body": ""
+  },
+  "offline /dashboard": {
+    "status": null,
+    "err": "page.goto: net::ERR_INTERNET_DISCONNECTED at http://127.0.0.1:4000/dashboard",
+    "hasApp": false,
+    "body": ""
+  },
+  "online-restored.title": ""
+}

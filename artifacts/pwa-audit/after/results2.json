@@ -1,0 +1,19 @@
+{
+  "installability.errors": [],
+  "beforeinstallprompt.fired": true,
+  "app.installButtonVisible": 1,
+  "sw.controlled.afterReload": true,
+  "deeplink /dashboard": {
+    "status": 200,
+    "url": "http://127.0.0.1:4000/login"
+  },
+  "history": {
+    "back": "http://127.0.0.1:4000/login",
+    "forward": "http://127.0.0.1:4000/login"
+  },
+  "api.auth.me (not cached, expect 401)": {
+    "status": 401
+  },
+  "api.inCache": null,
+  "offline.login.bodyAfterSubmit": "IT Ticketing | Selamat Datang | Masuk untuk mengakses IT Service Desk Anda. | [POST] \"/api/auth/login\": <no response> Failed to fetch | Email | Password | Ingat saya | Lupa password? | Masuk | atau | Install Aplikasi | DEMO AKUN | Admin: sysadmin@company.co.id / password123 | IT Worker: budi.santoso"
+}
