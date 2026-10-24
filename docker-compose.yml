@@ -1,6 +1,10 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        APP_BUILD: ${APP_BUILD:-dev}
+        APP_COMMIT: ${APP_COMMIT:-}
     container_name: it-ticketing-app
     ports:
       - "8080:3000"

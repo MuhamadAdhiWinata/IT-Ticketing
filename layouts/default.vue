@@ -17,6 +17,7 @@
 
       <footer class="py-4 text-center text-[10px] text-muted-foreground font-medium">
         &copy; 2026 IT HO - All Rights Reserved.
+        <span class="ml-2 opacity-70">v{{ build }}<template v-if="commit"> · {{ commit }}</template></span>
       </footer>
     </div>
 
@@ -31,4 +32,5 @@ import ToastContainer from '~/components/common/ToastContainer.vue';
 import { useAppStore } from '~/stores/app';
 
 const store = useAppStore();
+const { appBuild: build, appCommit: commit } = useRuntimeConfig().public;
 </script>

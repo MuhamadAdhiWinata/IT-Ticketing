@@ -65,6 +65,12 @@ export default defineNuxtConfig({
     cssPath: "~/assets/css/main.css",
     configPath: "tailwind.config",
   },
+  runtimeConfig: {
+    public: {
+      appBuild: process.env.APP_BUILD || 'dev',
+      appCommit: process.env.APP_COMMIT || '',
+    },
+  },
   css: ["~/app/globals.css", "~/assets/css/main.css"],
   app: {
     head: {

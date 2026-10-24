@@ -22,6 +22,7 @@ git fetch origin main
 git reset --hard origin/main
 echo "[$(ts)] deploy: now at $(git rev-parse --short HEAD)"
 
+export APP_BUILD="$(git rev-list --count HEAD)" APP_COMMIT="$(git rev-parse --short HEAD)"
 docker compose up -d --build app
 
 for _ in $(seq 1 30); do

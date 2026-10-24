@@ -4,6 +4,9 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install --legacy-peer-deps
 COPY . .
+ARG APP_BUILD=dev
+ARG APP_COMMIT=
+ENV APP_BUILD=$APP_BUILD APP_COMMIT=$APP_COMMIT
 RUN npm run build
 
 # Production stage
