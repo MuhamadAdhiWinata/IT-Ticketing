@@ -12,22 +12,22 @@
 
     <!-- Summary Cards -->
     <div class="grid grid-cols-3 gap-2">
-      <div class="p-2.5 bg-primary/5 border border-primary/15 rounded-lg text-center">
+      <div class="p-2.5 bg-surface-elevated border border-primary/20 shadow-xs rounded-lg text-center">
         <span class="text-[10px] text-primary font-bold block">Hari Ini</span>
         <span class="text-base font-bold text-primary font-mono">{{ summary.today }}</span>
       </div>
-      <div class="p-2.5 bg-warning/5 border border-warning/15 rounded-lg text-center">
+      <div class="p-2.5 bg-surface-elevated border border-warning/20 shadow-xs rounded-lg text-center">
         <span class="text-[10px] text-warning font-bold block">7 Hari</span>
         <span class="text-base font-bold text-warning font-mono">{{ summary.sevenDays }}</span>
       </div>
-      <div class="p-2.5 bg-muted border border-border rounded-lg text-center">
+      <div class="p-2.5 bg-surface-elevated border border-border shadow-xs rounded-lg text-center">
         <span class="text-[10px] text-muted-foreground font-bold block">Bulan Ini</span>
         <span class="text-base font-bold text-muted-foreground font-mono">{{ summary.month }}</span>
       </div>
     </div>
 
     <!-- Period Tabs -->
-    <div class="flex items-center gap-0.5 bg-muted p-0.5 rounded-lg">
+    <div class="flex items-center gap-0.5 bg-surface p-0.5 rounded-lg border border-border">
       <button
         v-for="p in periods"
         :key="p.id"
@@ -35,7 +35,7 @@
         :class="[
           'flex-1 px-2.5 py-1.5 rounded-md text-[10px] sm:text-[11px] font-bold transition-all text-center',
           period === p.id
-            ? 'bg-surface shadow-xs text-primary'
+            ? 'bg-surface-elevated shadow-xs text-primary'
             : 'text-muted-foreground hover:text-foreground'
         ]"
       >
@@ -79,13 +79,9 @@
             <p class="text-xs font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
               {{ item.title }}
             </p>
-            <div class="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <div class="flex items-center gap-1.5 text-[10px] text-muted-foreground min-w-0">
               <User class="w-3 h-3 shrink-0" />
-              <span class="truncate">{{ item.requestedByName }}</span>
-              <template v-if="item.requestedByDept">
-                <span>-</span>
-                <span class="truncate">{{ item.requestedByDept }}</span>
-              </template>
+              <span class="truncate">{{ requesterIdentity(item) }}</span>
             </div>
           </div>
         </div>
@@ -97,16 +93,18 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import { Inbox, Loader2, User } from 'lucide-vue-next';
+import type { IncomingTicket } from '~/types';
+import { apiFetch } from '~/services/api';
+import { formatRequesterIdentity } from '~/utils/identity';
 
-interface IncomingTicket {
-  id: string;
-  title: string;
-  status: string;
-  priority: string;
-  category: string;
-  requestedByName: string;
-  requestedByDept: string;
-  created_at: string;
+// Identitas pelapor memakai satu format dengan halaman tiket lain.
+function requesterIdentity(item: IncomingTicket) {
+  return formatRequesterIdentity({
+    name: item.requestedByName,
+    company: item.requested_by_company,
+    division: item.requested_by_division,
+    department: item.requestedByDept,
+  }, '-');
 }
 
 const emit = defineEmits<{
@@ -132,9 +130,8 @@ const formatTime = (dateStr: string) => {
 const fetchData = async () => {
   loading.value = true;
   try {
-    const res = await $fetch<{ success: boolean; data: { summary: any; period: string; log: IncomingTicket[] } }>(
-      `/api/tickets/incoming-log?period=${period.value}`,
-      { credentials: 'include' }
+    const res = await apiFetch<{ success: boolean; data: { summary: any; period: string; log: IncomingTicket[] } }>(
+      `/api/tickets/incoming-log?period=${period.value}`
     );
     if (res.success) {
       summary.value = res.data.summary;

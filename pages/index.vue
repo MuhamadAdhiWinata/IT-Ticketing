@@ -1,48 +1,61 @@
 <template>
-  <div v-if="store.isLoaded && store.currentUser" class="space-y-6">
-    <!-- Active Views: State/View Based -->
-    <CreateTicketView v-if="store.activeView === 'create-ticket'" />
-    <TicketDetailView v-else-if="store.activeView === 'ticket-detail'" />
+  <div class="space-y-6">
+    <!-- Akar selalu dirender (tanpa v-if): root ber-v-if menghasilkan node comment
+         saat mount sehingga Nuxt melempar NUXT_E4004 "does not have a single root node".
+         Komentar sengaja diletakkan DI DALAM root agar tidak jadi anak akar kedua. -->
+    <template v-if="store.isLoaded && store.currentUser">
+      <!-- Active Views: State/View Based -->
+      <CreateTicketView v-if="store.activeView === 'create-ticket'" />
+      <TicketDetailView v-else-if="store.activeView === 'ticket-detail'" />
 
-    <!-- Main Navigation Views -->
-    <template v-else>
-      <TrackingView
-        v-if="store.activeTab === 'tracking'"
-        :tickets="store.tickets"
-        :currentUser="store.currentUser"
-        :onSelectTicket="(ticket) => store.openTicketDetail(ticket.id)"
-        :onCreateTicketClick="() => store.openCreateTicket()"
-      />
+      <!-- Main Navigation Views -->
+      <template v-else>
+        <TrackingView
+          v-if="store.activeTab === 'tracking'"
+          :tickets="store.tickets"
+          :currentUser="store.currentUser"
+          :onSelectTicket="(ticket) => store.openTicketDetail(ticket.id)"
+          :onCreateTicketClick="() => store.openCreateTicket()"
+        />
 
-      <ITDashboard
-        v-else-if="store.activeTab === 'dashboard'"
-        :tickets="store.tickets"
-        :currentUser="store.currentUser"
-        :onSelectTicket="(ticket) => store.openTicketDetail(ticket.id)"
-        :onTakeTicket="(ticket) => store.updateTicketAssignee(ticket.id, store.currentUser!.id)"
-        :onMoveStatus="store.updateTicketStatus"
-      />
+        <MyTicketsView
+          v-else-if="store.activeTab === 'my-tickets'"
+          :tickets="store.myTickets"
+          :currentUser="store.currentUser"
+          :onSelectTicket="(ticket) => store.openTicketDetail(ticket.id)"
+        />
 
-      <MyWorkView
-        v-else-if="store.activeTab === 'my-work'"
-        :tickets="store.tickets"
-        :currentUser="store.currentUser"
-        :onSelectTicket="(ticket) => store.openTicketDetail(ticket.id)"
-      />
+        <ITDashboard
+          v-else-if="store.activeTab === 'dashboard'"
+          :tickets="store.tickets"
+          :allUsers="store.allUsers"
+          :currentUser="store.currentUser"
+          :onSelectTicket="(ticket) => store.openTicketDetail(ticket.id)"
+          :onTakeTicket="(ticket) => store.updateTicketAssignee(ticket.id, store.currentUser!.id)"
+          :onMoveStatus="store.updateTicketStatus"
+        />
 
-      <DailyWorkView v-else-if="store.activeTab === 'daily-work'" />
+        <MyWorkView
+          v-else-if="store.activeTab === 'my-work'"
+          :tickets="store.tickets"
+          :currentUser="store.currentUser"
+          :onSelectTicket="(ticket) => store.openTicketDetail(ticket.id)"
+        />
 
-      <ReportsView
-        v-else-if="store.activeTab === 'reports'"
-        :tickets="store.tickets"
-      />
+        <DailyWorkView v-else-if="store.activeTab === 'daily-work'" />
 
-      <AdminMasterView
-        v-else-if="store.activeTab === 'admin'"
-        :allUsers="store.allUsers"
-      />
+        <ReportsView
+          v-else-if="store.activeTab === 'reports'"
+          :tickets="store.tickets"
+        />
 
-      <SettingsView v-else-if="store.activeTab === 'settings'" />
+        <AdminMasterView
+          v-else-if="store.activeTab === 'admin'"
+          :allUsers="store.allUsers"
+        />
+
+        <SettingsView v-else-if="store.activeTab === 'settings'" />
+      </template>
     </template>
   </div>
 </template>
@@ -52,6 +65,7 @@ import { onMounted, onUnmounted } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { useAuthStore } from '~/stores/auth';
 import TrackingView from '~/components/views/TrackingView.vue';
+import MyTicketsView from '~/components/views/MyTicketsView.vue';
 import ITDashboard from '~/components/dashboard/ITDashboard.vue';
 import MyWorkView from '~/components/dashboard/MyWorkView.vue';
 import DailyWorkView from '~/components/dashboard/DailyWorkView.vue';

@@ -24,40 +24,43 @@
   --color-surface: #ffffff;
   --color-surface-elevated: #ffffff;
   --color-muted: #f1f5f9;
-  --color-muted-foreground: #64748b;
+  --color-muted-foreground: #5b6b80;
 
   /* --- Borders --- */
   --color-border: #e2e8f0;
   --color-border-strong: #cbd5e1;
-  --color-input: #e2e8f0;
+  /* Batas isian wajib 3:1 (WCAG 1.4.11): #64748b = 4.15 terhadap #e6f1f8, 4.76 terhadap #ffffff.
+     --color-border tetap tipis karena hanya pemisah dekoratif. */
+  --color-input: #64748b;
 
   /* --- Status --- */
   --color-destructive: #dc2626;
   --color-destructive-hover: #b91c1c;
   --color-destructive-foreground: #ffffff;
 
-  --color-success: #16a34a;
+  --color-success: #047857;
   --color-success-muted: #f0fdf4;
   --color-success-foreground: #ffffff;
+  --color-success-hover: #065f46;
 
-  --color-warning: #d97706;
+  --color-warning: #b45309;
   --color-warning-muted: #fffbeb;
   --color-warning-foreground: #ffffff;
 
-  --color-info: #0284c7;
+  --color-info: #0369a1;
   --color-info-muted: #f0f9ff;
   --color-info-foreground: #ffffff;
 
   /* --- Ticket Status --- */
-  --color-status-draft: #64748b;
+  --color-status-draft: #5b6b80;
   --color-status-process: #026bb1;
-  --color-status-delegasi: #d97706;
-  --color-status-selesai: #16a34a;
+  --color-status-delegasi: #b45309;
+  --color-status-selesai: #047857;
 
   /* --- Ticket Priority --- */
-  --color-priority-low: #64748b;
+  --color-priority-low: #5b6b80;
   --color-priority-medium: #026bb1;
-  --color-priority-high: #d97706;
+  --color-priority-high: #b45309;
   --color-priority-critical: #dc2626;
 
   /* --- Typography --- */
@@ -81,6 +84,17 @@
   --z-modal-backdrop: 9990;
   --z-modal: 9999;
 
+  /* --- Tracking Hero Scoped --- */
+  --tracking-hero-bg: var(--color-background);
+
+  /* --- Tracking Network Opacities (Light) --- */
+  --tracking-network-stroke: 0.15;
+  --tracking-network-fill: 0.03;
+  --tracking-network-core: 0.20;
+  --tracking-network-line: 0.10;
+  --tracking-network-icon: 0.14;
+  --tracking-network-led: 0.28;
+
   /* --- Login Page Scoped --- */
   --login-visual-bg: #e6f1f8;
   --login-card-bg: rgba(255, 255, 255, 0.88);
@@ -95,10 +109,31 @@
   --login-curve-surface-opacity: 0.95;
   --login-curve-mid-opacity: 0.6;
   --login-curve-front-opacity: 0.35;
+
+  /* Network lines for tracking banner */
+  --color-network-lines: #cbd5e1;
 }
 
 .login-floating-card {
   box-shadow: var(--login-card-shadow);
+}
+
+.tracking-hero {
+  background-color: var(--tracking-hero-bg);
+}
+
+/* ============================================
+   TRACKING NETWORK OPACITIES (Light)
+   ============================================ */
+
+:root {
+  /* --- Tracking Network Opacities (Light) --- */
+  --tracking-network-stroke: 0.15;
+  --tracking-network-fill: 0.03;
+  --tracking-network-core: 0.20;
+  --tracking-network-line: 0.10;
+  --tracking-network-icon: 0.14;
+  --tracking-network-led: 0.28;
 }
 
 /* ============================================
@@ -110,16 +145,52 @@ html.dark {
   --color-background: #0f172a;
   --color-foreground: #f1f5f9;
   --color-surface: #1e293b;
-  --color-surface-elevated: #1e293b;
+  --color-surface-elevated: #253349;
   --color-muted: #1e293b;
   --color-muted-foreground: #94a3b8;
   --color-border: #334155;
   --color-border-strong: #475569;
-  --color-input: #334155;
+  /* Batas isian wajib 3:1 di mode gelap: #94a3b8 = 4.97 terhadap #253349, 5.70 terhadap #1e293b. */
+  --color-input: #94a3b8;
+
+  /* Varian terang: warna status gelap tidak lolos 4,5:1 di atas permukaan gelap.
+     --color-primary-foreground dihitung ulang oleh applyThemeTokens, tetapi
+     foreground ini ditetapkan di sini agar selaras dengan primary gelap. */
+  --color-success: #4ade80;
+  --color-success-foreground: #052e16;
+  --color-success-hover: #86efac;
+  --color-warning: #fbbf24;
+  --color-warning-foreground: #451a03;
+  --color-info: #38bdf8;
+  --color-info-foreground: #082f49;
+  --color-destructive: #ff6b6b;
+  --color-destructive-hover: #ff8080;
+  --color-destructive-foreground: #450a0a;
+
+  --color-status-draft: #94a3b8;
+  --color-status-process: #52b5f2;
+  --color-status-delegasi: #fbbf24;
+  --color-status-selesai: #4ade80;
+  --color-priority-low: #94a3b8;
+  --color-priority-medium: #52b5f2;
+  --color-priority-high: #fbbf24;
+  --color-priority-critical: #ff6b6b;
+
   --color-primary-muted: #0c4a6e;
   --color-success-muted: #052e16;
   --color-warning-muted: #451a03;
-  --color-info-muted: #0c4a6e;
+  --color-info-muted: #082f49;
+
+  /* --- Tracking Hero Scoped (Dark) --- */
+  --tracking-hero-bg: var(--color-background);
+
+  /* --- Tracking Network Opacities (Dark) --- */
+  --tracking-network-stroke: 0.20;
+  --tracking-network-fill: 0.06;
+  --tracking-network-core: 0.30;
+  --tracking-network-line: 0.14;
+  --tracking-network-icon: 0.22;
+  --tracking-network-led: 0.38;
 
   /* --- Login Page Scoped (Dark) --- */
   --login-visual-bg: #0c1929;
@@ -135,6 +206,9 @@ html.dark {
   --login-curve-surface-opacity: 0.85;
   --login-curve-mid-opacity: 0.45;
   --login-curve-front-opacity: 0.2;
+
+  /* Network lines for tracking banner */
+  --color-network-lines: #334155;
 }
 
 /* ============================================
@@ -192,7 +266,7 @@ body {
   outline: none;
 }
 .focus-ring:focus-visible {
-  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px rgba(2, 107, 177, 0.5);
+  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-primary);
 }
 
 /* Skeleton loading animation */
@@ -270,4 +344,23 @@ body {
 
 .login-anim-fade {
   animation: login-fade-in 600ms ease-out both;
+}
+
+/* ============================================
+   TRACKING NETWORK ANIMATIONS
+   ============================================ */
+
+@keyframes tracking-node-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.tracking-node-pulse {
+  animation: tracking-node-pulse 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tracking-node-pulse {
+    animation: none;
+  }
 }

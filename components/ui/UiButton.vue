@@ -28,7 +28,7 @@ import { computed } from 'vue';
 
 const props = withDefaults(
   defineProps<{
-    variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
+    variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'glass';
     size?: 'xs' | 'sm' | 'md' | 'lg';
     block?: boolean;
     loading?: boolean;
@@ -71,6 +71,7 @@ const variantClasses = computed(() => {
     ghost: 'text-muted-foreground hover:bg-muted hover:text-foreground',
     danger: 'bg-destructive text-destructive-foreground hover:bg-destructive-hover shadow-xs',
     success: 'bg-success text-success-foreground hover:opacity-90 shadow-xs',
+    glass: 'bg-surface/80 border border-border text-foreground backdrop-blur-md hover:bg-surface',
   };
   return variants[props.variant];
 });

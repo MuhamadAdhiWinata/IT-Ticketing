@@ -75,8 +75,11 @@
           {{ t.title }}
         </h3>
 
-        <div class="pt-2 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-          <span>{{ t.requestedByName }}</span>
+        <div class="pt-2 border-t border-border flex items-end justify-between gap-2 text-xs text-muted-foreground">
+          <div class="min-w-0">
+            <span class="block truncate text-foreground/80 font-semibold">{{ t.requestedByName }}</span>
+            <span class="block truncate text-[10px]">{{ orgLabel(t) || '-' }}</span>
+          </div>
           <UiStatusBadge :status="t.status" size="xs" />
         </div>
       </div>
@@ -90,6 +93,15 @@
 import { ref, computed } from 'vue';
 import { Briefcase } from 'lucide-vue-next';
 import type { AppUser, Ticket } from '~/types';
+import { formatOrgLabel } from '~/utils/identity';
+
+function orgLabel(t: Ticket) {
+  return formatOrgLabel({
+    company: t.requested_by_company,
+    division: t.requested_by_division,
+    department: t.requestedByDept,
+  });
+}
 
 const props = defineProps<{
   tickets: Ticket[];

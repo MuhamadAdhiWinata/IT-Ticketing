@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import type { AppUser } from '~/types';
+import { apiFetch } from '~/services/api';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -23,7 +24,7 @@ export const useAuthStore = defineStore('auth', {
       this.error = null;
 
       try {
-        const res = await $fetch<{ success: boolean; data: AppUser }>('/api/auth/login', {
+        const res = await apiFetch<{ success: boolean; data: AppUser }>('/api/auth/login', {
           method: 'POST',
           body: { email, password },
         });
@@ -41,7 +42,7 @@ export const useAuthStore = defineStore('auth', {
 
     async logout() {
       try {
-        await $fetch('/api/auth/logout', { method: 'POST' });
+        await apiFetch('/api/auth/logout', { method: 'POST' });
       } catch {
         // Ignore errors on logout
       }
@@ -52,7 +53,7 @@ export const useAuthStore = defineStore('auth', {
 
     async restoreSession() {
       try {
-        const res = await $fetch<{ success: boolean; data: AppUser }>('/api/auth/me');
+        const res = await apiFetch<{ success: boolean; data: AppUser }>('/api/auth/me');
         this.user = res.data;
         this.isAuthenticated = true;
       } catch {

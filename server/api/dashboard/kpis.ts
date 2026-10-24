@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
   });
   dailyTicketsCount = uniqueTicketIds.size;
 
-  const relevantTickets = await getTicketsWithRelations((t, { eq: e, or: o, and: a }: any) => {
+  const relevantTickets = await getTicketsWithRelations((t: any, { eq: e, or: o, and: a }: any) => {
     const conditions: any[] = [];
     if (workerId) conditions.push(e(t.assignedTo, workerId as string));
 

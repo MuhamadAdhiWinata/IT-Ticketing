@@ -30,18 +30,87 @@ describe('Validation', () => {
         title: 'Test',
         description: 'Desc',
         category: 'Support IT',
-        subcategory: 'Printer',
+        project_kendala: 'Printer',
+        submodule: 'Inkjet Lantai 2',
         location: 'L1',
         priority: 'MEDIUM',
       });
       expect(result.success).toBe(true);
     });
 
+    it('accepts valid ticket without submodule and location for IT Programmer', () => {
+      const payload = {
+        title: 'Programmer Request',
+        description: 'Need new feature',
+        category: 'IT Programmer',
+        project_kendala: 'Development Sistem Baru',
+        priority: 'MEDIUM',
+        submodule: null,
+        location: null,
+      };
+      const result = validate(CreateTicketSchema, payload);
+      if (!result.success) console.log('DEBUG VALIDATE ERROR:', result.error);
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts valid ticket with empty location for IT Programmer', () => {
+      const result = validate(CreateTicketSchema, {
+        title: 'Programmer Request',
+        description: 'Need new feature',
+        category: 'IT Programmer',
+        project_kendala: 'Development Sistem Baru',
+        priority: 'MEDIUM',
+        location: '',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects missing location for Support IT', () => {
+      const result = validate(CreateTicketSchema, {
+        title: 'Test',
+        description: 'Desc',
+        category: 'Support IT',
+        project_kendala: 'Printer',
+        submodule: 'Inkjet Lantai 2',
+        priority: 'MEDIUM',
+      });
+      expect(result.success).toBe(false);
+      if (result.success) throw new Error('seharusnya gagal validasi');
+      expect(result.error).toContain('Lokasi wajib diisi');
+    });
+
+    it('rejects empty location for Support IT', () => {
+      const result = validate(CreateTicketSchema, {
+        title: 'Test',
+        description: 'Desc',
+        category: 'Support IT',
+        project_kendala: 'Printer',
+        submodule: 'Inkjet Lantai 2',
+        location: '',
+        priority: 'MEDIUM',
+      });
+      expect(result.success).toBe(false);
+      if (result.success) throw new Error('seharusnya gagal validasi');
+      expect(result.error).toContain('Lokasi wajib diisi');
+    });
+
+    it('rejects missing project_kendala', () => {
+      const result = validate(CreateTicketSchema, {
+        title: 'Test',
+        description: 'Desc',
+        category: 'Support IT',
+        location: 'L1',
+        priority: 'MEDIUM',
+      });
+      expect(result.success).toBe(false);
+    });
+
     it('rejects missing title', () => {
       const result = validate(CreateTicketSchema, {
         description: 'Desc',
         category: 'Support IT',
-        subcategory: 'Printer',
+        project_kendala: 'Printer',
+        submodule: 'Inkjet Lantai 2',
         location: 'L1',
         priority: 'MEDIUM',
       });
@@ -53,7 +122,7 @@ describe('Validation', () => {
         title: 'Test',
         description: 'Desc',
         category: 'Invalid',
-        subcategory: 'Printer',
+        project_kendala: 'Printer',
         location: 'L1',
         priority: 'MEDIUM',
       });
@@ -65,7 +134,8 @@ describe('Validation', () => {
         title: 'Test',
         description: 'Desc',
         category: 'Support IT',
-        subcategory: 'Printer',
+        project_kendala: 'Printer',
+        submodule: 'Inkjet Lantai 2',
         location: 'L1',
         priority: 'URGENT',
       });

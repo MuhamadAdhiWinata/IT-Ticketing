@@ -7,7 +7,7 @@ import { getTicketsWithRelations } from '~/server/utils/tickets';
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
 
-  const results = await getTicketsWithRelations((t, { eq: e, or: o, like: l, and: a }: any) => {
+  const results = await getTicketsWithRelations((t: any, { eq: e, or: o, like: l, and: a }: any) => {
     const conditions: any[] = [];
     if (query.status) conditions.push(e(t.status, query.status as string));
     if (query.category) conditions.push(e(t.category, query.category as string));
@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   let inProgressCount = results.filter(t => t.status === 'PROCESS' || t.status === 'DELEGASI').length;
   let totalWorklogHours = 0;
   results.forEach(t => {
-    t.worklogs?.forEach(wl => {
+    t.worklogs?.forEach((wl: any) => {
       totalWorklogHours += (wl.durationMinutes || 0) / 60;
     });
   });

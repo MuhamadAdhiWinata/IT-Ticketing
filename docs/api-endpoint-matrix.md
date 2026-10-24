@@ -26,14 +26,14 @@
 | PUT | `/api/categories/:id` | Yes | SYSTEM_ADMIN | `{name}` | `CategoryItem` |
 | DELETE | `/api/categories/:id` | Yes | SYSTEM_ADMIN | - | `{success}` |
 
-## Subcategories
+## Project/Kendala
 
 | Method | Path | Auth | Role | Request | Response |
 |---|---|---|---|---|---|
-| GET | `/api/subcategories` | Yes | Any | `?categoryId=` | `SubcategoryItem[]` |
-| POST | `/api/subcategories` | Yes | SYSTEM_ADMIN | `{id, categoryId, name}` | `SubcategoryItem` |
-| PUT | `/api/subcategories/:id` | Yes | SYSTEM_ADMIN | `{categoryId, name}` | `SubcategoryItem` |
-| DELETE | `/api/subcategories/:id` | Yes | SYSTEM_ADMIN | - | `{success}` |
+| GET | `/api/project-kendala` | Yes | Any | `?categoryId=` | `ProjectKendalaItem[]` |
+| POST | `/api/project-kendala` | Yes | SYSTEM_ADMIN | `{id, categoryId, name}` | `ProjectKendalaItem` |
+| PUT | `/api/project-kendala/:id` | Yes | SYSTEM_ADMIN | `{categoryId, name}` | `ProjectKendalaItem` |
+| DELETE | `/api/project-kendala/:id` | Yes | SYSTEM_ADMIN | - | `{success}` |
 
 ## Vendors
 

@@ -16,7 +16,22 @@ export interface AppUser {
   email: string;
   role: UserRole;
   department: string;
+  companyId?: string | null;
+  divisionId?: string | null;
+  companyName?: string | null;
+  divisionName?: string | null;
   avatarUrl?: string;
+}
+
+export interface CompanyItem {
+  id: string;
+  name: string;
+}
+
+export interface DivisionItem {
+  id: string;
+  company_id: string;
+  name: string;
 }
 
 export interface Attachment {
@@ -68,12 +83,32 @@ export interface AuditLog {
   notes?: string;
 }
 
+export interface TicketComment {
+  id: string;
+  ticket_id: string;
+  user_id: string;
+  user_name: string;
+  user_role: UserRole;
+  message: string;
+  created_at: string;
+}
+
+export interface TicketInternalNote {
+  id: string;
+  ticket_id: string;
+  author_id: string;
+  author_name: string;
+  note: string;
+  created_at: string;
+}
+
 export interface Ticket {
   id: string;
   title: string;
   description: string;
   category: string;
-  subcategory: string;
+  project_kendala: string;
+  submodule?: string | null;
   location: string;
   priority: TicketPriority;
   status: TicketStatus;
@@ -81,12 +116,16 @@ export interface Ticket {
   created_by: string;
   created_by_name: string;
   created_by_dept: string;
+  created_by_company?: string;
+  created_by_division?: string;
   created_by_admin_id?: string | null;
   created_by_admin_name?: string | null;
 
   requestedBy: string;
   requestedByName: string;
   requestedByDept: string;
+  requested_by_company?: string;
+  requested_by_division?: string;
 
   assignedTo?: string | null;
   assignedToName?: string | null;
@@ -100,6 +139,8 @@ export interface Ticket {
   attachments: Attachment[];
   worklogs: Worklog[];
   audit_logs: AuditLog[];
+  slaDeadline?: string | null;
+  isSLABreached?: boolean;
 
   created_at: string;
   ticket_number?: string;
@@ -118,8 +159,27 @@ export interface PendingAttachment {
   preview?: string;
 }
 
-export interface SubcategoryItem {
+export interface ProjectKendalaItem {
   id: string;
   category_id: string;
   name: string;
+}
+
+export interface SubmoduleItem {
+  id: string;
+  project_kendala_id: string;
+  name: string;
+}
+
+export interface IncomingTicket {
+  id: string;
+  title: string;
+  status: TicketStatus;
+  priority: TicketPriority;
+  category: string;
+  requestedByName: string;
+  requestedByDept: string;
+  requested_by_company?: string;
+  requested_by_division?: string;
+  created_at: string;
 }

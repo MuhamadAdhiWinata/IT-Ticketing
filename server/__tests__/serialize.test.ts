@@ -4,7 +4,8 @@ import {
   serializeWorklog,
   serializeAuditLog,
   serializeAttachment,
-  serializeSubcategory,
+  serializeProjectKendala,
+  serializeSubmodule,
   serializeTicketMember,
 } from '../utils/serialize';
 
@@ -16,7 +17,8 @@ describe('Serializers', () => {
         title: 'Test',
         description: 'Desc',
         category: 'Support IT',
-        subcategory: 'Printer',
+        projectKendala: 'Printer',
+        submodule: 'Modul Printer',
         location: 'L1',
         priority: 'MEDIUM',
         status: 'PROCESS',
@@ -60,6 +62,8 @@ describe('Serializers', () => {
 
       expect(result.id).toBe('TCK-001');
       expect(result.created_by).toBe('USR-001');
+      expect(result.project_kendala).toBe('Printer');
+      expect(result.submodule).toBe('Modul Printer');
       expect(result.created_at).toBe('2026-09-21 10:00:00');
       expect(result.ticket_number).toBe('TIKSP-123456');
       expect(result.members).toEqual([]);
@@ -73,7 +77,8 @@ describe('Serializers', () => {
         title: 'Test',
         description: 'Desc',
         category: 'Support IT',
-        subcategory: 'Printer',
+        projectKendala: 'Printer',
+        submodule: 'Modul Printer',
         location: 'L1',
         priority: 'MEDIUM',
         status: 'DELEGASI',
@@ -123,12 +128,78 @@ describe('Serializers', () => {
         returned_notes: null,
       });
     });
+
+    it('memetakan identitas perusahaan & divisi pelapor', () => {
+      const result = serializeTicket({
+        id: 'TCK-003',
+        title: 'Test',
+        description: 'Desc',
+        category: 'Support IT',
+        projectKendala: 'Printer',
+        location: 'L1',
+        priority: 'MEDIUM',
+        status: 'DRAFT',
+        createdBy: 'USR-001',
+        createdByDept: 'Finance',
+        creator: { name: 'Rina', companyName: 'PT IONS', divisionName: 'Finance' },
+        requestedBy: 'USR-001',
+        requestedByDept: 'Finance',
+        requester: { name: 'Rina', companyName: 'PT IONS', divisionName: 'Finance' },
+        assignedTo: null,
+        members: [],
+        attachments: [],
+        worklogs: [],
+        auditLogs: [],
+        createdAt: '2026-09-21 10:00:00',
+      });
+
+      expect(result.requested_by_company).toBe('PT IONS');
+      expect(result.requested_by_division).toBe('Finance');
+      expect(result.created_by_company).toBe('PT IONS');
+      expect(result.created_by_division).toBe('Finance');
+      expect(result.requestedByName).toBe('Rina');
+    });
+
+    it('string kosong saat user belum punya perusahaan/divisi', () => {
+      const result = serializeTicket({
+        id: 'TCK-004',
+        title: 'Test',
+        description: 'Desc',
+        category: 'Support IT',
+        projectKendala: 'Printer',
+        location: 'L1',
+        priority: 'MEDIUM',
+        status: 'DRAFT',
+        createdBy: 'USR-001',
+        createdByDept: 'Finance',
+        creator: { name: 'Rina' },
+        requestedBy: 'USR-001',
+        requestedByDept: 'Finance',
+        requester: { name: 'Rina' },
+        assignedTo: null,
+        members: [],
+        attachments: [],
+        worklogs: [],
+        auditLogs: [],
+        createdAt: '2026-09-21 10:00:00',
+      });
+
+      expect(result.requested_by_company).toBe('');
+      expect(result.requested_by_division).toBe('');
+    });
   });
 
-  describe('serializeSubcategory', () => {
+  describe('serializeProjectKendala', () => {
     it('maps categoryId to category_id', () => {
-      const result = serializeSubcategory({ id: 'SUB-001', categoryId: 'CAT-01', name: 'Printer' });
+      const result = serializeProjectKendala({ id: 'SUB-001', categoryId: 'CAT-01', name: 'Printer' });
       expect(result).toEqual({ id: 'SUB-001', category_id: 'CAT-01', name: 'Printer' });
+    });
+  });
+
+  describe('serializeSubmodule', () => {
+    it('maps projectKendalaId to project_kendala_id', () => {
+      const result = serializeSubmodule({ id: 'SMOD-001', projectKendalaId: 'SUB-015', name: 'Modul Payroll' });
+      expect(result).toEqual({ id: 'SMOD-001', project_kendala_id: 'SUB-015', name: 'Modul Payroll' });
     });
   });
 

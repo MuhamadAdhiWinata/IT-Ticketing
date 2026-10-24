@@ -1,6 +1,7 @@
 import { db } from '~/server/database/client';
 import { successResponse } from '~/server/utils/response';
 import { getCurrentUser } from '~/server/utils/user-context';
+import { shapeUserRow } from '~/server/utils/org';
 
 export default defineEventHandler(async (event) => {
   const user = await getCurrentUser(event);
@@ -8,12 +9,5 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
   }
 
-  return successResponse({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    department: user.department,
-    avatarUrl: user.avatarUrl,
-  });
+  return successResponse(await shapeUserRow(user));
 });

@@ -1,23 +1,17 @@
 // Serializer: Drizzle result → Frontend snake_case
 // Includes name resolution via JOINs to users table
-
-export function serializeUser(u: any) {
-  return {
-    id: u.id,
-    name: u.name,
-    email: u.email,
-    role: u.role,
-    department: u.department,
-    avatarUrl: u.avatarUrl ?? null,
-  };
-}
+// (Identitas user/company/division di-resolve lewat server/utils/org.ts)
 
 export function serializeCategory(c: any) {
   return { id: c.id, name: c.name };
 }
 
-export function serializeSubcategory(s: any) {
+export function serializeProjectKendala(s: any) {
   return { id: s.id, category_id: s.categoryId, name: s.name };
+}
+
+export function serializeSubmodule(s: any) {
+  return { id: s.id, project_kendala_id: s.projectKendalaId, name: s.name };
 }
 
 export function serializeTicketMember(m: any) {
@@ -99,7 +93,8 @@ export function serializeTicket(t: any) {
     title: t.title,
     description: t.description,
     category: t.category,
-    subcategory: t.subcategory,
+    project_kendala: t.projectKendala ?? '',
+    submodule: t.submodule ?? '',
     location: t.location,
     priority: t.priority,
     status: t.status,
@@ -107,12 +102,16 @@ export function serializeTicket(t: any) {
     created_by: t.createdBy,
     created_by_name: t.creator?.name || t.createdByName || '',
     created_by_dept: t.createdByDept,
+    created_by_company: t.creator?.companyName || '',
+    created_by_division: t.creator?.divisionName || '',
     created_by_admin_id: t.createdByAdminId ?? null,
     created_by_admin_name: t.createdByAdminName ?? null,
 
     requestedBy: t.requestedBy,
     requestedByName: t.requester?.name || t.requestedByName || '',
     requestedByDept: t.requestedByDept,
+    requested_by_company: t.requester?.companyName || '',
+    requested_by_division: t.requester?.divisionName || '',
 
     assignedTo: t.assignedTo ?? null,
     assignedToName: t.assignee?.name || t.assignedToName || '',
@@ -135,9 +134,32 @@ export function serializeTicket(t: any) {
   };
 }
 
+export function serializeComment(c: any) {
+  return {
+    id: c.id,
+    ticket_id: c.ticketId,
+    user_id: c.userId,
+    user_name: c.userName || c.author?.name || '',
+    user_role: c.userRole,
+    message: c.message,
+    created_at: c.createdAt,
+  };
+}
+
+export function serializeInternalNote(n: any) {
+  return {
+    id: n.id,
+    ticket_id: n.ticketId,
+    author_id: n.authorId,
+    author_name: n.authorName || n.author?.name || '',
+    note: n.note,
+    created_at: n.createdAt,
+  };
+}
+
 // Batch serializers
 export function serializeTickets(list: any[]) { return list.map(serializeTicket); }
-export function serializeSubcategories(list: any[]) { return list.map(serializeSubcategory); }
-export function serializeUsers(list: any[]) { return list.map(serializeUser); }
+export function serializeProjectKendalas(list: any[]) { return list.map(serializeProjectKendala); }
+export function serializeSubmodules(list: any[]) { return list.map(serializeSubmodule); }
 export function serializeCategories(list: any[]) { return list.map(serializeCategory); }
 export function serializeTicketMembers(list: any[]) { return list.map(serializeTicketMember); }

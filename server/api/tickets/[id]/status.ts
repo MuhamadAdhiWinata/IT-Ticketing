@@ -31,6 +31,16 @@ export default defineEventHandler(async (event) => {
 
   await db.update(tickets).set({ status: body.status }).where(eq(tickets.id, id)).execute();
 
+  const { createNotification } = await import('~/server/utils/notifications');
+  const notifyId = existing.requestedBy;
+  await createNotification({
+    userId: notifyId,
+    ticketId: id,
+    type: 'ASSIGNED', // Or generic 'STATUS_CHANGE'
+    title: 'Status Tiket Berubah',
+    message: `Status tiket ${existing.ticketNumber || id} berubah dari ${existing.status} menjadi ${body.status}`,
+  });
+
   const result = await getTicketById(id);
 
   return successResponse(result);

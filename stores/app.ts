@@ -1,10 +1,8 @@
 import { defineStore } from 'pinia';
-import type { AppUser, Ticket, CategoryItem, SubcategoryItem, PendingAttachment } from '~/types';
+import type { AppUser, Ticket, CategoryItem, ProjectKendalaItem, SubmoduleItem, CompanyItem, DivisionItem, PendingAttachment } from '~/types';
 import { useAuthStore } from '~/stores/auth';
-
-function apiFetch<T>(url: string, opts?: any): Promise<T> {
-  return $fetch<T>(url, { ...opts, credentials: 'include' });
-}
+import { refreshThemeTokens } from '~/composables/useCompany';
+import { apiFetch } from '~/services/api';
 
 export const useAppStore = defineStore('app', {
   state: () => ({
@@ -15,8 +13,13 @@ export const useAppStore = defineStore('app', {
     selectedTicketId: null as string | null,
     currentUser: null as AppUser | null,
     tickets: [] as Ticket[],
+    myTickets: [] as Ticket[],
+    myTicketsLoading: false,
     categories: [] as CategoryItem[],
-    subcategories: [] as SubcategoryItem[],
+    projectKendala: [] as ProjectKendalaItem[],
+    submodules: [] as SubmoduleItem[],
+    companies: [] as CompanyItem[],
+    divisions: [] as DivisionItem[],
     allUsers: [] as AppUser[],
     isCreateModalOpen: false,
     selectedTicket: null as Ticket | null,
@@ -41,22 +44,43 @@ export const useAppStore = defineStore('app', {
       const authStore = useAuthStore();
       this.currentUser = authStore.user;
 
-      const [usersRes, ticketsRes, catsRes, subcatsRes, prefsRes] = await Promise.all([
+      const [usersRes, ticketsRes, catsRes, projectKendalaRes, submodsRes, prefsRes, companiesRes, divisionsRes] = await Promise.all([
         apiFetch<{ success: boolean; data: AppUser[] }>('/api/users').catch(() => null),
         apiFetch<{ success: boolean; data: Ticket[] }>('/api/tickets').catch(() => null),
         apiFetch<{ success: boolean; data: CategoryItem[] }>('/api/categories').catch(() => null),
-        apiFetch<{ success: boolean; data: SubcategoryItem[] }>('/api/subcategories').catch(() => null),
-        apiFetch<{ success: boolean; data: { darkMode: boolean } }>('/api/user/preferences').catch(() => null),
+        apiFetch<{ success: boolean; data: ProjectKendalaItem[] }>('/api/project-kendala').catch(() => null),
+        apiFetch<{ success: boolean; data: SubmoduleItem[] }>('/api/submodules').catch(() => null),
+        apiFetch<{ success: boolean; data: { darkMode: boolean | null } }>('/api/user/preferences').catch(() => null),
+        apiFetch<{ success: boolean; data: CompanyItem[] }>('/api/companies').catch(() => null),
+        apiFetch<{ success: boolean; data: DivisionItem[] }>('/api/divisions').catch(() => null),
       ]);
 
       if (usersRes) this.allUsers = usersRes.data;
       if (ticketsRes) this.tickets = ticketsRes.data;
       if (catsRes) this.categories = catsRes.data;
-      if (subcatsRes) this.subcategories = subcatsRes.data;
+      if (projectKendalaRes) this.projectKendala = projectKendalaRes.data;
+      if (submodsRes) this.submodules = submodsRes.data;
+      if (companiesRes) this.companies = companiesRes.data;
+      if (divisionsRes) this.divisions = divisionsRes.data;
       if (prefsRes) {
-        this.darkMode = prefsRes.data.darkMode;
+        const stored = prefsRes.data.darkMode;
         if (typeof document !== 'undefined') {
-          document.documentElement.classList.toggle('dark', this.darkMode);
+          if (stored === null) {
+            // Belum pernah memilih: pakai apa yang sudah dipasang plugin
+            // (prefers-color-scheme) dan jangan mengunci lewat localStorage.
+            this.darkMode = document.documentElement.classList.contains('dark');
+            refreshThemeTokens();
+          } else {
+            this.darkMode = stored;
+            document.documentElement.classList.toggle('dark', this.darkMode);
+            refreshThemeTokens();
+            // Sinkronkan localStorage: plugin membacanya sebelum render, jadi bila
+            // dibiarkan basi, muat ulang berikutnya memasang arah tema lawan dulu
+            // lalu melompat (kilatan) saat initApp menerapkan preferensi server.
+            localStorage.setItem('darkMode', this.darkMode ? '1' : '0');
+          }
+        } else {
+          this.darkMode = stored ?? false;
         }
       }
 
@@ -73,16 +97,34 @@ export const useAppStore = defineStore('app', {
       }
     },
 
+    async fetchMyTickets() {
+      this.myTicketsLoading = true;
+      try {
+        const res = await apiFetch<{ success: boolean; data: Ticket[] }>('/api/tickets/mine');
+        this.myTickets = res.data;
+      } catch (e) {
+        console.error('Failed to fetch my tickets:', e);
+      } finally {
+        this.myTicketsLoading = false;
+      }
+    },
+
     async refetchMasterData() {
       try {
-        const [catsRes, subcatsRes, allUsersRes] = await Promise.all([
+        const [catsRes, projectKendalaRes, submodsRes, allUsersRes, companiesRes, divisionsRes] = await Promise.all([
           apiFetch<{ success: boolean; data: CategoryItem[] }>('/api/categories'),
-          apiFetch<{ success: boolean; data: SubcategoryItem[] }>('/api/subcategories'),
+          apiFetch<{ success: boolean; data: ProjectKendalaItem[] }>('/api/project-kendala'),
+          apiFetch<{ success: boolean; data: SubmoduleItem[] }>('/api/submodules'),
           apiFetch<{ success: boolean; data: AppUser[] }>('/api/users'),
+          apiFetch<{ success: boolean; data: CompanyItem[] }>('/api/companies'),
+          apiFetch<{ success: boolean; data: DivisionItem[] }>('/api/divisions'),
         ]);
         this.categories = catsRes.data;
-        this.subcategories = subcatsRes.data;
+        this.projectKendala = projectKendalaRes.data;
+        this.submodules = submodsRes.data;
         this.allUsers = allUsersRes.data;
+        this.companies = companiesRes.data;
+        this.divisions = divisionsRes.data;
       } catch (e) {
         console.error('Failed to refetch master data:', e);
       }
@@ -95,6 +137,7 @@ export const useAppStore = defineStore('app', {
     async toggleDarkMode() {
       this.darkMode = !this.darkMode;
       document.documentElement.classList.toggle('dark', this.darkMode);
+      refreshThemeTokens();
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('darkMode', this.darkMode ? '1' : '0');
       }
@@ -206,7 +249,8 @@ export const useAppStore = defineStore('app', {
           body: {
             title: ticketPayload.title,
             category: ticketPayload.category,
-            subcategory: ticketPayload.subcategory,
+            project_kendala: ticketPayload.project_kendala,
+            submodule: ticketPayload.submodule,
             location: ticketPayload.location,
             priority: ticketPayload.priority,
             description: ticketPayload.description,
@@ -379,36 +423,66 @@ export const useAppStore = defineStore('app', {
       try {
         await apiFetch(`/api/categories/${catId}`, { method: 'DELETE' });
         this.categories = this.categories.filter(c => c.id !== catId);
-        this.subcategories = this.subcategories.filter(s => s.category_id !== catId);
+        const removedSubIds = this.projectKendala.filter(s => s.category_id === catId).map(s => s.id);
+        this.projectKendala = this.projectKendala.filter(s => s.category_id !== catId);
+        this.submodules = this.submodules.filter(m => !removedSubIds.includes(m.project_kendala_id));
       } catch (e) {
         console.error('Failed to delete category:', e);
       }
     },
 
-    async addSubcategory(sub: SubcategoryItem) {
+    async addProjectKendala(sub: ProjectKendalaItem) {
       try {
-        const res = await apiFetch<{ success: boolean; data: SubcategoryItem }>('/api/subcategories', { method: 'POST', body: sub });
-        this.subcategories = [...this.subcategories, res.data];
+        const res = await apiFetch<{ success: boolean; data: ProjectKendalaItem }>('/api/project-kendala', { method: 'POST', body: sub });
+        this.projectKendala = [...this.projectKendala, res.data];
       } catch (e) {
-        console.error('Failed to add subcategory:', e);
+        console.error('Failed to add project/kendala:', e);
       }
     },
 
-    async updateSubcategory(sub: SubcategoryItem) {
+    async updateProjectKendala(sub: ProjectKendalaItem) {
       try {
-        const res = await apiFetch<{ success: boolean; data: SubcategoryItem }>(`/api/subcategories/${sub.id}`, { method: 'PUT', body: sub });
-        this.subcategories = this.subcategories.map(s => s.id === sub.id ? res.data : s);
+        const res = await apiFetch<{ success: boolean; data: ProjectKendalaItem }>(`/api/project-kendala/${sub.id}`, { method: 'PUT', body: sub });
+        this.projectKendala = this.projectKendala.map(s => s.id === sub.id ? res.data : s);
       } catch (e) {
-        console.error('Failed to update subcategory:', e);
+        console.error('Failed to update project/kendala:', e);
       }
     },
 
-    async deleteSubcategory(subId: string) {
+    async deleteProjectKendala(subId: string) {
       try {
-        await apiFetch(`/api/subcategories/${subId}`, { method: 'DELETE' });
-        this.subcategories = this.subcategories.filter(s => s.id !== subId);
+        await apiFetch(`/api/project-kendala/${subId}`, { method: 'DELETE' });
+        this.projectKendala = this.projectKendala.filter(s => s.id !== subId);
+        this.submodules = this.submodules.filter(m => m.project_kendala_id !== subId);
       } catch (e) {
-        console.error('Failed to delete subcategory:', e);
+        console.error('Failed to delete project/kendala:', e);
+      }
+    },
+
+    async addSubmodule(mod: SubmoduleItem) {
+      try {
+        const res = await apiFetch<{ success: boolean; data: SubmoduleItem }>('/api/submodules', { method: 'POST', body: mod });
+        this.submodules = [...this.submodules, res.data];
+      } catch (e) {
+        console.error('Failed to add submodule:', e);
+      }
+    },
+
+    async updateSubmodule(mod: SubmoduleItem) {
+      try {
+        const res = await apiFetch<{ success: boolean; data: SubmoduleItem }>(`/api/submodules/${mod.id}`, { method: 'PUT', body: mod });
+        this.submodules = this.submodules.map(m => m.id === mod.id ? res.data : m);
+      } catch (e) {
+        console.error('Failed to update submodule:', e);
+      }
+    },
+
+    async deleteSubmodule(modId: string) {
+      try {
+        await apiFetch(`/api/submodules/${modId}`, { method: 'DELETE' });
+        this.submodules = this.submodules.filter(m => m.id !== modId);
+      } catch (e) {
+        console.error('Failed to delete submodule:', e);
       }
     },
 
@@ -418,6 +492,89 @@ export const useAppStore = defineStore('app', {
         this.allUsers = [...this.allUsers, res.data];
       } catch (e) {
         console.error('Failed to add user:', e);
+        throw e;
+      }
+    },
+
+    async updateUser(id: string, user: Partial<AppUser>) {
+      try {
+        const res = await apiFetch<{ success: boolean; data: AppUser }>(`/api/users/${id}`, { method: 'PUT', body: user });
+        this.allUsers = this.allUsers.map(u => u.id === id ? res.data : u);
+      } catch (e) {
+        console.error('Failed to update user:', e);
+        throw e;
+      }
+    },
+
+    async addCompany(company: CompanyItem) {
+      try {
+        const res = await apiFetch<{ success: boolean; data: CompanyItem }>('/api/companies', { method: 'POST', body: company });
+        this.companies = [...this.companies, res.data];
+      } catch (e) {
+        console.error('Failed to add company:', e);
+        throw e;
+      }
+    },
+
+    async updateCompany(company: CompanyItem) {
+      try {
+        const res = await apiFetch<{ success: boolean; data: CompanyItem }>(`/api/companies/${company.id}`, { method: 'PUT', body: company });
+        this.companies = this.companies.map(c => c.id === company.id ? res.data : c);
+      } catch (e) {
+        console.error('Failed to update company:', e);
+        throw e;
+      }
+    },
+
+    async deleteCompany(companyId: string) {
+      try {
+        await apiFetch(`/api/companies/${companyId}`, { method: 'DELETE' });
+        this.companies = this.companies.filter(c => c.id !== companyId);
+        const removedDivisionIds = this.divisions.filter(d => d.company_id === companyId).map(d => d.id);
+        this.divisions = this.divisions.filter(d => d.company_id !== companyId);
+        this.allUsers = this.allUsers.map(u =>
+          u.companyId === companyId || (u.divisionId && removedDivisionIds.includes(u.divisionId))
+            ? { ...u, companyId: null, divisionId: null, companyName: null, divisionName: null }
+            : u
+        );
+      } catch (e) {
+        console.error('Failed to delete company:', e);
+        throw e;
+      }
+    },
+
+    async addDivision(division: DivisionItem) {
+      try {
+        const res = await apiFetch<{ success: boolean; data: DivisionItem }>('/api/divisions', { method: 'POST', body: division });
+        this.divisions = [...this.divisions, res.data];
+      } catch (e) {
+        console.error('Failed to add division:', e);
+        throw e;
+      }
+    },
+
+    async updateDivision(division: DivisionItem) {
+      try {
+        const res = await apiFetch<{ success: boolean; data: DivisionItem }>(`/api/divisions/${division.id}`, { method: 'PUT', body: division });
+        this.divisions = this.divisions.map(d => d.id === division.id ? res.data : d);
+      } catch (e) {
+        console.error('Failed to update division:', e);
+        throw e;
+      }
+    },
+
+    async deleteDivision(divisionId: string) {
+      try {
+        await apiFetch(`/api/divisions/${divisionId}`, { method: 'DELETE' });
+        this.divisions = this.divisions.filter(d => d.id !== divisionId);
+        this.allUsers = this.allUsers.map(u =>
+          u.divisionId === divisionId
+            ? { ...u, divisionId: null, divisionName: null }
+            : u
+        );
+      } catch (e) {
+        console.error('Failed to delete division:', e);
+        throw e;
       }
     },
 

@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { db } from '~/server/database/client';
 import { signToken } from '~/server/utils/auth';
 import { successResponse } from '~/server/utils/response';
+import { shapeUserRow } from '~/server/utils/org';
 import { LoginSchema, validate } from '~/server/utils/validate';
 
 export default defineEventHandler(async (event) => {
@@ -39,12 +40,5 @@ export default defineEventHandler(async (event) => {
     path: '/',
   });
 
-  return successResponse({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    department: user.department,
-    avatarUrl: user.avatarUrl,
-  });
+  return successResponse(await shapeUserRow(user));
 });

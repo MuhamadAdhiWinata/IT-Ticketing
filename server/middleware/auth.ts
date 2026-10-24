@@ -1,9 +1,15 @@
 import { getUserFromToken } from '~/server/utils/auth';
+import { createError } from 'h3';
 
 const PUBLIC_PATHS = [
   '/api/auth/login',
   '/api/auth/logout',
-  '/api/uploads',
+];
+
+// GET publik tanpa sesi: branding halaman login (nama, logo, warna perusahaan).
+// PATCH di endpoint ini tetap diamankan langsung oleh handler-nya (wajib admin).
+const PUBLIC_GET_PATHS = [
+  '/api/settings/company',
 ];
 
 export default defineEventHandler(async (event) => {
@@ -20,10 +26,11 @@ export default defineEventHandler(async (event) => {
   // Attach user to event context (null if not authenticated)
   (event as any).context.user = user;
 
-  // For now, don't block unauthenticated requests
-  // This allows gradual migration from X-User-Id to JWT
-  // Once frontend fully uses JWT, uncomment below:
-  // if (!user) {
-  //   throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
-  // }
+  // Block unauthenticated requests for all other API routes
+  if (!user) {
+    const allowPublicGet = event.method === 'GET' && PUBLIC_GET_PATHS.some(p => path.startsWith(p));
+    if (!allowPublicGet) {
+      throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
+    }
+  }
 });

@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between bg-surface p-6 rounded-lg border border-border shadow-xs">
       <div class="flex items-center gap-3">
-        <button @click="store.backToMainView()" class="p-2 rounded-lg bg-muted hover:bg-gray-200 text-gray-600 dark:text-gray-300">
+        <button @click="store.backToMainView()" class="p-2 rounded-lg bg-muted hover:bg-muted text-muted-foreground">
           <ArrowLeft class="w-5 h-5" />
         </button>
         <div>
@@ -26,7 +26,7 @@
               'p-4 rounded-lg border text-left transition-all flex items-center gap-3',
               serviceView === 'SUPPORT_IT'
                 ? 'bg-primary/5 border-primary ring-2 ring-primary/20 text-primary font-bold'
-                : 'bg-surface border-input text-foreground'
+                : 'bg-surface border-border text-foreground'
             ]"
           >
             <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0 text-lg">
@@ -45,7 +45,7 @@
               'p-4 rounded-lg border text-left transition-all flex items-center gap-3',
               serviceView === 'IT_PROGRAMMER'
                 ? 'bg-purple-50/80 dark:bg-purple-950/40 border-purple-600 ring-2 ring-purple-600/20 text-purple-700 dark:text-purple-300 font-bold'
-                : 'bg-surface border-input text-foreground'
+                : 'bg-surface border-border text-foreground'
             ]"
           >
             <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center shrink-0 text-lg">
@@ -60,15 +60,16 @@
       </div>
 
       <!-- Auto ID Info -->
-      <div class="p-3.5 bg-muted/50 rounded-lg border border-border flex items-center justify-between text-xs">
-        <div>
+      <div class="p-3.5 bg-muted/50 rounded-lg border border-border flex items-center justify-between gap-3 text-xs">
+        <div class="min-w-0">
           <span class="text-muted-foreground">Pelapor:</span>
           <strong class="text-foreground ml-1">{{ displayPelaporName }}</strong>
-          <span class="text-muted-foreground mx-1.5">•</span>
-          <span class="text-muted-foreground">Dept:</span>
-          <span class="text-foreground ml-1">{{ displayPelaporDept }}</span>
+          <template v-if="displayPelaporOrg">
+            <span class="text-muted-foreground mx-1.5">•</span>
+            <span class="text-foreground">{{ displayPelaporOrg }}</span>
+          </template>
         </div>
-        <span class="px-2.5 py-1 bg-blue-100 dark:bg-blue-900/40 text-primary rounded-lg font-mono font-bold text-xs">
+        <span class="shrink-0 px-2.5 py-1 bg-blue-100 dark:bg-blue-900/40 text-primary rounded-lg font-mono font-bold text-xs">
           {{ ticketPrefix }}-{{ ticketNumber }}
         </span>
       </div>
@@ -76,10 +77,10 @@
       <!-- Buat Atas Nama (Hanya untuk SYSTEM_ADMIN) -->
       <div v-if="store.currentUser?.role === 'SYSTEM_ADMIN'" class="p-3.5 bg-amber-50/60 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800/40 space-y-2">
         <div class="flex items-center gap-2">
-          <Shield class="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <Shield class="w-4 h-4 text-warning" />
           <span class="text-xs font-bold text-amber-700 dark:text-amber-300">Buat Atas Nama (Opsional)</span>
         </div>
-        <p class="text-[11px] text-amber-600/70 dark:text-amber-400/60">Pilih user lain sebagai pelapor tiket. Jika tidak dipilih, tiket dibuat atas nama Anda sendiri.</p>
+        <p class="text-[11px] text-warning">Pilih user lain sebagai pelapor tiket. Jika tidak dipilih, tiket dibuat atas nama Anda sendiri.</p>
         <AppSelect
           :modelValue="behalfUserId ?? ''"
           @update:modelValue="val => behalfUserId = val || null"
@@ -101,28 +102,36 @@
           v-model="title"
           type="text" 
           placeholder="Cth: Printer lantai 2 macet tidak bisa cetak warna"
-          class="w-full px-4 py-3 rounded-lg border border-input bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all font-medium"
+          class="w-full px-4 py-3 rounded-lg border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium"
         />
       </div>
 
-      <!-- Subcategory Row -->
-      <div>
+      <!-- Project/Kendala & Sub Modul Row -->
+      <div :class="[serviceView === 'SUPPORT_IT' ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2', 'grid gap-4']">
         <AppSelect
-          v-model="subcategory"
-          :options="currentSubcategories"
-          label="Spesifik Kendala / Sub-Kategori"
+          v-model="projectKendala"
+          :options="currentProjectKendala"
+          :label="serviceView === 'SUPPORT_IT' ? 'Kendala' : 'Project'"
+          :placeholder="serviceView === 'SUPPORT_IT' ? '-- Pilih Kendala --' : '-- Pilih Project --'"
+        />
+        <AppSelect
+          v-if="serviceView === 'IT_PROGRAMMER'"
+          v-model="submodule"
+          :options="currentSubmodules"
+          label="Sub Modul"
+          placeholder="-- Pilih Sub Modul --"
         />
       </div>
 
       <!-- Location & Priority Row -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
+      <div :class="[serviceView === 'SUPPORT_IT' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1', 'grid gap-4']">
+        <div v-if="serviceView === 'SUPPORT_IT'">
           <label class="block text-xs font-semibold text-foreground mb-1.5">Lokasi / Ruangan Anda</label>
           <input 
             v-model="location"
             type="text" 
             placeholder="Cth: Lantai 3, Ruang Finance"
-            class="w-full px-4 py-3 rounded-lg border border-input bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all font-medium"
+            class="w-full px-4 py-3 rounded-lg border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium"
           />
         </div>
 
@@ -138,7 +147,7 @@
                 'py-2.5 px-2 rounded-lg text-xs font-bold border transition-all flex items-center justify-center',
                 priority === p.id 
                   ? p.activeClass 
-                  : 'bg-surface border-input text-gray-600 dark:text-muted-foreground hover:bg-gray-50'
+                  : 'bg-surface border-border text-muted-foreground hover:bg-muted'
               ]"
             >
               <span>{{ p.label }}</span>
@@ -164,7 +173,7 @@
           v-model="description"
           rows="5"
           placeholder="Jelaskan kendala secara rinci..."
-          class="w-full px-4 py-3 rounded-lg border border-input bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all font-medium resize-none"
+          class="w-full px-4 py-3 rounded-lg border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium resize-none"
         ></textarea>
       </div>
 
@@ -175,7 +184,7 @@
           <span v-if="priority === 'CRITICAL'" class="text-red-500">(Wajib untuk CRITICAL)</span>
           <span v-else class="text-muted-foreground font-normal">(Opsional)</span>
         </label>
-        <div class="border-2 border-dashed border-input rounded-lg p-5 text-center bg-muted/30 relative">
+        <div class="border-2 border-dashed border-border rounded-lg p-5 text-center bg-muted/30 relative">
           <input 
             type="file" 
             multiple
@@ -195,7 +204,7 @@
           </div>
           <div v-else class="flex flex-col items-center justify-center space-y-1">
             <Upload class="w-6 h-6 text-muted-foreground" />
-            <p class="text-xs text-gray-600 dark:text-gray-300 font-medium">Klik atau seret file ke sini untuk unggah</p>
+            <p class="text-xs text-muted-foreground font-medium">Klik atau seret file ke sini untuk unggah</p>
             <p class="text-[10px] text-muted-foreground">Bisa pilih beberapa file sekaligus</p>
           </div>
         </div>
@@ -214,7 +223,7 @@
         <button
           type="button"
           @click="handleSubmit(false)"
-          class="px-6 py-3 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-colors shadow-md"
+          class="px-6 py-3 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold transition-colors shadow-md"
         >
           Simpan
         </button>
@@ -235,14 +244,14 @@
         <div class="bg-surface rounded-lg border border-border p-6 max-w-sm w-full shadow-lg space-y-4 text-center relative">
           <button
             @click="closeSuccessModalAndGoMain"
-            class="absolute top-4 right-4 p-1 text-muted-foreground hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            class="absolute top-4 right-4 p-1 text-muted-foreground hover:text-muted-foreground dark:hover:text-foreground transition-colors"
             title="Tutup"
           >
             <X class="w-5 h-5" />
           </button>
 
           <!-- Success Icon -->
-          <div class="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto pt-0.5">
+          <div class="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 flex items-center justify-center mx-auto pt-0.5">
             <CheckCircle2 class="w-7 h-7" />
           </div>
 
@@ -258,7 +267,7 @@
             <button
               type="button"
               @click="goToTicketDetail"
-              class="w-full py-3 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+              class="w-full py-3 bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <Eye class="w-4 h-4" />
               <span>Klik untuk Melihat Detail</span>
@@ -282,8 +291,10 @@
 import { ref, computed, watch, nextTick } from 'vue';
 import { ArrowLeft, Upload, Check, CheckCircle2, Eye, X, Shield, AlertTriangle } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
+import { apiFetch } from '~/services/api';
 import { useModal } from '~/composables/useModal';
 import type { TicketPriority, Ticket, PendingAttachment } from '~/types';
+import { formatOrgLabel, formatRequesterIdentity } from '~/utils/identity';
 import AppSelect from '~/components/common/AppSelect.vue';
 import WorkerPickerModal from '~/components/common/WorkerPickerModal.vue';
 
@@ -303,27 +314,23 @@ const behalfUserOptions = computed(() => [
   { value: '', label: '-- Buat untuk diri sendiri --' },
   ...store.allUsers
     .filter(u => u.id !== store.currentUser?.id)
-    .map(u => ({ value: u.id, label: `${u.name} (${u.department})` }))
+    .map(u => ({ value: u.id, label: formatRequesterIdentity(u, u.name) }))
 ]);
 
-const displayPelaporName = computed(() => {
+const pelaporIdentity = computed(() => {
   if (behalfUserId.value) {
     const user = store.allUsers.find(u => u.id === behalfUserId.value);
-    if (user) return user.name;
+    if (user) return user;
   }
-  return store.currentUser?.name || 'User';
+  return store.currentUser;
 });
 
-const displayPelaporDept = computed(() => {
-  if (behalfUserId.value) {
-    const user = store.allUsers.find(u => u.id === behalfUserId.value);
-    if (user) return user.department;
-  }
-  return store.currentUser?.department || 'General';
-});
+const displayPelaporName = computed(() => pelaporIdentity.value?.name || 'User');
+const displayPelaporOrg = computed(() => formatOrgLabel(pelaporIdentity.value ?? {}));
 
 const title = ref('');
-const subcategory = ref('Printer');
+const projectKendala = ref('');
+const submodule = ref('');
 const location = ref('Lantai 2');
 const priority = ref<TicketPriority>('MEDIUM');
 const description = ref('');
@@ -331,17 +338,25 @@ const pendingFiles = ref<PendingAttachment[]>([]);
 const createdTicketSuccess = ref<Ticket | null>(null);
 const uploadSection = ref<HTMLElement | null>(null);
 
-const currentSubcategories = computed(() => {
+const currentProjectKendala = computed(() => {
   const targetCatName = serviceView.value === 'SUPPORT_IT' ? 'Support IT' : 'IT Programmer';
   const targetCategory = store.categories.find(c => c.name.toLowerCase() === targetCatName.toLowerCase());
   
   if (!targetCategory) return [];
 
-  const storeSubs = store.subcategories
+  const storeSubs = store.projectKendala
     .filter(s => s.category_id === targetCategory.id)
     .map(s => s.name);
 
   return storeSubs;
+});
+
+const currentSubmodules = computed(() => {
+  const parent = store.projectKendala.find(s => s.name === projectKendala.value);
+  if (!parent) return [];
+  return store.submodules
+    .filter(m => m.project_kendala_id === parent.id)
+    .map(m => m.name);
 });
 
 const priorities: { id: TicketPriority; label: string; activeClass: string }[] = [
@@ -352,12 +367,18 @@ const priorities: { id: TicketPriority; label: string; activeClass: string }[] =
 ];
 
 watch(serviceView, (newView) => {
+  projectKendala.value = '';
+  submodule.value = '';
   if (newView === 'SUPPORT_IT') {
-    subcategory.value = 'Printer';
+    location.value = 'Lantai 2'; // Reset location for Support IT
   } else {
-    subcategory.value = 'Development Sistem Baru';
+    location.value = ''; // Clear location for IT Programmer
   }
 }, { immediate: true });
+
+watch(projectKendala, () => {
+  submodule.value = '';
+});
 
 const handleFileDrop = (e: Event) => {
   const target = e.target as HTMLInputElement;
@@ -376,6 +397,15 @@ const removePendingFile = (index: number) => {
 const handleSubmit = async (shouldAssign: boolean) => {
   if (!title.value.trim() || !description.value.trim()) {
     showError('Formulir Tidak Lengkap', 'Mohon isi Judul Tiket dan Deskripsi Masalah.');
+    return;
+  }
+  if (!projectKendala.value.trim()) {
+    showError(
+      'Formulir Tidak Lengkap',
+      serviceView.value === 'SUPPORT_IT'
+        ? 'Mohon pilih Kendala yang dialami.'
+        : 'Mohon pilih Project yang sedang dikerjakan.'
+    );
     return;
   }
   if (priority.value === 'CRITICAL' && pendingFiles.value.length === 0) {
@@ -404,15 +434,16 @@ const createTicket = async (shouldIssue: boolean = false) => {
     const ticketPayload: Partial<Ticket> = {
       title: title.value.trim(),
       category: serviceView.value === 'SUPPORT_IT' ? 'Support IT' : 'IT Programmer',
-      subcategory: subcategory.value,
-      location: location.value.trim(),
+      project_kendala: projectKendala.value,
+      submodule: submodule.value,
+      location: serviceView.value === 'IT_PROGRAMMER' ? '' : location.value.trim(),
       priority: priority.value,
       description: description.value.trim(),
     };
     const newTicket = await store.addTicket(ticketPayload, shouldIssue, behalfUserId.value || null, pendingFiles.value.length);
     if (newTicket) {
       if (selectedWorkers.value.length > 0) {
-        await $fetch(`/api/tickets/${newTicket.id}/members`, {
+        await apiFetch(`/api/tickets/${newTicket.id}/members`, {
           method: 'POST',
           body: { userIds: selectedWorkers.value },
         });
@@ -425,10 +456,9 @@ const createTicket = async (shouldIssue: boolean = false) => {
         for (const pf of pendingFiles.value) {
           fd.append('files', pf.file);
         }
-        await $fetch('/api/upload', {
+        await apiFetch('/api/upload', {
           method: 'POST',
           body: fd,
-          credentials: 'include',
         });
         await store.refreshTicket(newTicket.id);
       }

@@ -26,7 +26,7 @@ export function getTargetStatus(stageKey: string): string {
 
 // Fields that can be edited by the user directly
 export const EDITABLE_TICKET_FIELDS = [
-  'title', 'description', 'category', 'subcategory', 'location', 'priority',
+  'title', 'description', 'category', 'project_kendala', 'submodule', 'location', 'priority',
 ];
 
 // Fields that can only be changed via domain actions

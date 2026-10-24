@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Fetch tickets where user is assigned, requested, or has worklogs
-  const results = await getTicketsWithRelations((t, { eq: e, or: o, sql: s }: any) => o(
+  const results = await getTicketsWithRelations((t: any, { eq: e, or: o, sql: s }: any) => o(
     e(t.assignedTo, userId),
     e(t.requestedBy, userId),
     // For worklogs, it's easier to fetch all then filter or use a subquery.
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
   const myWorkTickets = allTickets.filter(t => {
     if (t.assignedTo === userId) return true;
     if (t.requestedBy === userId) return true;
-    if (t.worklogs?.some(wl => wl.workerId === userId)) return true;
+    if (t.worklogs?.some((wl: any) => wl.workerId === userId)) return true;
     return false;
   });
 

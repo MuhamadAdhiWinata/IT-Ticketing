@@ -36,7 +36,7 @@
             <input
               v-model="form.companyName"
               type="text"
-              class="w-full px-3 py-2 rounded-lg border border-input bg-surface text-xs font-medium text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+              class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs font-medium text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               placeholder="Nama perusahaan"
             />
           </div>
@@ -47,7 +47,7 @@
             <input
               v-model="form.logoUrl"
               type="text"
-              class="w-full px-3 py-2 rounded-lg border border-input bg-surface text-xs font-medium text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+              class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs font-medium text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               placeholder="https://example.com/logo.png"
             />
           </div>
@@ -73,7 +73,7 @@
                 <input
                   v-model="form[key]"
                   type="text"
-                  class="flex-1 px-2 py-1.5 rounded border border-input bg-surface text-[11px] font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  class="flex-1 px-2 py-1.5 rounded border border-border bg-surface text-[11px] font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>
@@ -91,7 +91,7 @@
                 <input
                   v-model="form[key]"
                   type="text"
-                  class="flex-1 px-2 py-1.5 rounded border border-input bg-surface text-[11px] font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  class="flex-1 px-2 py-1.5 rounded border border-border bg-surface text-[11px] font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>
@@ -109,7 +109,7 @@
                 <input
                   v-model="form[key]"
                   type="text"
-                  class="flex-1 px-2 py-1.5 rounded border border-input bg-surface text-[11px] font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  class="flex-1 px-2 py-1.5 rounded border border-border bg-surface text-[11px] font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>

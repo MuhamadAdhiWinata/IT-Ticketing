@@ -10,7 +10,7 @@ Mapping: Frontend Type → API Response (DTO) → Database Column
 | `title` | `title` | `tickets.title` | |
 | `description` | `description` | `tickets.description` | |
 | `category` | `category` | `tickets.category` | |
-| `subcategory` | `subcategory` | `tickets.subcategory` | |
+| `project_kendala` | `project_kendala` | `tickets.project_kendala` | |
 | `location` | `location` | `tickets.location` | |
 | `priority` | `priority` | `tickets.priority` | |
 | `status` | `status` | `tickets.status` | |
@@ -102,13 +102,21 @@ Mapping: Frontend Type → API Response (DTO) → Database Column
 | `uploaded_by_name` | `uploaded_by_name` | `attachments.uploaded_by_name` |
 | `uploaded_at` | `uploaded_at` | `attachments.uploaded_at` |
 
-## Subcategory
+## Project/Kendala
 
 | Frontend Field | API Response | DB Column |
 |---|---|---|
-| `id` | `id` | `subcategories.id` |
-| `category_id` | `category_id` | `subcategories.category_id` (Drizzle camelCase) |
-| `name` | `name` | `subcategories.name` |
+| `id` | `id` | `project_kendala.id` |
+| `category_id` | `category_id` | `project_kendala.category_id` (Drizzle camelCase) |
+| `name` | `name` | `project_kendala.name` |
+
+## Submodule
+
+| Frontend Field | API Response | DB Column |
+|---|---|---|
+| `id` | `id` | `submodules.id` |
+| `project_kendala_id` | `project_kendala_id` | `submodules.project_kendala_id` (Drizzle camelCase) |
+| `name` | `name` | `submodules.name` |
 
 ## Vendor
 

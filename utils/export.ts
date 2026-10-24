@@ -34,12 +34,15 @@ export function exportTicketsToExcel(tickets: Ticket[]) {
     'Nomor Tiket',
     'Judul Masalah',
     'Kategori',
-    'Subkategori',
+    'Project/Kendala',
+    'Sub Modul',
     'Lokasi',
     'Prioritas',
     'Status',
     'Pelapor (User)',
     'Departemen',
+    'Perusahaan',
+    'Divisi',
     'Primary Worker',
     'Supporting Members',
     'Delegasi',
@@ -53,12 +56,15 @@ export function exportTicketsToExcel(tickets: Ticket[]) {
     t.id,
     t.title,
     t.category,
-    t.subcategory,
+    t.project_kendala || '-',
+    t.submodule || '-',
     t.location,
     t.priority,
     t.status,
     t.created_by_name,
     t.created_by_dept,
+    t.requested_by_company || '-',
+    t.requested_by_division || '-',
     t.assignedToName || 'Belum Ditugaskan',
     (t.members || []).map(m => m.user_name).join('; ') || '-',
     t.delegation ? `${t.delegation.type} (${t.delegation.vendor_name || t.delegation.technician_name})` : '-',
@@ -89,7 +95,7 @@ export function exportWorklogsToExcel(tickets: Ticket[], workerFilter?: string, 
   tickets.forEach((t) => {
     t.worklogs.forEach((wl) => {
       const matchWorker = !workerFilter || wl.worker_name.toLowerCase().includes(workerFilter.toLowerCase());
-      const wlDate = wl.date || (wl.created_at ? wl.created_at.split('T')[0] : '');
+      const wlDate = wl.date || (wl.created_at ? wl.created_at.slice(0, 10) : '');
       const matchDate = !dateRange || (wlDate >= dateRange.start && wlDate <= dateRange.end);
       if (matchWorker && matchDate) {
         rows.push([

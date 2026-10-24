@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { createError, getRouterParam, setHeader } from 'h3';
+import { requireAuth } from '~/server/utils/authorize';
 
 const MIME_TYPES: Record<string, string> = {
   jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
@@ -21,6 +22,7 @@ const MIME_TYPES: Record<string, string> = {
 const IMAGE_EXTS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico']);
 
 export default async function handler(event: any) {
+  await requireAuth(event);
   const filePath = getRouterParam(event, 'path') || [];
   const relativePath = Array.isArray(filePath) ? filePath.join('/') : filePath;
   const fullPath = (process.env.UPLOAD_DIR || './server/uploads') + '/' + relativePath;

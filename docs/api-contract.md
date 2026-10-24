@@ -10,7 +10,7 @@ Dokumen ini berisi spesifikasi kontrak API lengkap untuk sistem **IT Ticketing &
 2. [Authentication & Users](#2-authentication--users)
 3. [Tickets (Core Ticketing & Lifecycle)](#3-tickets-core-ticketing--lifecycle)
 4. [Ticket Sub-Entities (Worklogs, Attachments, Comments, Notes)](#4-ticket-sub-entities-worklogs-attachments-comments-notes)
-5. [Master Data — Categories & Subcategories](#5-master-data--categories--subcategories)
+5. [Master Data — Categories & Project/Kendala](#5-master-data--categories--projectkendala)
 6. [Master Data — Vendors & Technicians](#6-master-data--vendors--technicians)
 7. [Reports & Analytics](#7-reports--analytics)
 8. [Dashboard & Workload](#8-dashboard--workload)
@@ -144,7 +144,7 @@ Dokumen ini berisi spesifikasi kontrak API lengkap untuk sistem **IT Ticketing &
 {
   "title": "Printer Lantai 2 Macet",
   "category": "Support IT",
-  "subcategory": "Printer",
+  "project_kendala": "Printer & Mesin Fotokopi",
   "location": "Lantai 2, Ruang Finance",
   "priority": "HIGH",
   "description": "Printer tidak bisa cetak warna sejak pagi.",
@@ -281,7 +281,7 @@ Dokumen ini berisi spesifikasi kontrak API lengkap untuk sistem **IT Ticketing &
 
 ---
 
-## 5. MASTER DATA — CATEGORIES & SUBCATEGORIES
+## 5. MASTER DATA — CATEGORIES & PROJECT/KENDALA
 
 ### `GET /api/categories`
 * **Description**: Mengambil daftar kategori utama (`Support IT`, `IT Programmer`).
@@ -301,23 +301,23 @@ Dokumen ini berisi spesifikasi kontrak API lengkap untuk sistem **IT Ticketing &
 * **Description**: Hapus kategori (cascade delete subkategori terkait).
 * **Response** `200`: `{ "success": true }`.
 
-### `GET /api/subcategories`
-* **Description**: Mengambil daftar subkategori.
+### `GET /api/project-kendala`
+* **Description**: Mengambil daftar Project/Kendala (per kategori).
 * **Query Parameters**: `category_id` (optional).
-* **Response** `200`: Array `SubcategoryItem[]`.
+* **Response** `200`: Array `ProjectKendalaItem[]`.
 
-### `POST /api/subcategories`
-* **Description**: Tambah subkategori baru dengan relasi `category_id`.
+### `POST /api/project-kendala`
+* **Description**: Tambah Project/Kendala baru dengan relasi `category_id`.
 * **Request Body**: `{ "id": "SUB-013", "category_id": "CAT-01", "name": "Maintenance Router" }`
-* **Response** `201`: `SubcategoryItem`.
+* **Response** `201`: `ProjectKendalaItem`.
 
-### `PUT /api/subcategories/:id`
-* **Description**: Edit subkategori.
+### `PUT /api/project-kendala/:id`
+* **Description**: Edit Project/Kendala.
 * **Request Body**: `{ "category_id": "CAT-01", "name": "Updated Name" }`
-* **Response** `200`: `SubcategoryItem`.
+* **Response** `200`: `ProjectKendalaItem`.
 
-### `DELETE /api/subcategories/:id`
-* **Description**: Hapus subkategori.
+### `DELETE /api/project-kendala/:id`
+* **Description**: Hapus Project/Kendala.
 * **Response** `200`: `{ "success": true }`.
 
 ---

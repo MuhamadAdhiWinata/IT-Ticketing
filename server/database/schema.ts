@@ -9,6 +9,33 @@ import {
 } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 
+// ── Companies (master Perusahaan/PT) ──
+export const companies = mysqlTable('companies', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  name: varchar('name', { length: 255 }).notNull().unique(),
+});
+
+export const companiesRelations = relations(companies, ({ many }) => ({
+  divisions: many(divisions),
+}));
+
+// ── Divisions (master Divisi, melekat pada satu Perusahaan) ──
+export const divisions = mysqlTable('divisions', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  companyId: varchar('company_id', { length: 50 }).notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+}, (table) => ({
+  idxCompany: index('idx_division_company').on(table.companyId),
+}));
+
+export const divisionsRelations = relations(divisions, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [divisions.companyId],
+    references: [companies.id],
+  }),
+  members: many(users),
+}));
+
 // ── Users ──
 export const users = mysqlTable('users', {
   id: varchar('id', { length: 50 }).primaryKey(),
@@ -17,36 +44,104 @@ export const users = mysqlTable('users', {
   passwordHash: text('password_hash'),
   role: varchar('role', { length: 50 }).notNull(),
   department: varchar('department', { length: 255 }).notNull(),
+  companyId: varchar('company_id', { length: 50 }).references(() => companies.id),
+  divisionId: varchar('division_id', { length: 50 }).references(() => divisions.id),
   avatarUrl: text('avatar_url'),
-});
+}, (table) => ({
+  idxCompany: index('idx_users_company').on(table.companyId),
+  idxDivision: index('idx_users_division').on(table.divisionId),
+}));
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [users.companyId],
+    references: [companies.id],
+  }),
+  division: one(divisions, {
+    fields: [users.divisionId],
+    references: [divisions.id],
+  }),
   preferences: many(userPreferences),
   memberships: many(ticketMembers),
 }));
 
-// ── Categories & Subcategories ──
+// ── Categories & Project/Kendala ──
 export const categories = mysqlTable('categories', {
   id: varchar('id', { length: 50 }).primaryKey(),
   name: varchar('name', { length: 255 }).notNull().unique(),
+  slaCritical: int('sla_critical').default(1), // hours
+  slaHigh: int('sla_high').default(4),
+  slaMedium: int('sla_medium').default(8),
+  slaLow: int('sla_low').default(24),
 });
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
-  subcategories: many(subcategories),
+  projectKendala: many(projectKendala),
 }));
 
-export const subcategories = mysqlTable('subcategories', {
+export const projectKendala = mysqlTable('project_kendala', {
   id: varchar('id', { length: 50 }).primaryKey(),
   categoryId: varchar('category_id', { length: 50 }).notNull().references(() => categories.id),
   name: varchar('name', { length: 255 }).notNull(),
 }, (table) => ({
-  idxCategory: index('idx_subcategory_category').on(table.categoryId),
+  idxCategory: index('idx_project_kendala_category').on(table.categoryId),
 }));
 
-export const subcategoriesRelations = relations(subcategories, ({ one }) => ({
+export const projectKendalaRelations = relations(projectKendala, ({ one, many }) => ({
   category: one(categories, {
-    fields: [subcategories.categoryId],
+    fields: [projectKendala.categoryId],
     references: [categories.id],
+  }),
+  submodules: many(submodules),
+}));
+
+// ── Vendors ──
+export const vendors = mysqlTable('vendors', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  name: varchar('name', { length: 255 }).notNull().unique(),
+  contactName: varchar('contact_name', { length: 255 }),
+  email: varchar('email', { length: 255 }),
+  phone: varchar('phone', { length: 50 }),
+  address: text('address'),
+});
+
+export const vendorsRelations = relations(vendors, ({ many }) => ({
+  tickets: many(tickets),
+}));
+
+// ── Notifications ──
+export const notifications = mysqlTable('notifications', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  userId: varchar('user_id', { length: 50 }).notNull().references(() => users.id),
+  ticketId: varchar('ticket_id', { length: 50 }).references(() => tickets.id),
+  type: varchar('type', { length: 50 }).notNull(), // 'NEW_TICKET', 'ASSIGNED', 'COMMENT', 'SLA_WARNING'
+  title: varchar('title', { length: 255 }).notNull(),
+  message: text('message').notNull(),
+  isRead: int('is_read', { unsigned: true }).default(0),
+  createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
+}, (table) => ({
+  idxUser: index('idx_notif_user').on(table.userId),
+  idxRead: index('idx_notif_read').on(table.isRead),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, { fields: [notifications.userId], references: [users.id] }),
+  ticket: one(tickets, { fields: [notifications.ticketId], references: [tickets.id] }),
+}));
+
+// ── Sub Modules (child of Project/Kendala) ──
+export const submodules = mysqlTable('submodules', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  projectKendalaId: varchar('project_kendala_id', { length: 50 }).notNull().references(() => projectKendala.id),
+  name: varchar('name', { length: 255 }).notNull(),
+}, (table) => ({
+  idxProjectKendala: index('idx_submodule_project_kendala').on(table.projectKendalaId),
+}));
+
+export const submodulesRelations = relations(submodules, ({ one }) => ({
+  projectKendala: one(projectKendala, {
+    fields: [submodules.projectKendalaId],
+    references: [projectKendala.id],
   }),
 }));
 
@@ -56,7 +151,8 @@ export const tickets = mysqlTable('tickets', {
   title: text('title').notNull(),
   description: text('description').notNull(),
   category: varchar('category', { length: 100 }).notNull(),
-  subcategory: varchar('subcategory', { length: 100 }).notNull(),
+  projectKendala: varchar('project_kendala', { length: 100 }),
+  submodule: varchar('submodule', { length: 100 }),
   location: varchar('location', { length: 500 }).notNull(),
   priority: varchar('priority', { length: 50 }).notNull(),
   status: varchar('status', { length: 50 }).notNull(),
@@ -108,6 +204,45 @@ export const ticketsRelations = relations(tickets, ({ one, many }) => ({
   attachments: many(attachments),
   auditLogs: many(auditLogs),
   members: many(ticketMembers),
+  comments: many(comments),
+  internalNotes: many(internalNotes),
+}));
+
+// ── Comments (diskusi User ↔ IT, terlihat semua pihak tiket) ──
+// ponytail: user_name/user_role disimpan snapshot saat tulis; bila riwayat rename
+// user harus ikut berubah, resolve live lewat relasi author seperti audit_logs.
+export const comments = mysqlTable('comments', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  ticketId: varchar('ticket_id', { length: 50 }).notNull().references(() => tickets.id),
+  userId: varchar('user_id', { length: 50 }).notNull().references(() => users.id),
+  userName: varchar('user_name', { length: 255 }).notNull(),
+  userRole: varchar('user_role', { length: 50 }).notNull(),
+  message: text('message').notNull(),
+  createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
+}, (table) => ({
+  idxTicket: index('idx_comments_ticket').on(table.ticketId),
+}));
+
+export const commentsRelations = relations(comments, ({ one }) => ({
+  ticket: one(tickets, { fields: [comments.ticketId], references: [tickets.id] }),
+  author: one(users, { fields: [comments.userId], references: [users.id] }),
+}));
+
+// ── Internal Notes (khusus IT; Rule 15: tidak terlihat oleh User Non-IT) ──
+export const internalNotes = mysqlTable('internal_notes', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  ticketId: varchar('ticket_id', { length: 50 }).notNull().references(() => tickets.id),
+  authorId: varchar('author_id', { length: 50 }).notNull().references(() => users.id),
+  authorName: varchar('author_name', { length: 255 }).notNull(),
+  note: text('note').notNull(),
+  createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
+}, (table) => ({
+  idxTicket: index('idx_internal_notes_ticket').on(table.ticketId),
+}));
+
+export const internalNotesRelations = relations(internalNotes, ({ one }) => ({
+  ticket: one(tickets, { fields: [internalNotes.ticketId], references: [tickets.id] }),
+  author: one(users, { fields: [internalNotes.authorId], references: [users.id] }),
 }));
 
 // ── Ticket Members (workers per ticket) ──
