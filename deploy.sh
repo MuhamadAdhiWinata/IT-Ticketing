@@ -2,4 +2,4 @@
 
 git pull origin main
 echo "completed pull."
-docker compose down && docker compose up -d
+docker compose down && docker compose up -d --build app
