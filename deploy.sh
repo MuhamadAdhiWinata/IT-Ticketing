@@ -1,5 +1,6 @@
 #!/bin/bash
+set -e
 
 git pull origin main
 echo "completed pull."
-docker compose down && docker compose up -d --build app
+docker compose up -d --build app
