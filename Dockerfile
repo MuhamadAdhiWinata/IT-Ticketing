@@ -1,13 +1,14 @@
 # Build stage
 FROM node:22-alpine AS builder
 WORKDIR /app
-COPY package.json ./
-RUN npm install --legacy-peer-deps
+RUN corepack enable && corepack prepare pnpm@10.28.1 --activate
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY . .
 ARG APP_BUILD=dev
 ARG APP_COMMIT=
 ENV APP_BUILD=$APP_BUILD APP_COMMIT=$APP_COMMIT
-RUN npm run build
+RUN pnpm run build
 
 # Production stage
 FROM node:22-alpine

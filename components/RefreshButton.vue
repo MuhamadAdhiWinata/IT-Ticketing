@@ -2,7 +2,7 @@
   <button
     @click="handleRefresh"
     :disabled="loading"
-    class="w-8 h-8 rounded-lg border border-border bg-surface text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+    class="w-11 h-11 md:w-8 md:h-8 rounded-lg border border-border bg-surface text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
     title="Refresh Data"
     aria-label="Refresh data"
   >

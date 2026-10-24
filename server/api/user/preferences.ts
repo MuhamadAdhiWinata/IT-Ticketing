@@ -17,8 +17,7 @@ export default defineEventHandler(async (event) => {
       where: (p, { eq: e }) => e(p.userId, userId),
     });
 
-    // null = pengguna belum pernah memilih: klien boleh ikuti prefers-color-scheme,
-    // bukan dipaksa terang oleh default false.
+    // null = pengguna belum pernah memilih: klien memakai tema terang.
     return successResponse({ darkMode: prefs ? (prefs.darkMode ? true : false) : null });
   }
 

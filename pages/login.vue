@@ -101,12 +101,12 @@
                   placeholder="Masukkan password"
                   required
                   autocomplete="current-password"
-                  class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-border bg-surface text-foreground text-sm font-medium placeholder:text-muted-foreground/50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  class="w-full pl-10 pr-11 py-2.5 rounded-xl border border-border bg-surface text-foreground text-sm font-medium placeholder:text-muted-foreground/50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 <button
                   type="button"
                   @click="showPassword = !showPassword"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-muted-foreground transition-colors hover:text-foreground"
+                  class="absolute right-0 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
                   :aria-label="showPassword ? 'Hide password' : 'Show password'"
                   :aria-pressed="showPassword"
                 >
@@ -118,7 +118,7 @@
 
             <!-- Remember me + Forgot password -->
             <div class="flex items-center justify-between mt-0.5">
-              <label class="flex items-center gap-2 cursor-pointer select-none">
+              <label class="flex items-center gap-2 cursor-pointer select-none min-h-11">
                 <input
                   v-model="rememberMe"
                   type="checkbox"
@@ -130,7 +130,7 @@
               </label>
               <a
                 href="#"
-                class="text-xs font-semibold text-primary transition-colors hover:underline"
+                class="text-xs font-semibold text-primary transition-colors hover:underline inline-flex items-center min-h-11"
                 @click.prevent
               >
                 Lupa password?
@@ -163,6 +163,7 @@
 
           <!-- Demo Credentials -->
           <div
+            v-if="isDev"
             class="p-4 rounded-xl border border-primary/15 bg-primary-muted/50 login-anim-fade mt-5"
             style="animation-delay: 0.4s"
           >
@@ -215,8 +216,10 @@ const appStore = useAppStore();
 const { settings, loaded } = useCompany();
 const logoError = ref(false);
 
-const email = ref('sysadmin@company.co.id');
-const password = ref('password123');
+// Akun demo dan isian otomatis hanya untuk dev; build produksi memangkasnya.
+const isDev = import.meta.dev;
+const email = ref(isDev ? 'sysadmin@company.co.id' : '');
+const password = ref(isDev ? 'password123' : '');
 const showPassword = ref(false);
 const rememberMe = ref(false);
 

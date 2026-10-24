@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-5">
     <!-- KPI Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="bg-surface rounded-lg border border-border p-4 shadow-xs flex items-center gap-4">
         <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
           <LayoutGrid class="w-5 h-5" />
@@ -138,7 +138,7 @@
     <!-- Kanban -->
     <div
       v-if="viewMode === 'kanban'"
-      class="flex overflow-x-auto gap-4 pb-4 w-full custom-scrollbar md:grid md:grid-cols-4 md:overflow-visible md:pb-0 items-start"
+      class="flex overflow-x-auto gap-4 pb-4 w-full custom-scrollbar lg:grid lg:grid-cols-4 lg:overflow-visible lg:pb-0 items-start"
     >
       <div
         v-for="col in kanbanColumns"
@@ -148,7 +148,7 @@
         @drop="handleDrop($event, col.id as TicketStatus)"
         :class="[
           'bg-muted/40 p-3 rounded-lg border transition-all space-y-3 min-h-[400px]',
-          'w-[85vw] sm:w-[300px] md:w-full shrink-0',
+          'w-[85vw] sm:w-[300px] lg:w-full shrink-0',
           draggedOverCol === col.id
             ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
             : 'border-border'

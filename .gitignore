@@ -9,6 +9,7 @@ coverage/
 .output/
 .nuxt/
 server/uploads/
-drizzle/
 prompt.md
 prompt*
+# Output skrip scripts/clickthrough.ts
+/verification/

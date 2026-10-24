@@ -94,31 +94,31 @@
               :key="cat.id"
               class="p-4 rounded-xl border border-border bg-muted space-y-3 shadow-xs"
             >
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-3 min-w-0">
                   <!-- Logo/Icon -->
                   <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <FolderTree class="w-5 h-5 text-primary" />
                   </div>
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <span class="font-mono font-bold text-xs px-2.5 py-0.5 rounded bg-primary/5 text-primary border border-primary/15">
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span class="font-mono font-bold text-xs px-2.5 py-0.5 rounded bg-primary/5 text-primary border border-primary/15 shrink-0">
                         {{ cat.id }}
                       </span>
-                      <span class="font-bold text-sm text-foreground">{{ cat.name }}</span>
+                      <span class="font-bold text-sm text-foreground break-words min-w-0">{{ cat.name }}</span>
                     </div>
                   </div>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 shrink-0">
                   <button
                     @click="editCategory(cat)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                    class="px-3 py-1.5 max-md:min-h-11 text-xs font-bold rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                   >
                     Edit
                   </button>
                   <button
                     @click="deleteCategory(cat.id)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/40 transition-colors"
+                    class="px-3 py-1.5 max-md:min-h-11 text-xs font-bold rounded-lg bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/40 transition-colors"
                   >
                     Hapus
                   </button>
@@ -393,13 +393,13 @@
                 <div class="flex items-center gap-2 shrink-0">
                   <button
                     @click="editCompany(c)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                    class="px-3 py-1.5 max-md:min-h-11 text-xs font-bold rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                   >
                     Edit
                   </button>
                   <button
                     @click="deleteCompany(c)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/40 transition-colors"
+                    class="px-3 py-1.5 max-md:min-h-11 text-xs font-bold rounded-lg bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/40 transition-colors"
                   >
                     Hapus
                   </button>

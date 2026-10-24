@@ -1,19 +1,9 @@
 export default defineNuxtPlugin(async () => {
   if (import.meta.server) return;
 
-  // Apply dark mode from localStorage BEFORE any Vue component renders
-  const stored = localStorage.getItem('darkMode');
-  if (stored === '1') {
-    document.documentElement.classList.add('dark');
-  } else if (stored === '0') {
-    document.documentElement.classList.remove('dark');
-  } else {
-    // Belum ada pilihan tersimpan: ikuti preferensi sistem, bukan paksa terang.
-    // Perbaikan penuh = skrip inline dari server sebelum paint pertama;
-    // plugin ini masih berjalan setelah HTML digarap, jadi kedipan tetap mungkin.
-    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-    document.documentElement.classList.toggle('dark', !!prefersDark);
-  }
+  // Default terang; gelap hanya bila pengguna memilihnya (prefers-color-scheme diabaikan).
+  // Skrip inline di nuxt.config.ts sudah memasang kelas sebelum paint; ini menjaga navigasi klien.
+  document.documentElement.classList.toggle('dark', localStorage.getItem('darkMode') === '1');
 
   // Token warna dihitung ulang untuk mode yang baru dipilih (kontras AA).
   const { refreshThemeTokens } = await import('~/composables/useCompany');

@@ -5,7 +5,7 @@
         <Inbox class="w-3.5 h-3.5 text-primary" />
         Aktivitas Tiket Masuk IT
       </h3>
-      <button @click="fetchData" class="text-[11px] text-primary hover:underline font-semibold">
+      <button @click="fetchData" class="text-[11px] text-primary hover:underline font-semibold min-h-11 md:min-h-0 px-2 -mr-2">
         Muat Ulang
       </button>
     </div>
@@ -33,7 +33,7 @@
         :key="p.id"
         @click="changePeriod(p.id)"
         :class="[
-          'flex-1 px-2.5 py-1.5 rounded-md text-[10px] sm:text-[11px] font-bold transition-all text-center',
+          'flex-1 px-2.5 py-3 md:py-1.5 rounded-md text-[10px] sm:text-[11px] font-bold transition-all text-center',
           period === p.id
             ? 'bg-surface-elevated shadow-xs text-primary'
             : 'text-muted-foreground hover:text-foreground'

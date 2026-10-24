@@ -38,7 +38,7 @@
 
         <button
           @click="store.closeMobileSidebar()"
-          class="md:hidden p-1.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          class="md:hidden w-11 h-11 shrink-0 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           aria-label="Tutup sidebar"
         >
           <X class="w-5 h-5" />
@@ -86,7 +86,7 @@
               :title="store.isSidebarCollapsed && !store.isMobileSidebarOpen ? item.label : ''"
               :aria-current="store.activeTab === item.id ? 'page' : undefined"
               :class="[
-                'w-full py-2.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-3',
+                'w-full min-h-11 md:min-h-0 py-2.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-3',
                 store.isSidebarCollapsed && !store.isMobileSidebarOpen ? 'px-0 justify-center' : 'px-3',
                 store.activeTab === item.id
                   ? 'bg-primary text-primary-foreground shadow-xs'

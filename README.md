@@ -106,8 +106,8 @@ cp .env.example .env
 docker exec -i mariadb_local mariadb -u root -prootpassword ticket_db -e \
   "DROP DATABASE IF EXISTS ticket_db; CREATE DATABASE ticket_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
-# 2. Push schema ke database
-DATABASE_URL="mysql2://root:rootpassword@localhost:3306/ticket_db" npx drizzle-kit push
+# 2. Terapkan migrasi (drizzle/)
+DATABASE_URL="mysql2://root:rootpassword@localhost:3306/ticket_db" npx drizzle-kit migrate
 
 # 3. Seed data
 DATABASE_URL="mysql2://root:rootpassword@localhost:3306/ticket_db" pnpm seed
@@ -118,7 +118,7 @@ DATABASE_URL="mysql2://root:rootpassword@localhost:3306/ticket_db" pnpm seed
 ```bash
 docker exec -i mariadb_local mariadb -u root -prootpassword ticket_db -e \
   "DROP DATABASE IF EXISTS ticket_db; CREATE DATABASE ticket_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" && \
-DATABASE_URL="mysql2://root:rootpassword@localhost:3306/ticket_db" npx drizzle-kit push && \
+DATABASE_URL="mysql2://root:rootpassword@localhost:3306/ticket_db" npx drizzle-kit migrate && \
 DATABASE_URL="mysql2://root:rootpassword@localhost:3306/ticket_db" pnpm seed
 ```
 

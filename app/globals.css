@@ -364,3 +364,13 @@ body {
     animation: none;
   }
 }
+
+/* Tap target 44px di bawah md; :where() menjaga specificity 0 agar kelas komponen tetap menang. */
+@media (max-width: 767px) {
+  :where(button, select, textarea, input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"])) {
+    min-height: 2.75rem;
+  }
+  :where(button) {
+    min-width: 2.75rem;
+  }
+}

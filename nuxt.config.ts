@@ -74,6 +74,15 @@ export default defineNuxtConfig({
   css: ["~/app/globals.css", "~/assets/css/main.css"],
   app: {
     head: {
+      script: [
+        {
+          // Jalan sebelum paint pertama: gelap hanya bila pengguna memilihnya sendiri.
+          textContent:
+            "try{if(localStorage.getItem('darkMode')==='1')document.documentElement.classList.add('dark')}catch(e){}",
+          tagPosition: "head",
+          tagPriority: "critical",
+        },
+      ],
       link: [
         {
           rel: "stylesheet",

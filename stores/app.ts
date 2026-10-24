@@ -66,9 +66,9 @@ export const useAppStore = defineStore('app', {
         const stored = prefsRes.data.darkMode;
         if (typeof document !== 'undefined') {
           if (stored === null) {
-            // Belum pernah memilih: pakai apa yang sudah dipasang plugin
-            // (prefers-color-scheme) dan jangan mengunci lewat localStorage.
-            this.darkMode = document.documentElement.classList.contains('dark');
+            // Belum pernah memilih: terang, dan jangan mengunci lewat localStorage.
+            this.darkMode = false;
+            document.documentElement.classList.remove('dark');
             refreshThemeTokens();
           } else {
             this.darkMode = stored;

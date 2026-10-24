@@ -1,25 +1,25 @@
 <template>
-  <header class="bg-surface border-b border-border h-16 sticky top-0 z-sticky flex items-center justify-between px-4 sm:px-6">
+  <header class="bg-surface border-b border-border h-16 sticky top-0 z-sticky flex items-center justify-between px-3 gap-2 sm:px-6">
     <!-- Left -->
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2 sm:gap-3 min-w-0">
       <button
         @click="toggleSidebarAction"
-        class="p-2 rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        class="w-11 h-11 shrink-0 md:w-auto md:h-auto flex items-center justify-center md:p-2 rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
         aria-label="Buka/Tutup Sidebar"
       >
         <Menu class="w-5 h-5" />
       </button>
 
-      <h1 class="text-sm font-bold text-foreground capitalize">
+      <h1 class="text-sm font-bold text-foreground capitalize truncate">
         {{ store.activeTab.replace('-', ' ') }}
       </h1>
     </div>
 
     <!-- Right -->
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
       <RefreshButton mode="all" />
 
-      <UiButton size="sm" @click="store.openCreateTicket()">
+      <UiButton size="sm" class="min-h-11 min-w-11 md:min-h-0 md:min-w-0" @click="store.openCreateTicket()">
         <PlusCircle class="w-4 h-4" />
         <span class="hidden sm:inline">Buat Tiket</span>
       </UiButton>
@@ -28,7 +28,7 @@
       <div class="relative" ref="profileDropdownRef">
         <button
           @click="isProfileOpen = !isProfileOpen"
-          class="flex items-center gap-1.5 px-1.5 py-1 rounded-lg border border-border hover:bg-muted transition-colors"
+          class="flex items-center gap-1.5 px-1.5 py-1 min-h-11 md:min-h-0 rounded-lg border border-border hover:bg-muted transition-colors"
           aria-haspopup="true"
           :aria-expanded="isProfileOpen"
         >
@@ -64,7 +64,7 @@
             </div>
             <button
               @click="store.toggleDarkMode"
-              class="w-full text-left px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted flex items-center gap-2 transition-colors"
+              class="w-full text-left px-3 py-2 min-h-11 md:min-h-0 text-xs font-semibold text-foreground hover:bg-muted flex items-center gap-2 transition-colors"
               role="menuitem"
             >
               <Sun v-if="store.darkMode" class="w-4 h-4 text-warning" />
@@ -73,7 +73,7 @@
             </button>
             <button
               @click="handleLogout"
-              class="w-full text-left px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/5 flex items-center gap-2 transition-colors"
+              class="w-full text-left px-3 py-2 min-h-11 md:min-h-0 text-xs font-semibold text-destructive hover:bg-destructive/5 flex items-center gap-2 transition-colors"
               role="menuitem"
             >
               <LogOut class="w-4 h-4" />

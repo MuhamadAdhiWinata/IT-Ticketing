@@ -49,7 +49,7 @@
     <div class="bg-surface rounded-lg border border-border p-4 sm:p-5 shadow-xs space-y-3.5">
       <!-- Quick Preset Filter Tabs & Worker Filter -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
-        <div class="flex-1">
+        <div class="flex-1 min-w-0">
           <span class="text-xs font-bold text-muted-foreground mr-1 flex items-center gap-1 mb-2 sm:mb-0">
             <Filter class="w-3.5 h-3.5 text-primary" />
             Periode:
@@ -88,7 +88,7 @@
 
       <!-- Date Range Inputs with Step Navigation -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div class="flex-1 flex items-center gap-2 text-xs">
+        <div class="flex-1 min-w-0 flex items-center gap-2 text-xs">
           <!-- Step backward button -->
           <button
             @click="shiftRange(-1)"

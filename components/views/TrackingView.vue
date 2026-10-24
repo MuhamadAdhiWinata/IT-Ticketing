@@ -25,7 +25,7 @@
             v-if="onCreateTicketClick"
             variant="glass"
             size="sm"
-            class="sm:w-auto w-full"
+            class="sm:w-auto w-full min-h-11 md:min-h-0"
             @click="onCreateTicketClick"
           >
             <PlusCircle class="w-4 h-4" /> Buat Tiket Baru

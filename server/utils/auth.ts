@@ -1,6 +1,9 @@
 import jwt, { type SignOptions } from 'jsonwebtoken';
 import { db } from '~/server/database/client';
 
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET wajib diisi di production');
+}
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-dev-secret';
 // Format durasi (mis. "7d") dikirim apa adanya; env bisa menimpanya.
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '7d') as SignOptions['expiresIn'];
