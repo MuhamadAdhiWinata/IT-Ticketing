@@ -1,0 +1,13 @@
+[Unit]
+Description=IT-Ticketing GitHub webhook receiver
+After=network-online.target
+
+[Service]
+EnvironmentFile=%h/.config/it-ticketing-webhook.env
+ExecStart=/usr/local/bin/node %h/Sistem-Tiketing/scripts/webhook-receiver.mjs
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target
