@@ -30,6 +30,9 @@
                 <span class="text-sm font-bold" style="color: var(--color-foreground)">
                   {{ loaded ? settings.companyName : 'IT Ticketing' }}
                 </span>
+                <span class="text-sm font-bold" style="color: var(--color-foreground)">
+                  {{ 'v1.0.0' }}
+                </span>
               </div>
             </div>
           </div>
