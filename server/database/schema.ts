@@ -329,6 +329,8 @@ export const mcpTokens = mysqlTable('mcp_tokens', {
   userId: varchar('user_id', { length: 50 }).notNull().references(() => users.id),
   name: varchar('name', { length: 100 }).notNull(),
   tokenHash: varchar('token_hash', { length: 64 }).notNull().unique(),
+  // Token terenkripsi (AES-256-GCM) agar pemilik bisa melihatnya lagi; null untuk token lama.
+  tokenEnc: text('token_enc'),
   createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
   lastUsedAt: timestamp('last_used_at', { mode: 'string' }),
   revokedAt: timestamp('revoked_at', { mode: 'string' }),

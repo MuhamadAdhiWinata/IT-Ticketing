@@ -380,6 +380,28 @@ describe('token self-service scoping', () => {
   });
 });
 
+describe('token reveal', () => {
+  it('owner can re-read an active token; others, revoked and legacy tokens cannot', async () => {
+    const { revealMcpToken } = await import('~/server/services/ticketing/mcp-auth');
+    const { id, token } = await createMcpToken(IT_A.id, 'reveal');
+    expect(await revealMcpToken(id, IT_A.id)).toBe(token);
+    expect(await authenticateMcp(`Bearer ${await revealMcpToken(id, IT_A.id)}`)).toEqual(IT_A);
+
+    await expect(revealMcpToken(id, IT_B.id)).rejects.toMatchObject({ statusCode: 404 });
+
+    const stored = (await db.select().from(mcpTokens).where(eq(mcpTokens.id, id)))[0]!;
+    expect(stored.tokenEnc).toBeTruthy();
+    expect(stored.tokenEnc).not.toContain(token);
+
+    await db.update(mcpTokens).set({ tokenEnc: null }).where(eq(mcpTokens.id, id));
+    await expect(revealMcpToken(id, IT_A.id)).rejects.toMatchObject({ statusCode: 409 });
+
+    const second = await createMcpToken(IT_A.id, 'reveal2');
+    await revokeMcpToken(second.id, IT_A.id);
+    await expect(revealMcpToken(second.id, IT_A.id)).rejects.toMatchObject({ statusCode: 404 });
+  });
+});
+
 describe('token auth', () => {
   it('resolves actor from DB by token hash; revoked and unknown tokens rejected; role is live', async () => {
     const { id, token } = await createMcpToken(IT_A.id, 'test');

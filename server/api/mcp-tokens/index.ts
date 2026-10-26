@@ -19,6 +19,7 @@ export default defineEventHandler(async (event) => {
       created_at: t.createdAt,
       last_used_at: t.lastUsedAt,
       revoked_at: t.revokedAt,
+      can_reveal: !!Number(t.canReveal),
     })));
   }
 

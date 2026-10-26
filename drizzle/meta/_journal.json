@@ -15,6 +15,13 @@
       "when": 1792998096954,
       "tag": "0001_mcp_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1793006286682,
+      "tag": "0002_mcp_token_enc",
+      "breakpoints": true
     }
   ]
 }
