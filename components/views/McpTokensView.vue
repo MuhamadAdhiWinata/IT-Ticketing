@@ -61,10 +61,10 @@
               <td class="px-4 py-2 text-muted-foreground whitespace-nowrap">{{ t.created_at }}</td>
               <td class="px-4 py-2 text-muted-foreground whitespace-nowrap">{{ t.last_used_at || 'Belum pernah' }}</td>
               <td class="px-4 py-2">
-                <span :class="t.revoked_at ? 'text-muted-foreground' : 'text-success font-semibold'">{{ t.revoked_at ? 'Dicabut' : 'Aktif' }}</span>
+                <span :class="t.revoked_at ? 'text-muted-foreground' : 'text-success font-semibold'">{{ t.revoked_at ? 'Non-aktif' : 'Aktif' }}</span>
               </td>
               <td class="px-4 py-2 text-right">
-                <UiButton v-if="!t.revoked_at" size="xs" variant="danger" :loading="revokingId === t.id" @click="revoke(t)">Cabut</UiButton>
+                <UiButton v-if="!t.revoked_at" size="xs" variant="danger" :loading="revokingId === t.id" @click="revoke(t)">Nonaktifkan</UiButton>
               </td>
             </tr>
           </tbody>
@@ -128,13 +128,13 @@ async function generate() {
 }
 
 async function revoke(t: McpTokenItem) {
-  if (!window.confirm(`Cabut token "${t.name}"? Klien yang memakainya akan langsung ditolak.`)) return;
+  if (!window.confirm(`Nonaktifkan token "${t.name}"? Klien yang memakainya akan langsung ditolak.`)) return;
   revokingId.value = t.id;
   try {
     await apiFetch(`/api/mcp-tokens/${t.id}`, { method: 'DELETE' });
     await load();
   } catch (e) {
-    showError('Gagal', errMsg(e, 'Gagal mencabut token.'));
+    showError('Gagal', errMsg(e, 'Gagal menonaktifkan token.'));
   } finally {
     revokingId.value = '';
   }

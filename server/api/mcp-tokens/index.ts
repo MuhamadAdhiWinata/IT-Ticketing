@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
     const { name } = parse(CreateSchema, await readBody(event));
     const active = (await listMcpTokens(user.id)).filter(t => !t.revokedAt).length;
     if (active >= MAX_ACTIVE) {
-      throw createError({ statusCode: 409, statusMessage: `Maksimal ${MAX_ACTIVE} token aktif. Cabut token lama dahulu.` });
+      throw createError({ statusCode: 409, statusMessage: `Maksimal ${MAX_ACTIVE} token aktif. Nonaktifkan token lama dahulu.` });
     }
     const { id, token } = await createMcpToken(user.id, name);
     return successResponse({ id, token });

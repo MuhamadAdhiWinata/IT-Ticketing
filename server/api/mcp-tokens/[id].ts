@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
   if (!id) throw createError({ statusCode: 400, statusMessage: 'Token ID required' });
 
   if (!(await revokeMcpToken(id, user.id))) {
-    throw createError({ statusCode: 404, statusMessage: 'Token tidak ditemukan atau sudah dicabut' });
+    throw createError({ statusCode: 404, statusMessage: 'Token tidak ditemukan atau sudah non-aktif' });
   }
   return successResponse({ success: true });
 });

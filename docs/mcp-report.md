@@ -123,7 +123,7 @@ claude mcp add --transport http it-ticketing https://<host>/mcp --header "Author
 - `IT_WORKER` boleh bertindak pada tiket mana pun, bukan hanya yang ditugaskan. Perlu keputusan bila ingin dibatasi ke assignee/member.
 - Konfirmasi worker bergantung pada klien AI; server tidak bisa memaksa.
 - Lampiran lewat base64 (batas 50 MB per file) memakan memori dan konteks klien.
-- Token tidak punya masa berlaku; hanya bisa dicabut. Belum ada rate limit.
+- Token tidak punya masa berlaku; hanya bisa dinonaktifkan. Belum ada rate limit.
 - ID memakai `Date.now()` + acak 4 karakter (skema lama); tabrakan sangat kecil tapi mungkin.
 - `GET /api/tickets/:id` (web) belum menyaring lampiran `INTERNAL_ONLY` per role. MCP sudah menyaring.
 - Migrasi `0001_mcp_tokens` harus dijalankan di produksi sebelum deploy.
