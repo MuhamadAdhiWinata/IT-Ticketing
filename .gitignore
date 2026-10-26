@@ -13,3 +13,4 @@ prompt.md
 prompt*
 # Output skrip scripts/clickthrough.ts
 /verification/
+server/__tests__/.uploads/

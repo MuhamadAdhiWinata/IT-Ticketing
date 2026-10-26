@@ -13,6 +13,10 @@ export function isValidTransition(from: string, to: string): boolean {
   return VALID_TRANSITIONS[from]?.includes(to) ?? false;
 }
 
+export function getValidTransitions(from: string): string[] {
+  return [...(VALID_TRANSITIONS[from] ?? [])];
+}
+
 export function getTargetStatus(stageKey: string): string {
   const map: Record<string, string> = {
     REQUEST: 'DRAFT',

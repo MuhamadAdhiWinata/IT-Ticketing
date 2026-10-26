@@ -55,6 +55,14 @@ export async function cleanupTempFiles(files: ParsedFile[]): Promise<void> {
   }
 }
 
+export async function readUploads(files: ParsedFile[], visibility?: 'USER_VISIBLE' | 'INTERNAL_ONLY') {
+  return Promise.all(files.map(async f => ({
+    fileName: f.originalFilename || 'file',
+    data: await fs.readFile(f.filepath),
+    visibility,
+  })));
+}
+
 export function sanitizeFilename(name: string): string {
   const ext = path.extname(name);
   const base = path.basename(name, ext).replace(/[^a-zA-Z0-9-_]/g, '_');

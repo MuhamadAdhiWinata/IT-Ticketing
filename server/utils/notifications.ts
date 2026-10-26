@@ -7,9 +7,9 @@ export async function createNotification(params: {
   type: 'NEW_TICKET' | 'ASSIGNED' | 'COMMENT' | 'SLA_WARNING';
   title: string;
   message: string;
-}) {
+}, exec: typeof db = db) {
   const id = `NTF-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  await db.insert(notifications).values({
+  await exec.insert(notifications).values({
     id,
     userId: params.userId,
     ticketId: params.ticketId || null,

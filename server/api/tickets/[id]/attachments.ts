@@ -53,10 +53,12 @@ export default defineEventHandler(async (event) => {
     })));
   }
 
-  // POST (existing) - keep as is but add requireAuth
   const user = getCurrentUser(event);
   const userId = getCurrentUserId(event);
   if (!user) throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
+  if (user.role !== 'IT_WORKER' && user.role !== 'SYSTEM_ADMIN') {
+    throw createError({ statusCode: 403, statusMessage: 'Forbidden' });
+  }
 
   const body = await readBody(event);
   const existing = await db.query.tickets.findFirst({

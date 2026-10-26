@@ -6,6 +6,7 @@ import {
   int,
   json,
   index,
+  primaryKey,
 } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 
@@ -320,6 +321,30 @@ export const attachments = mysqlTable('attachments', {
 export const attachmentsRelations = relations(attachments, ({ one }) => ({
   ticket: one(tickets, { fields: [attachments.ticketId], references: [tickets.id] }),
   uploader: one(users, { fields: [attachments.uploadedBy], references: [users.id] }),
+}));
+
+// ── MCP: token API per user (hanya hash SHA-256 yang disimpan) ──
+export const mcpTokens = mysqlTable('mcp_tokens', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  userId: varchar('user_id', { length: 50 }).notNull().references(() => users.id),
+  name: varchar('name', { length: 100 }).notNull(),
+  tokenHash: varchar('token_hash', { length: 64 }).notNull().unique(),
+  createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
+  lastUsedAt: timestamp('last_used_at', { mode: 'string' }),
+  revokedAt: timestamp('revoked_at', { mode: 'string' }),
+}, (table) => ({
+  idxUser: index('idx_mcp_tokens_user').on(table.userId),
+}));
+
+// ── MCP: idempotensi aksi tulis (unik per user + key) ──
+export const mcpIdempotency = mysqlTable('mcp_idempotency', {
+  userId: varchar('user_id', { length: 50 }).notNull().references(() => users.id),
+  idemKey: varchar('idem_key', { length: 100 }).notNull(),
+  tool: varchar('tool', { length: 100 }).notNull(),
+  resultJson: text('result_json'),
+  createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.userId, table.idemKey] }),
 }));
 
 // ── User Preferences ──

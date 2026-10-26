@@ -3,6 +3,7 @@ import { db } from '~/server/database/client';
 import { tickets, attachments, ticketMembers, worklogs, auditLogs, comments, internalNotes } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 import { getTicketById } from '~/server/utils/tickets';
+import { requireRole } from '~/server/utils/authorize';
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
@@ -23,6 +24,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (method === 'PUT') {
+    await requireRole(event, 'IT_WORKER', 'SYSTEM_ADMIN');
     const body = await readBody(event);
 
     const existing = await db.query.tickets.findFirst({
@@ -63,6 +65,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (method === 'DELETE') {
+    await requireRole(event, 'SYSTEM_ADMIN');
     const existing = await db.query.tickets.findFirst({
       where: (t, { eq: e }) => e(t.id, id),
     });

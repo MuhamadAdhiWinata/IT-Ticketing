@@ -1,47 +1,21 @@
-import { eq } from 'drizzle-orm';
-import { db } from '~/server/database/client';
-import { tickets } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 import { getTicketById } from '~/server/utils/tickets';
-import { isValidTransition } from '~/server/utils/ticket-lifecycle';
-import { getCurrentUserId } from '~/server/utils/user-context';
+import { requireAuth } from '~/server/utils/authorize';
+import { StatusUpdateSchema, validate } from '~/server/utils/validate';
+import { toActor } from '~/server/services/ticketing/common';
+import { transitionStatus } from '~/server/services/ticketing/workflow';
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
-  const userId = getCurrentUserId(event);
+  const user = await requireAuth(event);
   const body = await readBody(event);
 
-  if (!id || !body.status) {
+  if (!id || !body?.status) {
     throw createError({ statusCode: 400, statusMessage: 'Ticket ID and status required' });
   }
+  const check = validate(StatusUpdateSchema, body);
+  if (!check.success) throw createError({ statusCode: 400, statusMessage: check.error });
 
-  const existing = await db.query.tickets.findFirst({
-    where: (t, { eq: e }) => e(t.id, id),
-  });
-  if (!existing) {
-    throw createError({ statusCode: 404, statusMessage: 'Ticket not found' });
-  }
-
-  if (!isValidTransition(existing.status, body.status)) {
-    throw createError({
-      statusCode: 409,
-      statusMessage: `Cannot transition from ${existing.status} to ${body.status}`,
-    });
-  }
-
-  await db.update(tickets).set({ status: body.status }).where(eq(tickets.id, id)).execute();
-
-  const { createNotification } = await import('~/server/utils/notifications');
-  const notifyId = existing.requestedBy;
-  await createNotification({
-    userId: notifyId,
-    ticketId: id,
-    type: 'ASSIGNED', // Or generic 'STATUS_CHANGE'
-    title: 'Status Tiket Berubah',
-    message: `Status tiket ${existing.ticketNumber || id} berubah dari ${existing.status} menjadi ${body.status}`,
-  });
-
-  const result = await getTicketById(id);
-
-  return successResponse(result);
+  await transitionStatus(toActor(user), { ticketId: id, to: check.data.status });
+  return successResponse(await getTicketById(id));
 });
