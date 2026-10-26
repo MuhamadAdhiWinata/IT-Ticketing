@@ -183,3 +183,11 @@ export interface IncomingTicket {
   requested_by_division?: string;
   created_at: string;
 }
+
+export interface McpTokenItem {
+  id: string;
+  name: string;
+  created_at: string;
+  last_used_at: string | null;
+  revoked_at: string | null;
+}

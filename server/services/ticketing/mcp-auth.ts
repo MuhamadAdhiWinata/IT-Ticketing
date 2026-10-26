@@ -16,16 +16,18 @@ export async function createMcpToken(userId: string, name: string) {
   return { id, token };
 }
 
-export async function revokeMcpToken(id: string) {
-  const res = await db.update(mcpTokens).set({ revokedAt: nowTs() }).where(and(eq(mcpTokens.id, id), isNull(mcpTokens.revokedAt)));
+// ownerId diisi dari jalur web: user hanya boleh mencabut token miliknya.
+export async function revokeMcpToken(id: string, ownerId?: string) {
+  const where = and(eq(mcpTokens.id, id), isNull(mcpTokens.revokedAt), ownerId ? eq(mcpTokens.userId, ownerId) : undefined);
+  const res = await db.update(mcpTokens).set({ revokedAt: nowTs() }).where(where);
   return (res as any)[0]?.affectedRows ?? 0;
 }
 
-export async function listMcpTokens() {
+export async function listMcpTokens(ownerId?: string) {
   return db.select({
     id: mcpTokens.id, userId: mcpTokens.userId, name: mcpTokens.name,
     createdAt: mcpTokens.createdAt, lastUsedAt: mcpTokens.lastUsedAt, revokedAt: mcpTokens.revokedAt,
-  }).from(mcpTokens);
+  }).from(mcpTokens).where(ownerId ? eq(mcpTokens.userId, ownerId) : undefined);
 }
 
 // Identitas actor selalu berasal dari baris DB (role terkini), bukan dari klaim di token.

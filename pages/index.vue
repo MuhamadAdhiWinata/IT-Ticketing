@@ -55,6 +55,8 @@
         />
 
         <SettingsView v-else-if="store.activeTab === 'settings'" />
+
+        <McpTokensView v-else-if="store.activeTab === 'mcp-token' && store.currentUser?.role !== 'USER_NON_IT'" />
       </template>
     </template>
   </div>
@@ -74,6 +76,7 @@ import AdminMasterView from '~/components/views/AdminMasterView.vue';
 import CreateTicketView from '~/components/views/CreateTicketView.vue';
 import TicketDetailView from '~/components/views/TicketDetailView.vue';
 import SettingsView from '~/components/views/SettingsView.vue';
+import McpTokensView from '~/components/views/McpTokensView.vue';
 
 const store = useAppStore();
 const authStore = useAuthStore();

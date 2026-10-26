@@ -367,6 +367,19 @@ describe('15. exposed tools match the capability matrix', () => {
   });
 });
 
+describe('token self-service scoping', () => {
+  it('list and revoke are limited to the owner', async () => {
+    const mine = await createMcpToken(IT_A.id, 'milik A');
+    const theirs = await createMcpToken(IT_B.id, 'milik B');
+    const { listMcpTokens } = await import('~/server/services/ticketing/mcp-auth');
+    expect((await listMcpTokens(IT_A.id)).every(t => t.userId === IT_A.id)).toBe(true);
+    expect(await revokeMcpToken(theirs.id, IT_A.id)).toBe(0);
+    expect(await authenticateMcp(`Bearer ${theirs.token}`)).toEqual(IT_B);
+    expect(await revokeMcpToken(mine.id, IT_A.id)).toBe(1);
+    expect(await authenticateMcp(`Bearer ${mine.token}`)).toBeNull();
+  });
+});
+
 describe('token auth', () => {
   it('resolves actor from DB by token hash; revoked and unknown tokens rejected; role is live', async () => {
     const { id, token } = await createMcpToken(IT_A.id, 'test');

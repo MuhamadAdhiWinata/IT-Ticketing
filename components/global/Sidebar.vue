@@ -105,7 +105,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Search, Kanban, Briefcase, CalendarDays, FileSpreadsheet, Settings, SlidersHorizontal, ClipboardList, X } from 'lucide-vue-next';
+import { Search, Kanban, Briefcase, CalendarDays, FileSpreadsheet, Settings, SlidersHorizontal, ClipboardList, KeyRound, X } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
 import { useCompany } from '~/composables/useCompany';
 import { formatOrgLabel } from '~/utils/identity';
@@ -125,6 +125,7 @@ const allNavItems = [
   { id: 'reports', label: 'Laporan', icon: FileSpreadsheet, group: 'workspace', roles: ['SYSTEM_ADMIN'] },
   { id: 'admin', label: 'Master Data', icon: Settings, group: 'master', roles: ['SYSTEM_ADMIN'] },
   { id: 'settings', label: 'Pengaturan', icon: SlidersHorizontal, group: 'settings', roles: ['SYSTEM_ADMIN'] },
+  { id: 'mcp-token', label: 'Token MCP', icon: KeyRound, group: 'settings', roles: ['IT_WORKER', 'SYSTEM_ADMIN'] },
 ];
 
 const groupOrder = [
