@@ -69,6 +69,8 @@ export default defineNuxtConfig({
     public: {
       appBuild: process.env.APP_BUILD || 'dev',
       appCommit: process.env.APP_COMMIT || '',
+      // Ditimpa saat runtime lewat NUXT_PUBLIC_APP_ENV (tanpa rebuild). Selain "production" = akun demo tampil.
+      appEnv: process.env.NODE_ENV === 'development' ? 'development' : 'production',
     },
   },
   css: ["~/app/globals.css", "~/assets/css/main.css"],

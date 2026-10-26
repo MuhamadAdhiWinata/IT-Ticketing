@@ -216,8 +216,8 @@ const appStore = useAppStore();
 const { settings, loaded } = useCompany();
 const logoError = ref(false);
 
-// Akun demo dan isian otomatis hanya untuk dev; build produksi memangkasnya.
-const isDev = import.meta.dev;
+// Akun demo dan isian otomatis hanya untuk dev/staging (NUXT_PUBLIC_APP_ENV), bukan production.
+const isDev = useRuntimeConfig().public.appEnv !== 'production';
 const email = ref(isDev ? 'sysadmin@company.co.id' : '');
 const password = ref(isDev ? 'password123' : '');
 const showPassword = ref(false);
