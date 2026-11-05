@@ -23,6 +23,7 @@
     "@tiptap/starter-kit": "^3.32.2",
     "@tiptap/vue-3": "^3.32.2",
     "bcryptjs": "^3.0.3",
+    "dompurify": "^3.4.17",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.2",
     "formidable": "^3.5.4",

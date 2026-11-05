@@ -1,5 +1,5 @@
 <template>
-  <div class="border border-border rounded-lg overflow-hidden bg-card">
+  <div class="border border-border rounded-lg overflow-hidden bg-surface focus-within:ring-2 focus-within:ring-primary">
     <!-- Toolbar -->
     <div v-if="editor && !readonly" class="flex flex-wrap items-center gap-0.5 border-b border-border bg-muted px-2 py-1.5">
       <button
@@ -57,6 +57,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
       </button>
       <button
+        v-if="upload"
         type="button"
         @click="triggerImageUpload"
         :disabled="uploadingImage"
@@ -94,6 +95,7 @@ const props = withDefaults(defineProps<{
   modelValue: string;
   placeholder?: string;
   readonly?: boolean;
+  upload?: (file: File) => Promise<string>;
 }>(), {
   placeholder: 'Tulis sesuatu...',
   readonly: false,
@@ -101,7 +103,6 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: string];
-  'imageUpload': [file: File, callback: (url: string) => void];
 }>();
 
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -130,7 +131,7 @@ const editor = useEditor({
   ],
   editorProps: {
     attributes: {
-      class: 'prose prose-sm max-w-none focus:outline-none min-h-[80px] p-3 text-foreground',
+      class: 'rich-text focus:outline-none min-h-[80px] p-3 text-xs text-foreground',
     },
   },
   onUpdate: ({ editor: instance }) => {
@@ -175,61 +176,26 @@ async function handleImageUpload(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
   input.value = '';
-  if (!file || !editor.value) return;
-  
+  if (!file || !editor.value || !props.upload) return;
+
   uploadingImage.value = true;
-  
-  emit('imageUpload', file, (url: string) => {
-    editor.value?.chain().focus().setImage({ src: url }).run();
+  try {
+    const url = await props.upload(file);
+    editor.value?.chain().focus().setImage({ src: url, alt: file.name }).run();
+  } catch {
+    // Pesan error ditampilkan oleh pemanggil.
+  } finally {
     uploadingImage.value = false;
-  });
+  }
 }
 </script>
 
 <style>
-.ProseMirror {
-  outline: none;
-}
-
 .ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
-  color: rgb(var(--muted-foreground) / 0.5);
+  color: var(--color-muted-foreground);
   pointer-events: none;
   height: 0;
-}
-
-.ProseMirror img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 0.375rem;
-  margin: 0.5rem 0;
-}
-
-.ProseMirror ul,
-.ProseMirror ol {
-  padding-left: 1.5rem;
-  margin: 0.5rem 0;
-}
-
-.ProseMirror li {
-  margin: 0.25rem 0;
-}
-
-.ProseMirror a {
-  color: rgb(var(--primary));
-  text-decoration: underline;
-}
-
-.ProseMirror strong {
-  font-weight: 600;
-}
-
-.ProseMirror em {
-  font-style: italic;
-}
-
-.ProseMirror s {
-  text-decoration: line-through;
 }
 </style>

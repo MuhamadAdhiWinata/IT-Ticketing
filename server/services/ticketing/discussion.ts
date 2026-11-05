@@ -43,7 +43,7 @@ export async function addComment(
         ticketId: input.ticketId,
         type: 'COMMENT',
         title: 'Komentar Baru',
-        message: `${actor.name} mengomentari tiket ${ticket.ticketNumber || ticket.id}: "${row.message.slice(0, 50)}..."`,
+        message: `${actor.name} mengomentari tiket ${ticket.ticketNumber || ticket.id}: "${row.message.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 50)}..."`,
       }, tx);
     }
     return { comment: serializeComment(row), files: fileRecords };

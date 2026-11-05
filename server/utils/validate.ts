@@ -91,7 +91,7 @@ export const CustomWorklogSchema = z.object({
 });
 
 export const CommentSchema = z.object({
-  message: z.string().trim().min(1, 'Pesan wajib diisi').max(2000, 'Pesan maksimal 2000 karakter'),
+  message: z.string().trim().min(1, 'Pesan wajib diisi').max(20000, 'Pesan terlalu panjang'),
 });
 
 export const NoteSchema = z.object({

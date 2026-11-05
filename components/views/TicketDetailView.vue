@@ -262,22 +262,26 @@
           <!-- History Catatan / Worklog pada Tahap Ini -->
           <div v-if="filteredWorklogs.length > 0" class="space-y-2 pt-2 border-t border-border">
             <span class="text-[10px] font-bold text-muted-foreground uppercase">Catatan & Histori pada Tahap Ini:</span>
-            <div class="space-y-2">
+            <div class="space-y-3">
               <div
                 v-for="wl in filteredWorklogs"
                 :key="wl.id"
-                class="p-3 bg-muted/50 rounded-lg border border-border text-xs space-y-1"
+                :class="['flex', wl.worker_id === store.currentUser?.id ? 'justify-end' : 'justify-start']"
               >
-                <div class="flex items-center justify-between text-[10px] text-muted-foreground">
-              <div class="flex flex-wrap items-center gap-2">
-                    <span class="font-bold text-primary">Oleh: {{ wl.worker_name || 'Worker' }}</span>
-                    <span class="px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-primary font-semibold text-[9px]">
-                      Tahap {{ stepperStages[selectedStepIndex]?.label }}
-                    </span>
+                <div
+                  :class="[
+                    'max-w-[85%] sm:max-w-[75%] rounded-lg text-xs p-3 space-y-1',
+                    wl.worker_id === store.currentUser?.id
+                      ? 'bg-primary/10 border border-primary/20'
+                      : 'bg-muted/50 border border-border'
+                  ]"
+                >
+                  <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+                    <span class="font-bold text-primary">{{ wl.worker_name || 'Worker' }}</span>
+                    <span>{{ new Date(wl.created_at || Date.now()).toLocaleString() }}</span>
                   </div>
-                  <span>{{ new Date(wl.created_at || Date.now()).toLocaleString() }}</span>
+                  <div class="rich-text text-foreground" v-html="toSafeHtml(wl.description)" @click="onRichTextClick"></div>
                 </div>
-                <p class="text-foreground font-medium whitespace-pre-line">{{ wl.description }}</p>
               </div>
             </div>
           </div>
@@ -290,24 +294,13 @@
                 <label class="block text-[11px] font-bold text-foreground">
                   Catatan Penugasan:
                 </label>
-                <textarea
+                <RichTextEditor
                   v-model="stageNotes"
-                  rows="2"
                   placeholder="Tuliskan catatan (opsional)..."
-                  class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                ></textarea>
+                  :upload="uploadInlineImage"
+                />
               </div>
-              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <div class="flex-1 space-y-1.5">
-                  <input type="file" multiple ref="stageFileInput" @change="handleStageFile" class="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary-muted file:text-primary hover:file:bg-primary/10" />
-                  <div v-if="pendingFiles.length > 0" class="flex flex-wrap gap-1.5">
-                    <span v-for="(pf, i) in pendingFiles" :key="i" class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg text-[10px] text-primary font-semibold">
-                      {{ pf.file.name }}
-                      <button @click="removePendingFile(i)" class="text-red-400 hover:text-red-600"><X class="w-3 h-3" /></button>
-                    </span>
-                  </div>
-                </div>
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <!-- Kirim (always available) -->
                   <button
                     @click="handleSaveNote()"
@@ -334,7 +327,6 @@
                     <Play class="w-4 h-4" />
                     <span>Mulai Proses</span>
                   </button>
-                </div>
               </div>
             </template>
 
@@ -345,24 +337,13 @@
                   <label class="block text-[11px] font-bold text-foreground">
                     Catatan Pengerjaan:
                   </label>
-                  <textarea
+                  <RichTextEditor
                     v-model="stageNotes"
-                    rows="2"
                     placeholder="Tuliskan catatan (opsional)..."
-                    class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                  ></textarea>
+                    :upload="uploadInlineImage"
+                  />
                 </div>
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <div class="flex-1 space-y-1.5">
-                    <input type="file" multiple ref="stageFileInput" @change="handleStageFile" class="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary-muted file:text-primary hover:file:bg-primary/10" />
-                    <div v-if="pendingFiles.length > 0" class="flex flex-wrap gap-1.5">
-                      <span v-for="(pf, i) in pendingFiles" :key="i" class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg text-[10px] text-primary font-semibold">
-                        {{ pf.file.name }}
-                        <button @click="removePendingFile(i)" class="text-red-400 hover:text-red-600"><X class="w-3 h-3" /></button>
-                      </span>
-                    </div>
-                  </div>
-                  <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <!-- Kirim -->
                     <button
                       @click="handleSaveNote()"
@@ -379,7 +360,6 @@
                       <CheckCircle2 class="w-4 h-4" />
                       <span>Selesaikan</span>
                     </button>
-                  </div>
                 </div>
               </template>
               <!-- DRAFT status on PROCESS step: info only -->
@@ -397,31 +377,19 @@
                   <label class="block text-[11px] font-bold text-foreground">
                     Catatan:
                   </label>
-                  <textarea
+                  <RichTextEditor
                     v-model="stageNotes"
-                    rows="2"
                     placeholder="Tuliskan catatan (opsional)..."
-                    class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                  ></textarea>
+                    :upload="uploadInlineImage"
+                  />
                 </div>
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <div class="flex-1 space-y-1.5">
-                    <input type="file" multiple ref="stageFileInput" @change="handleStageFile" class="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary-muted file:text-primary hover:file:bg-primary/10" />
-                    <div v-if="pendingFiles.length > 0" class="flex flex-wrap gap-1.5">
-                      <span v-for="(pf, i) in pendingFiles" :key="i" class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg text-[10px] text-primary font-semibold">
-                        {{ pf.file.name }}
-                        <button @click="removePendingFile(i)" class="text-red-400 hover:text-red-600"><X class="w-3 h-3" /></button>
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    @click="handleSaveNote()"
-                    class="w-full px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <Clock class="w-4 h-4" />
-                    <span>Kirim</span>
-                  </button>
-                </div>
+                <button
+                  @click="handleSaveNote()"
+                  class="w-full px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Clock class="w-4 h-4" />
+                  <span>Kirim</span>
+                </button>
               </template>
             </template>
           </div>
@@ -464,7 +432,7 @@
                   </span>
                   <span>{{ new Date(c.created_at).toLocaleString() }}</span>
                 </div>
-                <div class="text-foreground prose prose-sm max-w-none" v-html="c.message"></div>
+                <div class="rich-text text-foreground" v-html="toSafeHtml(c.message)" @click="onRichTextClick"></div>
               </div>
               
               <!-- Files attached to comment -->
@@ -495,11 +463,11 @@
           <RichTextEditor
             v-model="commentDraft"
             placeholder="Tuliskan pertanyaan / balasan..."
-            @image-upload="handleCommentImageUpload"
+            :upload="uploadInlineImage"
           />
           <button
             type="submit"
-            :disabled="!commentDraft.trim() || commentSending"
+            :disabled="isRichTextEmpty(commentDraft) || commentSending"
             class="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
           >
             <Send class="w-4 h-4" />
@@ -569,7 +537,7 @@ import { ref, computed, watch, nextTick } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { apiFetch } from '~/services/api';
 import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon, User, X, Download, Image as ImageIcon, FileText, File, UserPlus, Play, Send, Lock } from 'lucide-vue-next';
-import type { TicketStatus, PendingAttachment, TicketComment, TicketInternalNote } from '~/types';
+import type { TicketStatus, TicketComment, TicketInternalNote } from '~/types';
 import { triggerPrintPDF } from '~/utils/export';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
 import { isImage, isPdf, getFileExtLabel } from '~/utils/fileHelpers';
@@ -577,6 +545,7 @@ import { formatRequesterIdentity } from '~/utils/identity';
 import { useModal } from '~/composables/useModal';
 import { useToast } from '~/composables/useToast';
 import RichTextEditor from '~/components/common/RichTextEditor.vue';
+import { toSafeHtml, isRichTextEmpty } from '~/utils/richText';
 
 const store = useAppStore();
 const { showError } = useModal();
@@ -600,7 +569,6 @@ const selectedStepIndex = ref(0);
 const activeStepEl = ref<HTMLElement | null>(null);
 const hasInitializedStep = ref(false);
 const stageNotes = ref('');
-const pendingFiles = ref<PendingAttachment[]>([]);
 const previewImage = ref<{ url: string; name: string } | null>(null);
 
 const activeStep = computed(() => stepperStages.value[selectedStepIndex.value]?.stageKey || 'ASSIGN');
@@ -629,27 +597,13 @@ const handleImageError = (e: Event) => {
   img.style.display = 'none';
 };
 
-const handleStageFile = (e: Event) => {
-  const target = e.target as HTMLInputElement;
-  if (target.files) {
-    for (const file of Array.from(target.files)) {
-      pendingFiles.value.push({ file });
-    }
-  }
-  target.value = '';
-};
-
-const removePendingFile = (index: number) => {
-  pendingFiles.value.splice(index, 1);
-};
-
 const handleSubmitCurrentStage = async (targetStatus?: TicketStatus) => {
   if (!ticket.value) return;
   const currentStage = stepperStages.value[selectedStepIndex.value];
   if (!currentStage) return;
 
   try {
-    await store.completeStage(ticket.value.id, currentStage.stageKey, stageNotes.value || undefined, pendingFiles.value.length > 0 ? pendingFiles.value : undefined, targetStatus);
+    await store.completeStage(ticket.value.id, currentStage.stageKey, isRichTextEmpty(stageNotes.value) ? undefined : stageNotes.value, undefined, targetStatus);
     const newStatus = store.selectedTicket?.status;
     if (newStatus) {
       selectedStepIndex.value = getDefaultStepIndex(newStatus);
@@ -659,21 +613,17 @@ const handleSubmitCurrentStage = async (targetStatus?: TicketStatus) => {
     showError('Gagal Memproses', e?.data?.statusMessage || e?.message || 'Terjadi kesalahan.');
   }
   stageNotes.value = '';
-  pendingFiles.value = [];
 };
 
 const handleSaveNote = async () => {
   if (!ticket.value) return;
-  const hasNote = stageNotes.value.trim();
-  const hasFiles = pendingFiles.value.length > 0;
-  if (!hasNote && !hasFiles) return;
+  if (isRichTextEmpty(stageNotes.value)) return;
 
   const currentStage = stepperStages.value[selectedStepIndex.value];
   if (!currentStage) return;
 
-  await store.saveWorklogNote(ticket.value.id, currentStage.stageKey, stageNotes.value, pendingFiles.value.length > 0 ? pendingFiles.value : undefined);
+  await store.saveWorklogNote(ticket.value.id, currentStage.stageKey, stageNotes.value);
   stageNotes.value = '';
-  pendingFiles.value = [];
 };
 
 const isCurrentUserMember = computed(() => {
@@ -703,7 +653,7 @@ const handleAddMember = async () => {
 const handleStartWork = async () => {
   if (!ticket.value) return;
   try {
-    await store.completeStage(ticket.value.id, 'START_WORK', stageNotes.value || undefined, pendingFiles.value.length > 0 ? pendingFiles.value : undefined);
+    await store.completeStage(ticket.value.id, 'START_WORK', isRichTextEmpty(stageNotes.value) ? undefined : stageNotes.value, undefined);
     if (store.selectedTicket?.status === 'PROCESS') {
       selectedStepIndex.value = 2;
       scrollToStep(2);
@@ -712,7 +662,6 @@ const handleStartWork = async () => {
     showError('Gagal Memulai Pekerjaan', e?.data?.statusMessage || e?.message || 'Terjadi kesalahan.');
   }
   stageNotes.value = '';
-  pendingFiles.value = [];
 };
 
 const stepperStages = computed(() => {
@@ -867,34 +816,31 @@ const loadDiscussions = async () => {
 
 watch(() => ticket.value?.id, loadDiscussions, { immediate: true });
 
-const handleCommentImageUpload = async (file: File, callback: (url: string) => void) => {
-  if (!ticket.value) return;
-  
+const uploadInlineImage = async (file: File): Promise<string> => {
+  const fd = new FormData();
+  fd.append('ticketId', ticket.value?.id || 'general');
+  fd.append('file', file);
   try {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    const res = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData,
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-    });
-    
-    if (!res.ok) throw new Error('Upload gagal');
-    const data = await res.json();
-    
-    // Return URL ke editor
-    if (data.files && data.files[0]?.url) {
-      callback(data.files[0].url);
-    }
+    const res = await apiFetch<{ success: boolean; data: { file_url: string }[] }>('/api/upload', { method: 'POST', body: fd });
+    const url = res.data?.[0]?.file_url;
+    if (!url) throw new Error('URL gambar tidak ditemukan');
+    return url;
   } catch (e: any) {
-    showError('Gagal Upload Gambar', e?.message || 'Terjadi kesalahan.');
+    showError('Gagal Upload Gambar', e?.data?.statusMessage || e?.message || 'Terjadi kesalahan.');
+    throw e;
+  }
+};
+
+const onRichTextClick = (e: MouseEvent) => {
+  const img = e.target as HTMLElement;
+  if (img instanceof HTMLImageElement) {
+    previewImage.value = { url: img.src, name: img.alt || 'Gambar' };
   }
 };
 
 const handleSendComment = async () => {
-  const message = commentDraft.value.trim();
-  if (!message || !ticket.value || commentSending.value) return;
+  const message = commentDraft.value;
+  if (isRichTextEmpty(message) || !ticket.value || commentSending.value) return;
 
   commentSending.value = true;
   try {
