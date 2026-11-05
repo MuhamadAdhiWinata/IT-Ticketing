@@ -3,10 +3,12 @@ import { db } from '~/server/database/client';
 import { users } from '~/server/database/schema';
 import { successResponse, errorResponse } from '~/server/utils/response';
 import { departmentFromDivision, shapeUserRow } from '~/server/utils/org';
+import { requireRole } from '~/server/utils/authorize';
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
   const method = event.method;
+  await requireRole(event, 'SYSTEM_ADMIN');
 
   if (!id) {
     throw createError({ statusCode: 400, statusMessage: 'User ID required' });

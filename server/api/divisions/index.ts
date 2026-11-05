@@ -1,6 +1,7 @@
 import { db } from '~/server/database/client';
 import { divisions } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
+import { requireRole } from '~/server/utils/authorize';
 
 function serializeDivision(d: { id: string; companyId: string; name: string }) {
   return { id: d.id, company_id: d.companyId, name: d.name };
@@ -8,6 +9,7 @@ function serializeDivision(d: { id: string; companyId: string; name: string }) {
 
 export default defineEventHandler(async (event) => {
   const method = event.method;
+  if (method !== 'GET') await requireRole(event, 'SYSTEM_ADMIN');
 
   if (method === 'GET') {
     const query = getQuery(event);

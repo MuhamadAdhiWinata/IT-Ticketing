@@ -4,6 +4,7 @@ import { requireAuth } from '~/server/utils/authorize';
 import { serializeComment } from '~/server/utils/serialize';
 import { toActor } from '~/server/services/ticketing/common';
 import { addComment } from '~/server/services/ticketing/discussion';
+import { canViewTicket } from '~/server/services/ticketing/permissions';
 import { parseMultipart, cleanupTempFiles, readUploads } from '~/server/utils/upload';
 import { getFilesByComment } from '~/server/services/ticketing/files';
 
@@ -12,10 +13,12 @@ export default defineEventHandler(async (event) => {
   if (!id) throw createError({ statusCode: 400, statusMessage: 'Ticket ID required' });
 
   if (event.method === 'GET') {
+    const me = await requireAuth(event);
     const existing = await db.query.tickets.findFirst({
       where: (t, { eq: e }) => e(t.id, id),
     });
     if (!existing) throw createError({ statusCode: 404, statusMessage: 'Ticket not found' });
+    if (!canViewTicket(existing, toActor(me))) throw createError({ statusCode: 403, statusMessage: 'Forbidden: bukan pihak tiket ini' });
 
     const list = await db.query.comments.findMany({
       where: (c, { eq: e }) => e(c.ticketId, id),

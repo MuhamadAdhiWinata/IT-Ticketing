@@ -15,6 +15,7 @@ export default defineEventHandler(async (event) => {
   let notes = '';
   let targetStatus: string | undefined;
   let delegation: any;
+  let solution: any;
   let parsed: Awaited<ReturnType<typeof parseMultipart>> | null = null;
 
   const ct = event.node.req.headers['content-type'] || '';
@@ -29,12 +30,19 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 400, statusMessage: 'delegation bukan JSON valid' });
       }
     }
+    if (parsed.fields.solution) {
+      try { solution = JSON.parse(parsed.fields.solution); } catch {
+        await cleanupTempFiles(parsed.files);
+        throw createError({ statusCode: 400, statusMessage: 'solution bukan JSON valid' });
+      }
+    }
   } else {
     const body = await readBody(event);
     stageKey = body?.stageKey || stageKey;
     notes = body?.notes || '';
     targetStatus = body?.targetStatus;
     delegation = body?.delegation;
+    solution = body?.solution;
   }
 
   const to = targetStatus || getTargetStatus(stageKey);
@@ -44,6 +52,7 @@ export default defineEventHandler(async (event) => {
       to: to as (typeof STATUSES)[number],
       notes,
       delegation: delegation ?? undefined,
+      solution: solution ?? undefined,
       files: parsed ? await readUploads(parsed.files) : [],
     });
   } finally {

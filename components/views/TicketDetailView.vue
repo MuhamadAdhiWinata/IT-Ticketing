@@ -78,7 +78,30 @@
               <span v-else class="text-xs text-muted-foreground italic">Belum ditugaskan</span>
             </div>
           </div>
+          <div v-if="store.currentUser?.role === 'SYSTEM_ADMIN' && ticket.status !== 'SELESAI'" class="flex flex-col gap-1">
+            <label for="pelaksana" class="text-xs text-muted-foreground">Pelaksana:</label>
+            <select
+              id="pelaksana"
+              :value="ticket.assignedTo || ''"
+              @change="handleAssign(($event.target as HTMLSelectElement).value)"
+              class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground"
+            >
+              <option value="" disabled>Pilih pelaksana...</option>
+              <option v-for="w in itWorkers" :key="w.id" :value="w.id">{{ w.name }}</option>
+            </select>
+          </div>
+          <div v-if="(ticket.reopen_count ?? 0) > 0" class="flex items-center justify-between">
+            <span class="text-xs text-muted-foreground">Dibuka ulang:</span>
+            <span class="text-xs font-bold text-foreground">{{ ticket.reopen_count }}x</span>
+          </div>
         </div>
+      </div>
+
+      <div v-if="ticket.solution_type" class="bg-muted/50 p-4 rounded-lg border border-border space-y-1.5">
+        <span class="text-[10px] uppercase tracking-wider text-muted-foreground font-bold block">Solusi Penyelesaian ({{ ticket.solution_type === 'SEMENTARA' ? 'Sementara' : 'Permanen' }})</span>
+        <p class="text-xs text-foreground whitespace-pre-line leading-relaxed">{{ ticket.resolution_summary }}</p>
+        <p v-if="ticket.odoo_task_url" class="text-xs">Task Odoo: <a :href="ticket.odoo_task_url" target="_blank" rel="noopener noreferrer" class="text-primary underline break-all">{{ ticket.odoo_task_url }}</a></p>
+        <p v-if="ticket.tech_debt_url" class="text-xs">Utang teknis: <a :href="ticket.tech_debt_url" target="_blank" rel="noopener noreferrer" class="text-primary underline break-all">{{ ticket.tech_debt_url }}</a></p>
       </div>
 
       <!-- Progress Tracking Stepper -->
@@ -343,6 +366,18 @@
                     :upload="uploadInlineImage"
                   />
                 </div>
+                <div class="space-y-2 p-3 rounded-lg border border-border bg-muted/30">
+                  <p class="text-[11px] font-bold text-foreground">Solusi Penyelesaian (diisi saat menyelesaikan tiket):</p>
+                  <select v-model="solution.type" aria-label="Jenis solusi" class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground">
+                    <option value="PERMANEN">Solusi Permanen</option>
+                    <option value="SEMENTARA">Solusi Sementara</option>
+                  </select>
+                  <textarea v-model="solution.summary" rows="3" aria-label="Ringkasan solusi" placeholder="Jelaskan solusi yang diterapkan..." class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground" />
+                  <template v-if="solution.type === 'SEMENTARA'">
+                    <input v-model="solution.odoo_task_url" type="url" aria-label="Tautan task Odoo" placeholder="Tautan task Odoo (wajib)" class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground" />
+                    <input v-model="solution.tech_debt_url" type="url" aria-label="Tautan utang teknis" placeholder="Tautan utang teknis (wajib)" class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground" />
+                  </template>
+                </div>
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <!-- Kirim -->
                     <button
@@ -569,6 +604,8 @@ const selectedStepIndex = ref(0);
 const activeStepEl = ref<HTMLElement | null>(null);
 const hasInitializedStep = ref(false);
 const stageNotes = ref('');
+const solution = ref({ type: 'PERMANEN' as 'PERMANEN' | 'SEMENTARA', summary: '', odoo_task_url: '', tech_debt_url: '' });
+const itWorkers = computed(() => store.allUsers.filter(u => u.role === 'IT_WORKER' || u.role === 'SYSTEM_ADMIN'));
 const previewImage = ref<{ url: string; name: string } | null>(null);
 
 const activeStep = computed(() => stepperStages.value[selectedStepIndex.value]?.stageKey || 'ASSIGN');
@@ -602,8 +639,20 @@ const handleSubmitCurrentStage = async (targetStatus?: TicketStatus) => {
   const currentStage = stepperStages.value[selectedStepIndex.value];
   if (!currentStage) return;
 
+  let sol: Record<string, string> | undefined;
+  if (ticket.value.status === 'PROCESS' && currentStage.stageKey === 'IN_PROGRESS' && targetStatus !== 'DELEGASI') {
+    const f = solution.value;
+    if (!f.summary.trim()) return showError('Solusi Belum Diisi', 'Isi ringkasan solusi penyelesaian.');
+    if (f.type === 'SEMENTARA' && (!f.odoo_task_url.trim() || !f.tech_debt_url.trim())) {
+      return showError('Tautan Wajib', 'Solusi sementara wajib menyertakan tautan task Odoo dan tautan utang teknis.');
+    }
+    sol = { type: f.type, summary: f.summary.trim() };
+    if (f.type === 'SEMENTARA') { sol.odoo_task_url = f.odoo_task_url.trim(); sol.tech_debt_url = f.tech_debt_url.trim(); }
+  }
+
   try {
-    await store.completeStage(ticket.value.id, currentStage.stageKey, isRichTextEmpty(stageNotes.value) ? undefined : stageNotes.value, undefined, targetStatus);
+    await store.completeStage(ticket.value.id, currentStage.stageKey, isRichTextEmpty(stageNotes.value) ? undefined : stageNotes.value, undefined, targetStatus, undefined, sol);
+    solution.value = { type: 'PERMANEN', summary: '', odoo_task_url: '', tech_debt_url: '' };
     const newStatus = store.selectedTicket?.status;
     if (newStatus) {
       selectedStepIndex.value = getDefaultStepIndex(newStatus);
@@ -647,6 +696,17 @@ const handleAddMember = async () => {
     await store.refreshTicket(ticket.value.id);
   } catch (e: any) {
     console.error('Failed to add member:', e);
+  }
+};
+
+const handleAssign = async (userId: string) => {
+  if (!ticket.value || !userId) return;
+  try {
+    await apiFetch(`/api/tickets/${ticket.value.id}/assignee`, { method: 'POST', body: { userId } });
+    await store.refreshTicket(ticket.value.id);
+    toast('Pelaksana diperbarui', 'success');
+  } catch (e: any) {
+    showError('Gagal Menugaskan', e?.data?.statusMessage || e?.message || 'Terjadi kesalahan.');
   }
 };
 

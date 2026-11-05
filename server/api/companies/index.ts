@@ -1,6 +1,7 @@
 import { db } from '~/server/database/client';
 import { companies } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
+import { requireRole } from '~/server/utils/authorize';
 
 function serializeCompany(c: { id: string; name: string }) {
   return { id: c.id, name: c.name };
@@ -8,6 +9,7 @@ function serializeCompany(c: { id: string; name: string }) {
 
 export default defineEventHandler(async (event) => {
   const method = event.method;
+  if (method !== 'GET') await requireRole(event, 'SYSTEM_ADMIN');
 
   if (method === 'GET') {
     const results = await db.query.companies.findMany({

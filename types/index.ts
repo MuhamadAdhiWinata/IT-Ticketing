@@ -149,6 +149,13 @@ export interface Ticket {
   delegation?: DelegationInfo | null;
 
   referenced_ticket_id?: string | null;
+  reopen_count?: number;
+  solution_type?: 'SEMENTARA' | 'PERMANEN' | null;
+  resolution_summary?: string | null;
+  odoo_task_url?: string | null;
+  tech_debt_url?: string | null;
+  acknowledged_at?: string | null;
+  accepted_at?: string | null;
 
   attachments: Attachment[];
   worklogs: Worklog[];

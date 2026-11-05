@@ -182,12 +182,24 @@ export const tickets = mysqlTable('tickets', {
   returnedAt: timestamp('returned_at', { mode: 'string' }),
   returnedNotes: text('returned_notes'),
 
+  // "Duplikat dari": tiket induk yang sama dengan tiket ini.
   referencedTicketId: varchar('referenced_ticket_id', { length: 50 }),
+
+  // Siklus: bertambah 1 setiap tiket SELESAI dibuka ulang.
+  reopenCount: int('reopen_count', { unsigned: true }).notNull().default(0),
+
+  // Dokumentasi solusi (diisi saat tiket diselesaikan). solutionType: SEMENTARA | PERMANEN.
+  resolutionSummary: text('resolution_summary'),
+  solutionType: varchar('solution_type', { length: 20 }),
+  odooTaskUrl: varchar('odoo_task_url', { length: 500 }),
+  techDebtUrl: varchar('tech_debt_url', { length: 500 }),
 
   // Timestamps
   createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
   ticketNumber: varchar('ticket_number', { length: 50 }),
   issuedAt: timestamp('issued_at', { mode: 'string' }),
+  acknowledgedAt: timestamp('acknowledged_at', { mode: 'string' }),
+  acceptedAt: timestamp('accepted_at', { mode: 'string' }),
   processStartedAt: timestamp('process_started_at', { mode: 'string' }),
   completedAt: timestamp('completed_at', { mode: 'string' }),
 }, (table) => ({

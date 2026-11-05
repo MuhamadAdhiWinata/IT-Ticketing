@@ -188,7 +188,7 @@ Tidak di-seed: `mcp_tokens` dan `mcp_idempotency`. Token berisi rahasia dan dibu
 mariadb -u root -p ticketing_db -e "SELECT COUNT(*) AS migrasi FROM __drizzle_migrations; SELECT status, COUNT(*) FROM tickets GROUP BY status; SELECT id, company_name FROM company_settings;"
 ```
 
-Hasil yang diharapkan setelah setup baru: 4 migrasi, 15 tiket, dan satu baris `default` di `company_settings`.
+Hasil yang diharapkan setelah setup baru: 5 migrasi, 15 tiket, dan satu baris `default` di `company_settings`.
 
 ### Default Credentials (data seed)
 
