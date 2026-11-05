@@ -464,7 +464,7 @@
                   </span>
                   <span>{{ new Date(c.created_at).toLocaleString() }}</span>
                 </div>
-                <p class="text-foreground whitespace-pre-line leading-relaxed">{{ c.message }}</p>
+                <div class="text-foreground prose prose-sm max-w-none" v-html="c.message"></div>
               </div>
               
               <!-- Files attached to comment -->
@@ -491,27 +491,15 @@
         </div>
 
         <form @submit.prevent="handleSendComment" class="space-y-1.5">
-          <label for="comment-draft" class="block text-[11px] font-bold text-foreground">Tulis Komentar:</label>
-          <textarea
-            id="comment-draft"
+          <label class="block text-[11px] font-bold text-foreground">Tulis Komentar:</label>
+          <RichTextEditor
             v-model="commentDraft"
-            rows="2"
-            maxlength="2000"
             placeholder="Tuliskan pertanyaan / balasan..."
-            class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-          ></textarea>
-          <div class="space-y-1.5">
-            <input type="file" multiple ref="commentFileInput" @change="handleCommentFile" class="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary-muted file:text-primary hover:file:bg-primary/10" />
-            <div v-if="commentPendingFiles.length > 0" class="flex flex-wrap gap-1.5">
-              <span v-for="(pf, i) in commentPendingFiles" :key="i" class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg text-[10px] text-primary font-semibold">
-                {{ pf.file.name }}
-                <button @click="removeCommentFile(i)" type="button" class="text-red-400 hover:text-red-600"><X class="w-3 h-3" /></button>
-              </span>
-            </div>
-          </div>
+            @image-upload="handleCommentImageUpload"
+          />
           <button
             type="submit"
-            :disabled="(!commentDraft.trim() && commentPendingFiles.length === 0) || commentSending"
+            :disabled="!commentDraft.trim() || commentSending"
             class="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
           >
             <Send class="w-4 h-4" />
@@ -588,6 +576,7 @@ import { isImage, isPdf, getFileExtLabel } from '~/utils/fileHelpers';
 import { formatRequesterIdentity } from '~/utils/identity';
 import { useModal } from '~/composables/useModal';
 import { useToast } from '~/composables/useToast';
+import RichTextEditor from '~/components/common/RichTextEditor.vue';
 
 const store = useAppStore();
 const { showError } = useModal();
@@ -833,8 +822,6 @@ const commentSending = ref(false);
 const noteSending = ref(false);
 const commentDraft = ref('');
 const noteDraft = ref('');
-const commentFileInput = ref<HTMLInputElement | null>(null);
-const commentPendingFiles = ref<PendingAttachment[]>([]);
 
 const isViewerNonIT = computed(() => store.currentUser?.role === 'USER_NON_IT');
 
@@ -880,51 +867,43 @@ const loadDiscussions = async () => {
 
 watch(() => ticket.value?.id, loadDiscussions, { immediate: true });
 
-const handleCommentFile = (e: Event) => {
-  const target = e.target as HTMLInputElement;
-  if (target.files) {
-    for (const file of Array.from(target.files)) {
-      commentPendingFiles.value.push({ file });
+const handleCommentImageUpload = async (file: File, callback: (url: string) => void) => {
+  if (!ticket.value) return;
+  
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+    });
+    
+    if (!res.ok) throw new Error('Upload gagal');
+    const data = await res.json();
+    
+    // Return URL ke editor
+    if (data.files && data.files[0]?.url) {
+      callback(data.files[0].url);
     }
+  } catch (e: any) {
+    showError('Gagal Upload Gambar', e?.message || 'Terjadi kesalahan.');
   }
-  target.value = '';
-};
-
-const removeCommentFile = (index: number) => {
-  commentPendingFiles.value.splice(index, 1);
 };
 
 const handleSendComment = async () => {
   const message = commentDraft.value.trim();
-  const hasFiles = commentPendingFiles.value.length > 0;
-  if (!message && !hasFiles) return;
-  if (!ticket.value || commentSending.value) return;
+  if (!message || !ticket.value || commentSending.value) return;
 
   commentSending.value = true;
   try {
-    if (hasFiles) {
-      const formData = new FormData();
-      formData.append('message', message);
-      for (const pf of commentPendingFiles.value) {
-        formData.append('files', pf.file);
-      }
-      const res = await fetch(`/api/tickets/${ticket.value.id}/comments`, {
-        method: 'POST',
-        body: formData,
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-      });
-      if (!res.ok) throw new Error('Upload gagal');
-      const data = await res.json();
-      comments.value.push(data.data);
-    } else {
-      const res = await apiFetch<{ success: boolean; data: TicketComment }>(`/api/tickets/${ticket.value.id}/comments`, {
-        method: 'POST',
-        body: { message },
-      });
-      comments.value.push(res.data);
-    }
+    const res = await apiFetch<{ success: boolean; data: TicketComment }>(`/api/tickets/${ticket.value.id}/comments`, {
+      method: 'POST',
+      body: { message },
+    });
+    comments.value.push(res.data);
     commentDraft.value = '';
-    commentPendingFiles.value = [];
     toast('Komentar terkirim', 'success');
   } catch (e: any) {
     showError('Gagal Mengirim Komentar', e?.data?.statusMessage || e?.message || 'Terjadi kesalahan.');
