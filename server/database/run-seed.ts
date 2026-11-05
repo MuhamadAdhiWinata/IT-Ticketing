@@ -7,7 +7,7 @@ import { sql } from 'drizzle-orm';
 import { db } from './client';
 import {
   users, categories, projectKendala, submodules,
-  tickets, ticketMembers, worklogs, auditLogs, files,
+  tickets, ticketMembers, worklogs, auditLogs, files, comments, worklogFiles, commentFiles,
 } from './schema';
 
 function ts(date: string, time = '09:00:00'): string {
@@ -22,7 +22,8 @@ async function cleanup() {
   console.log('[SEED] Membersihkan data lama...');
   await db.execute(sql.raw('SET FOREIGN_KEY_CHECKS = 0'));
   const tables = [
-    'files', 'audit_logs', 'worklogs',
+    'comment_files', 'worklog_files', 'files', 'comments', 'internal_notes', 'notifications',
+    'audit_logs', 'worklogs',
     'ticket_members', 'tickets',
     'user_preferences', 'submodules', 'project_kendala', 'categories', 'users',
     'divisions', 'companies',
@@ -210,14 +211,42 @@ async function seedTickets() {
 
 async function seedWorklogs(ticketIds: string[]) {
   console.log('[SEED] Seeding worklogs...');
+  // Deskripsi worklog dan komentar berupa HTML (editor Tiptap); data lama polos tetap didukung.
   const data = [
-    { ticketId: ticketIds[0]!, stageKey: 'IN_PROGRESS', workerId: 'IT-001', date: '2026-09-01', startAt: '09:15', finishAt: '09:45', durationMinutes: 30, description: 'Pengecekan fisik printer.' },
-    { ticketId: ticketIds[1]!, stageKey: 'IN_PROGRESS', workerId: 'IT-002', date: '2026-09-02', startAt: '14:10', finishAt: '14:45', durationMinutes: 35, description: 'Unlock user SAP.' },
-    { ticketId: ticketIds[4]!, stageKey: 'IN_PROGRESS', workerId: 'IT-004', date: '2026-09-05', startAt: '08:00', finishAt: '09:15', durationMinutes: 75, description: 'Kill transactions.' },
-    { ticketId: ticketIds[5]!, stageKey: 'IN_PROGRESS', workerId: 'IT-001', date: '2026-09-06', startAt: '10:30', finishAt: '11:45', durationMinutes: 75, description: 'Ganti kabel HDMI.' },
+    { ticketId: ticketIds[0]!, stageKey: 'IN_PROGRESS', workerId: 'IT-001', date: '2026-09-01', startAt: '09:15', finishAt: '09:45', durationMinutes: 30, description: '<p>Pengecekan fisik printer. <strong>Head tersumbat</strong>, sudah dibersihkan.</p>' },
+    { ticketId: ticketIds[1]!, stageKey: 'IN_PROGRESS', workerId: 'IT-002', date: '2026-09-02', startAt: '14:10', finishAt: '14:45', durationMinutes: 35, description: '<p>Unlock user SU01.</p>' },
+    { ticketId: ticketIds[4]!, stageKey: 'IN_PROGRESS', workerId: 'IT-004', date: '2026-09-05', startAt: '08:00', finishAt: '09:15', durationMinutes: 75, description: '<p>Kill blocked transactions.</p>' },
+    { ticketId: ticketIds[5]!, stageKey: 'IN_PROGRESS', workerId: 'IT-001', date: '2026-09-06', startAt: '10:30', finishAt: '11:45', durationMinutes: 75, description: '<p>Ganti kabel HDMI.</p>' },
   ];
-  for (const w of data) await db.insert(worklogs).values({ id: randomId('WL'), ...w, createdAt: ts(w.date, w.finishAt) });
+  const ids: string[] = [];
+  for (const w of data) {
+    const id = randomId('WL');
+    ids.push(id);
+    await db.insert(worklogs).values({ id, ...w, createdAt: ts(w.date, w.finishAt) });
+  }
   console.log(`[SEED] ${data.length} worklogs berhasil.`);
+  return ids;
+}
+
+async function seedCommentsAndFiles(ticketIds: string[], worklogIds: string[]) {
+  console.log('[SEED] Seeding comments & files...');
+  const t = ticketIds[0]!;
+  const commentRows = [
+    { id: randomId('CMT'), ticketId: t, userId: 'USR-001', userName: 'Rina Wulandari', userRole: 'USER_NON_IT', message: '<p>Printernya masih belum bisa cetak, mohon dicek lagi.</p>', createdAt: ts('2026-09-01', '09:00:00') },
+    { id: randomId('CMT'), ticketId: t, userId: 'IT-001', userName: 'Budi Santoso', userRole: 'IT_WORKER', message: '<p>Baik, saya cek ke lokasi. Mohon kirim <em>foto error</em> jika ada.</p>', createdAt: ts('2026-09-01', '09:05:00') },
+  ];
+  for (const c of commentRows) await db.insert(comments).values(c);
+
+  // Berkas tanpa stage = lampiran lewat tabel pivot; file_path null karena seed tidak membuat berkas fisik.
+  const fileRows = [
+    { id: randomId('FILE'), ticketId: t, stage: null, visibility: 'USER_VISIBLE', fileName: 'hasil-cek-printer.pdf', fileSize: '12 KB', filePath: null, uploadedBy: 'IT-001', uploadedAt: ts('2026-09-01', '09:45:00') },
+    { id: randomId('FILE'), ticketId: t, stage: null, visibility: 'USER_VISIBLE', fileName: 'foto-error.png', fileSize: '48 KB', filePath: null, uploadedBy: 'USR-001', uploadedAt: ts('2026-09-01', '09:10:00') },
+  ];
+  for (const f of fileRows) await db.insert(files).values(f);
+
+  await db.insert(worklogFiles).values({ id: randomId('WLF'), worklogId: worklogIds[0]!, fileId: fileRows[0]!.id, createdAt: ts('2026-09-01', '09:45:00') });
+  await db.insert(commentFiles).values({ id: randomId('CMF'), commentId: commentRows[0]!.id, fileId: fileRows[1]!.id, createdAt: ts('2026-09-01', '09:10:00') });
+  console.log(`[SEED] ${commentRows.length} comments, ${fileRows.length} files, 2 pivot berhasil.`);
 }
 
 async function seedAuditLogs(ticketIds: string[]) {
@@ -258,7 +287,8 @@ await seedProjectKendala();
 await seedSubmodules();
 
 const ticketIds = (await seedTickets()).map((t: any) => t.id);
-await seedWorklogs(ticketIds);
+const worklogIds = await seedWorklogs(ticketIds);
+await seedCommentsAndFiles(ticketIds, worklogIds);
 await seedAuditLogs(ticketIds);
 await seedTicketMembers(ticketIds);
 

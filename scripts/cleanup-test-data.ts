@@ -10,7 +10,7 @@ import { resolve } from 'path';
 config({ path: resolve(process.cwd(), '.env') });
 
 const TEST_TICKET_TITLES = ['Smoke test%', 'Tiket uji identitas%'];
-const CHILD_TABLES = ['audit_logs', 'attachments', 'worklogs', 'ticket_members'];
+const CHILD_TABLES = ['audit_logs', 'files', 'comments', 'internal_notes', 'notifications', 'worklogs', 'ticket_members'];
 
 (async () => {
   const dbUri = process.env.DATABASE_URL;

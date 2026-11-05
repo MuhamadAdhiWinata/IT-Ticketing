@@ -22,6 +22,13 @@
       "when": 1793006286682,
       "tag": "0002_mcp_token_enc",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1793894818272,
+      "tag": "0003_file_refactor",
+      "breakpoints": true
     }
   ]
 }
