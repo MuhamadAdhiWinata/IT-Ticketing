@@ -1,7 +1,6 @@
 import { files, worklogFiles, commentFiles } from '~/server/database/schema';
 import { eq } from 'drizzle-orm';
-import { type Actor, type DbExec, type UploadInput, newId, nowTs, inTx } from './common';
-import { uploadFile } from '~/server/utils/storage';
+import { type Actor, type DbExec, type UploadInput, newId, nowTs, inTx, storeFile, withFileCleanup } from './common';
 
 export interface FileRecord {
   id: string;
@@ -21,6 +20,7 @@ export async function uploadFiles(
   ticketId: string,
   uploads: UploadInput[],
   visibility: 'USER_VISIBLE' | 'INTERNAL_ONLY',
+  track: string[],
   exec?: DbExec,
 ): Promise<FileRecord[]> {
   return inTx(exec, async (tx) => {
@@ -28,15 +28,15 @@ export async function uploadFiles(
     const created: FileRecord[] = [];
 
     for (const u of uploads) {
-      const uploaded = await uploadFile(u, `/uploads/${ticketId}`);
+      const stored = await storeFile(track, ticketId, u);
       const row = {
         id: newId('FILE'),
         ticketId,
         stage: null,
         visibility,
-        fileName: u.file.name,
-        fileSize: `${(u.file.size / 1024).toFixed(1)} KB`,
-        filePath: uploaded.url,
+        fileName: stored.fileName,
+        fileSize: stored.fileSize,
+        filePath: stored.url,
         uploadedBy: actor.id,
         uploadedAt: ts,
       };

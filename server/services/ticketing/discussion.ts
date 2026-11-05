@@ -2,7 +2,7 @@ import { comments, internalNotes } from '~/server/database/schema';
 import { serializeComment, serializeInternalNote } from '~/server/utils/serialize';
 import { createNotification } from '~/server/utils/notifications';
 import { CommentSchema, NoteSchema } from '~/server/utils/validate';
-import { type Actor, type DbExec, type UploadInput, fail, inTx, lockTicket, newId, nowTs, parse, requireIT } from './common';
+import { type Actor, type DbExec, type UploadInput, fail, inTx, lockTicket, newId, nowTs, parse, requireIT, withFileCleanup } from './common';
 import { canViewTicket } from './permissions';
 import { uploadFiles, linkFilesToComment } from './files';
 
@@ -14,7 +14,7 @@ export async function addComment(
   const v = parse(CommentSchema, { message: input.message });
   const files = input.files ?? [];
   
-  return inTx(exec, async (tx) => {
+  return withFileCleanup(track => inTx(exec, async (tx) => {
     const ticket = await lockTicket(tx, input.ticketId);
     if (!canViewTicket(ticket, actor)) fail(403, 'Forbidden: bukan pihak tiket ini');
 
@@ -32,7 +32,7 @@ export async function addComment(
     // Upload files and link to comment
     let fileRecords = [];
     if (files.length > 0) {
-      fileRecords = await uploadFiles(actor, input.ticketId, files, 'USER_VISIBLE', tx);
+      fileRecords = await uploadFiles(actor, input.ticketId, files, 'USER_VISIBLE', track, tx);
       await linkFilesToComment(row.id, fileRecords.map(f => f.id), tx);
     }
 
@@ -47,7 +47,7 @@ export async function addComment(
       }, tx);
     }
     return { comment: serializeComment(row), files: fileRecords };
-  });
+  }));
 }
 
 export async function addInternalNote(actor: Actor, input: { ticketId: string; note: string }, exec?: DbExec) {

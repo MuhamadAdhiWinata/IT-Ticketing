@@ -61,7 +61,7 @@ export async function addActivity(
     // Upload files and link to worklog
     let fileRecords = [];
     if (files.length > 0) {
-      fileRecords = await uploadFiles(actor, v.ticketId, files, 'USER_VISIBLE', tx);
+      fileRecords = await uploadFiles(actor, v.ticketId, files, 'USER_VISIBLE', track, tx);
       await linkFilesToWorklog(row.id, fileRecords.map(f => f.id), tx);
     }
 
