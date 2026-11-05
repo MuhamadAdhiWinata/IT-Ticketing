@@ -1,6 +1,6 @@
 import { eq, and, or, like } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { tickets, attachments } from '~/server/database/schema';
+import { tickets, files } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 import { generateTicketId, generateTicketNumber } from '~/server/utils/ticket-id';
 import { getTicketsWithRelations, getTicketById } from '~/server/utils/tickets';

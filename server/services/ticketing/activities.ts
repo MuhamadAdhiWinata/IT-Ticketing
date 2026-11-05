@@ -6,7 +6,7 @@ import {
   type Actor, type DbExec, type UploadInput, IT_ROLES,
   fail, inTx, lockTicket, newId, nowTs, parse, requireIT, ticketSummary, withFileCleanup, hm,
 } from './common';
-import { insertAttachments } from './attachments';
+import { uploadFiles, linkFilesToWorklog } from './files';
 import { activityStagesFor, defaultActivityStage } from './permissions';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -57,11 +57,17 @@ export async function addActivity(
       createdAt: ts,
     };
     await tx.insert(worklogs).values(row);
-    const attachments = await insertAttachments(tx, track, actor, v.ticketId, stageKey, 'USER_VISIBLE', ts, files);
+    
+    // Upload files and link to worklog
+    let fileRecords = [];
+    if (files.length > 0) {
+      fileRecords = await uploadFiles(actor, v.ticketId, files, 'USER_VISIBLE', tx);
+      await linkFilesToWorklog(row.id, fileRecords.map(f => f.id), tx);
+    }
 
     return {
       activity: serializeWorklog({ ...row, workerName: actor.name }),
-      attachments,
+      files: fileRecords,
       ticket: await ticketSummary(tx, v.ticketId),
     };
   }));

@@ -81,8 +81,8 @@ async function main() {
       for (const a of t.attachments) {
         try {
           await pool.execute(
-            `INSERT INTO attachments (id, ticket_id, stage, visibility, file_name, file_size, file_path, uploaded_by, uploaded_by_name, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [a.id, t.id, a.stage, a.visibility, a.file_name, a.file_size || null, a.file_path || null, a.uploaded_by, a.uploaded_by_name, a.uploaded_at]
+            `INSERT INTO files (id, ticket_id, stage, visibility, file_name, file_size, file_path, uploaded_by, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [a.id, t.id, a.stage, a.visibility, a.file_name, a.file_size || null, a.file_path || null, a.uploaded_by, a.uploaded_at]
           );
           totalMigrated++;
         } catch (e: any) {

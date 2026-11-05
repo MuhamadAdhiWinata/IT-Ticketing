@@ -4,6 +4,8 @@ import { requireAuth } from '~/server/utils/authorize';
 import { serializeComment } from '~/server/utils/serialize';
 import { toActor } from '~/server/services/ticketing/common';
 import { addComment } from '~/server/services/ticketing/discussion';
+import { parseMultipart, cleanupTempFiles, readUploads } from '~/server/utils/upload';
+import { getFilesByComment } from '~/server/services/ticketing/files';
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
@@ -19,14 +21,39 @@ export default defineEventHandler(async (event) => {
       where: (c, { eq: e }) => e(c.ticketId, id),
       orderBy: (c, { asc: a }) => a(c.createdAt),
     });
-    return successResponse(list.map(serializeComment));
+    
+    // Load files for each comment
+    const commentsWithFiles = await Promise.all(
+      list.map(async (c) => {
+        const files = await getFilesByComment(c.id);
+        return { ...serializeComment(c), files };
+      })
+    );
+    
+    return successResponse(commentsWithFiles);
   }
 
   if (event.method === 'POST') {
     const user = await requireAuth(event);
-    const body = await readBody(event);
-    const { comment } = await addComment(toActor(user), { ticketId: id, message: body?.message });
-    return successResponse(comment);
+    const ct = event.node.req.headers['content-type'] || '';
+    
+    if (ct.includes('multipart/form-data')) {
+      const parsed = await parseMultipart(event.node.req, process.env.UPLOAD_DIR || './server/uploads');
+      try {
+        const { comment, files } = await addComment(toActor(user), {
+          ticketId: id,
+          message: parsed.fields.message || '',
+          files: await readUploads(parsed.files, 'USER_VISIBLE'),
+        });
+        return successResponse({ ...comment, files });
+      } finally {
+        await cleanupTempFiles(parsed.files);
+      }
+    } else {
+      const body = await readBody(event);
+      const { comment, files } = await addComment(toActor(user), { ticketId: id, message: body?.message });
+      return successResponse({ ...comment, files });
+    }
   }
 
   throw createError({ statusCode: 405, statusMessage: 'Method not allowed' });

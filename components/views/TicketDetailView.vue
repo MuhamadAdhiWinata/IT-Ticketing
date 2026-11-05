@@ -450,20 +450,42 @@
           >
             <div
               :class="[
-                'max-w-[85%] sm:max-w-[75%] p-3 rounded-lg text-xs space-y-1',
+                'max-w-[85%] sm:max-w-[75%] rounded-lg text-xs space-y-2',
                 c.user_id === store.currentUser?.id
                   ? 'bg-primary/10 border border-primary/20'
                   : 'bg-muted/50 border border-border'
               ]"
             >
-              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
-                <span class="font-bold text-primary">
-                  {{ c.user_name }}
-                  <span class="ml-1 px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 font-semibold">{{ roleLabel(c.user_role) }}</span>
-                </span>
-                <span>{{ new Date(c.created_at).toLocaleString() }}</span>
+              <div class="p-3 space-y-1">
+                <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+                  <span class="font-bold text-primary">
+                    {{ c.user_name }}
+                    <span class="ml-1 px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 font-semibold">{{ roleLabel(c.user_role) }}</span>
+                  </span>
+                  <span>{{ new Date(c.created_at).toLocaleString() }}</span>
+                </div>
+                <p class="text-foreground whitespace-pre-line leading-relaxed">{{ c.message }}</p>
               </div>
-              <p class="text-foreground whitespace-pre-line leading-relaxed">{{ c.message }}</p>
+              
+              <!-- Files attached to comment -->
+              <div v-if="c.files && c.files.length > 0" class="px-3 pb-3 space-y-2">
+                <div v-for="file in c.files" :key="file.id" class="flex items-center gap-2 p-2 bg-surface/50 rounded border border-border/50">
+                  <Paperclip class="w-3.5 h-3.5 text-primary shrink-0" />
+                  <div class="flex-1 min-w-0">
+                    <p class="text-xs font-medium text-foreground truncate">{{ file.file_name }}</p>
+                    <p class="text-[9px] text-muted-foreground">{{ file.file_size }}</p>
+                  </div>
+                  <a
+                    v-if="file.file_path"
+                    :href="file.file_path"
+                    :download="file.file_name"
+                    class="shrink-0 p-1.5 rounded bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
+                    title="Download"
+                  >
+                    <Download class="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -478,9 +500,18 @@
             placeholder="Tuliskan pertanyaan / balasan..."
             class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
           ></textarea>
+          <div class="space-y-1.5">
+            <input type="file" multiple ref="commentFileInput" @change="handleCommentFile" class="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary-muted file:text-primary hover:file:bg-primary/10" />
+            <div v-if="commentPendingFiles.length > 0" class="flex flex-wrap gap-1.5">
+              <span v-for="(pf, i) in commentPendingFiles" :key="i" class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg text-[10px] text-primary font-semibold">
+                {{ pf.file.name }}
+                <button @click="removeCommentFile(i)" type="button" class="text-red-400 hover:text-red-600"><X class="w-3 h-3" /></button>
+              </span>
+            </div>
+          </div>
           <button
             type="submit"
-            :disabled="!commentDraft.trim() || commentSending"
+            :disabled="(!commentDraft.trim() && commentPendingFiles.length === 0) || commentSending"
             class="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
           >
             <Send class="w-4 h-4" />
@@ -802,6 +833,8 @@ const commentSending = ref(false);
 const noteSending = ref(false);
 const commentDraft = ref('');
 const noteDraft = ref('');
+const commentFileInput = ref<HTMLInputElement | null>(null);
+const commentPendingFiles = ref<PendingAttachment[]>([]);
 
 const isViewerNonIT = computed(() => store.currentUser?.role === 'USER_NON_IT');
 
@@ -847,18 +880,51 @@ const loadDiscussions = async () => {
 
 watch(() => ticket.value?.id, loadDiscussions, { immediate: true });
 
+const handleCommentFile = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  if (target.files) {
+    for (const file of Array.from(target.files)) {
+      commentPendingFiles.value.push({ file });
+    }
+  }
+  target.value = '';
+};
+
+const removeCommentFile = (index: number) => {
+  commentPendingFiles.value.splice(index, 1);
+};
+
 const handleSendComment = async () => {
   const message = commentDraft.value.trim();
-  if (!message || !ticket.value || commentSending.value) return;
+  const hasFiles = commentPendingFiles.value.length > 0;
+  if (!message && !hasFiles) return;
+  if (!ticket.value || commentSending.value) return;
 
   commentSending.value = true;
   try {
-    const res = await apiFetch<{ success: boolean; data: TicketComment }>(`/api/tickets/${ticket.value.id}/comments`, {
-      method: 'POST',
-      body: { message },
-    });
-    comments.value.push(res.data);
+    if (hasFiles) {
+      const formData = new FormData();
+      formData.append('message', message);
+      for (const pf of commentPendingFiles.value) {
+        formData.append('files', pf.file);
+      }
+      const res = await fetch(`/api/tickets/${ticket.value.id}/comments`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      });
+      if (!res.ok) throw new Error('Upload gagal');
+      const data = await res.json();
+      comments.value.push(data.data);
+    } else {
+      const res = await apiFetch<{ success: boolean; data: TicketComment }>(`/api/tickets/${ticket.value.id}/comments`, {
+        method: 'POST',
+        body: { message },
+      });
+      comments.value.push(res.data);
+    }
     commentDraft.value = '';
+    commentPendingFiles.value = [];
     toast('Komentar terkirim', 'success');
   } catch (e: any) {
     showError('Gagal Mengirim Komentar', e?.data?.statusMessage || e?.message || 'Terjadi kesalahan.');

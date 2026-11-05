@@ -1,6 +1,6 @@
 import { eq, and, count } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { tickets, attachments, ticketMembers, worklogs, auditLogs, comments, internalNotes } from '~/server/database/schema';
+import { tickets, files, ticketMembers, worklogs, auditLogs, comments, internalNotes } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 import { getTicketById } from '~/server/utils/tickets';
 import { requireRole } from '~/server/utils/authorize';
@@ -38,8 +38,8 @@ export default defineEventHandler(async (event) => {
     if (newPriority === 'CRITICAL' && existing.priority !== 'CRITICAL') {
       const rows = await db
         .select({ cnt: count() })
-        .from(attachments)
-        .where(eq(attachments.ticketId, id));
+        .from(files)
+        .where(eq(files.ticketId, id));
       const cnt = rows[0]?.cnt ?? 0;
       if (cnt === 0) {
         throw createError({
@@ -78,7 +78,7 @@ export default defineEventHandler(async (event) => {
       await tx.delete(ticketMembers).where(eq(ticketMembers.ticketId, id)).execute();
       await tx.delete(worklogs).where(eq(worklogs.ticketId, id)).execute();
       await tx.delete(auditLogs).where(eq(auditLogs.ticketId, id)).execute();
-      await tx.delete(attachments).where(eq(attachments.ticketId, id)).execute();
+      await tx.delete(files).where(eq(files.ticketId, id)).execute();
       await tx.delete(comments).where(eq(comments.ticketId, id)).execute();
       await tx.delete(internalNotes).where(eq(internalNotes.ticketId, id)).execute();
       await tx.delete(tickets).where(eq(tickets.id, id)).execute();

@@ -1,5 +1,5 @@
 import { db } from '~/server/database/client';
-import { tickets, worklogs, auditLogs, attachments, categories } from '~/server/database/schema';
+import { tickets, worklogs, auditLogs, files, categories } from '~/server/database/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { serializeTicket } from './serialize';
 import { loadOrgMaps, resolveCompanyOf, resolveDivisionOf } from './org';
@@ -43,7 +43,7 @@ export async function getTicketsWithRelations(whereClause?: any) {
   const [worklogsList, auditLogsList, attachmentsList, membersList, categoriesList] = await Promise.all([
     db.query.worklogs.findMany({ where: (w, { inArray: i }) => i(w.ticketId, ticketIds) }),
     db.query.auditLogs.findMany({ where: (a, { inArray: i }) => i(a.ticketId, ticketIds) }),
-    db.query.attachments.findMany({ where: (a, { inArray: i }) => i(a.ticketId, ticketIds) }),
+    db.query.files.findMany({ where: (a, { inArray: i }) => i(a.ticketId, ticketIds) }),
     db.query.ticketMembers.findMany({ where: (m, { inArray: i }) => i(m.ticketId, ticketIds) }),
     db.query.categories.findMany({ where: (c, { inArray: i }) => i(c.name, categoryNames) }),
   ]);
@@ -88,7 +88,7 @@ export async function getTicketById(ticketId: string) {
   const [worklogsList, auditLogsList, attachmentsList, membersList, cat] = await Promise.all([
     db.query.worklogs.findMany({ where: (w, { eq: e }) => e(w.ticketId, ticketId) }),
     db.query.auditLogs.findMany({ where: (a, { eq: e }) => e(a.ticketId, ticketId) }),
-    db.query.attachments.findMany({ where: (a, { eq: e }) => e(a.ticketId, ticketId) }),
+    db.query.files.findMany({ where: (a, { eq: e }) => e(a.ticketId, ticketId) }),
     db.query.ticketMembers.findMany({ where: (m, { eq: e }) => e(m.ticketId, ticketId) }),
     db.query.categories.findFirst({ where: (c, { eq: e }) => e(c.name, ticket.category) }),
   ]);

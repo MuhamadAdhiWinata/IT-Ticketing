@@ -7,7 +7,7 @@ import { sql } from 'drizzle-orm';
 import { db } from './client';
 import {
   users, categories, projectKendala, submodules,
-  tickets, ticketMembers, worklogs, auditLogs, attachments,
+  tickets, ticketMembers, worklogs, auditLogs, files,
 } from './schema';
 
 function ts(date: string, time = '09:00:00'): string {
@@ -22,7 +22,7 @@ async function cleanup() {
   console.log('[SEED] Membersihkan data lama...');
   await db.execute(sql.raw('SET FOREIGN_KEY_CHECKS = 0'));
   const tables = [
-    'attachments', 'audit_logs', 'worklogs',
+    'files', 'audit_logs', 'worklogs',
     'ticket_members', 'tickets',
     'user_preferences', 'submodules', 'project_kendala', 'categories', 'users',
     'divisions', 'companies',

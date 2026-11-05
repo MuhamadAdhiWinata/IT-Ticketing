@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, like, or } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { tickets, ticketMembers, worklogs, users, vendors, attachments, auditLogs } from '~/server/database/schema';
+import { tickets, ticketMembers, worklogs, users, vendors, files, auditLogs } from '~/server/database/schema';
 import { getTicketById } from '~/server/utils/tickets';
 import { serializeAttachment, serializeAuditLog, serializeComment, serializeInternalNote, serializeWorklog } from '~/server/utils/serialize';
 import { type Actor, fail, getTicketRow, isIT, requireIT } from './common';
@@ -102,10 +102,10 @@ export async function listInternalNotes(actor: Actor, ticketId: string) {
 export async function listAttachments(actor: Actor, ticketId: string) {
   await visibleTicket(actor, ticketId);
   const cond = isIT(actor)
-    ? eq(attachments.ticketId, ticketId)
-    : and(eq(attachments.ticketId, ticketId), eq(attachments.visibility, 'USER_VISIBLE'));
-  const rows = await db.select({ a: attachments, uploadedByName: users.name }).from(attachments)
-    .leftJoin(users, eq(users.id, attachments.uploadedBy)).where(cond);
+    ? eq(files.ticketId, ticketId)
+    : and(eq(files.ticketId, ticketId), eq(files.visibility, 'USER_VISIBLE'));
+  const rows = await db.select({ a: files, uploadedByName: users.name }).from(files)
+    .leftJoin(users, eq(users.id, files.uploadedBy)).where(cond);
   const items = rows.map(r => serializeAttachment({ ...r.a, uploadedByName: r.uploadedByName })).sort((a, b) => chrono(a, b, x => x.uploaded_at));
   return { count: items.length, attachments: items };
 }

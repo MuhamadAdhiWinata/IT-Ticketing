@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { and, eq } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { auditLogs, comments, mcpIdempotency, mcpTokens, tickets, worklogs, attachments, ticketMembers } from '~/server/database/schema';
+import { auditLogs, comments, mcpIdempotency, mcpTokens, tickets, worklogs, files, ticketMembers } from '~/server/database/schema';
 import { getTicketById } from '~/server/utils/tickets';
 import { authenticateMcp, createMcpToken, revokeMcpToken } from '~/server/services/ticketing/mcp-auth';
 import { TOOL_KINDS } from '~/server/mcp/server';
@@ -316,7 +316,7 @@ describe('13. failure leaves no partial state', () => {
     expect(ok.isError).toBe(false);
     expect(ok.data.attachments[0]).toMatchObject({ file_name: 'bukti.txt', visibility: 'INTERNAL_ONLY', uploaded_by: IT_A.id });
     expect((await a.call('add_attachment', { ticketId: id, fileName: 'k.txt', contentBase64: '=' })).isError).toBe(true);
-    expect(await db.select().from(attachments).where(eq(attachments.ticketId, id))).toHaveLength(1);
+    expect(await db.select().from(files).where(eq(files.ticketId, id))).toHaveLength(1);
 
     const req = await as(REQ);
     const seen = await a.call('list_ticket_attachments', { ticketId: id });

@@ -34,6 +34,18 @@ export interface DivisionItem {
   name: string;
 }
 
+export interface FileRecord {
+  id: string;
+  ticket_id: string;
+  file_name: string;
+  file_size?: string | null;
+  file_path?: string | null;
+  uploaded_by: string;
+  uploaded_at: string;
+  visibility: AttachmentVisibility;
+  stage?: string | null;
+}
+
 export interface Attachment {
   id: string;
   stage: AttachmentStage;
@@ -57,6 +69,7 @@ export interface Worklog {
   duration_minutes: number;
   description: string;
   created_at: string;
+  files?: FileRecord[];
 }
 
 export interface DelegationInfo {
@@ -91,6 +104,7 @@ export interface TicketComment {
   user_role: UserRole;
   message: string;
   created_at: string;
+  files?: FileRecord[];
 }
 
 export interface TicketInternalNote {

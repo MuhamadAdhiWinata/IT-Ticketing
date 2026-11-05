@@ -202,7 +202,7 @@ export const ticketsRelations = relations(tickets, ({ one, many }) => ({
   requester: one(users, { fields: [tickets.requestedBy], references: [users.id] }),
   assignee: one(users, { fields: [tickets.assignedTo], references: [users.id] }),
   worklogs: many(worklogs),
-  attachments: many(attachments),
+  files: many(files),
   auditLogs: many(auditLogs),
   members: many(ticketMembers),
   comments: many(comments),
@@ -224,9 +224,10 @@ export const comments = mysqlTable('comments', {
   idxTicket: index('idx_comments_ticket').on(table.ticketId),
 }));
 
-export const commentsRelations = relations(comments, ({ one }) => ({
+export const commentsRelations = relations(comments, ({ one, many }) => ({
   ticket: one(tickets, { fields: [comments.ticketId], references: [tickets.id] }),
   author: one(users, { fields: [comments.userId], references: [users.id] }),
+  fileLinks: many(commentFiles),
 }));
 
 // ── Internal Notes (khusus IT; Rule 15: tidak terlihat oleh User Non-IT) ──
@@ -280,9 +281,10 @@ export const worklogs = mysqlTable('worklogs', {
   idxDate: index('idx_worklogs_date').on(table.date),
 }));
 
-export const worklogsRelations = relations(worklogs, ({ one }) => ({
+export const worklogsRelations = relations(worklogs, ({ one, many }) => ({
   ticket: one(tickets, { fields: [worklogs.ticketId], references: [tickets.id] }),
   worker: one(users, { fields: [worklogs.workerId], references: [users.id] }),
+  fileLinks: many(worklogFiles),
 }));
 
 // ── Audit Logs ──
@@ -303,11 +305,11 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
   actor: one(users, { fields: [auditLogs.performedBy], references: [users.id] }),
 }));
 
-// ── Attachments ──
-export const attachments = mysqlTable('attachments', {
+// ── Files (renamed from attachments) ──
+export const files = mysqlTable('files', {
   id: varchar('id', { length: 50 }).primaryKey(),
   ticketId: varchar('ticket_id', { length: 50 }).notNull().references(() => tickets.id),
-  stage: varchar('stage', { length: 50 }).notNull(),
+  stage: varchar('stage', { length: 50 }),
   visibility: varchar('visibility', { length: 50 }).notNull(),
   fileName: varchar('file_name', { length: 255 }).notNull(),
   fileSize: varchar('file_size', { length: 50 }),
@@ -315,12 +317,46 @@ export const attachments = mysqlTable('attachments', {
   uploadedBy: varchar('uploaded_by', { length: 50 }).notNull().references(() => users.id),
   uploadedAt: timestamp('uploaded_at', { mode: 'string' }).notNull(),
 }, (table) => ({
-  idxTicket: index('idx_attachments_ticket').on(table.ticketId),
+  idxTicket: index('idx_files_ticket').on(table.ticketId),
 }));
 
-export const attachmentsRelations = relations(attachments, ({ one }) => ({
-  ticket: one(tickets, { fields: [attachments.ticketId], references: [tickets.id] }),
-  uploader: one(users, { fields: [attachments.uploadedBy], references: [users.id] }),
+export const filesRelations = relations(files, ({ one, many }) => ({
+  ticket: one(tickets, { fields: [files.ticketId], references: [tickets.id] }),
+  uploader: one(users, { fields: [files.uploadedBy], references: [users.id] }),
+  worklogLinks: many(worklogFiles),
+  commentLinks: many(commentFiles),
+}));
+
+// ── Worklog Files (pivot) ──
+export const worklogFiles = mysqlTable('worklog_files', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  worklogId: varchar('worklog_id', { length: 50 }).notNull().references(() => worklogs.id, { onDelete: 'cascade' }),
+  fileId: varchar('file_id', { length: 50 }).notNull().references(() => files.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
+}, (table) => ({
+  idxWorklog: index('idx_worklog_files_worklog').on(table.worklogId),
+  idxFile: index('idx_worklog_files_file').on(table.fileId),
+}));
+
+export const worklogFilesRelations = relations(worklogFiles, ({ one }) => ({
+  worklog: one(worklogs, { fields: [worklogFiles.worklogId], references: [worklogs.id] }),
+  file: one(files, { fields: [worklogFiles.fileId], references: [files.id] }),
+}));
+
+// ── Comment Files (pivot) ──
+export const commentFiles = mysqlTable('comment_files', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  commentId: varchar('comment_id', { length: 50 }).notNull().references(() => comments.id, { onDelete: 'cascade' }),
+  fileId: varchar('file_id', { length: 50 }).notNull().references(() => files.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
+}, (table) => ({
+  idxComment: index('idx_comment_files_comment').on(table.commentId),
+  idxFile: index('idx_comment_files_file').on(table.fileId),
+}));
+
+export const commentFilesRelations = relations(commentFiles, ({ one }) => ({
+  comment: one(comments, { fields: [commentFiles.commentId], references: [comments.id] }),
+  file: one(files, { fields: [commentFiles.fileId], references: [files.id] }),
 }));
 
 // ── MCP: token API per user (hanya hash SHA-256 yang disimpan) ──

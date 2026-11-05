@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { attachments } from '~/server/database/schema';
+import { files } from '~/server/database/schema';
 import { serializeAttachment } from '~/server/utils/serialize';
 import {
   type Actor, type DbExec, type UploadInput, VISIBILITIES,
@@ -33,7 +33,7 @@ export async function insertAttachments(
       uploadedBy: actor.id,
       uploadedAt: ts,
     };
-    await tx.insert(attachments).values(row);
+    await tx.insert(files).values(row);
     out.push(serializeAttachment({ ...row, uploadedByName: actor.name }));
   }
   return out;

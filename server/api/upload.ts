@@ -5,7 +5,7 @@ import { successResponse } from '~/server/utils/response';
 import { getCurrentUserId } from '~/server/utils/user-context';
 import { parseMultipart, cleanupTempFiles, sanitizeFilename } from '~/server/utils/upload';
 import { db } from '~/server/database/client';
-import { attachments } from '~/server/database/schema';
+import { files } from '~/server/database/schema';
 
 function now(): string {
   return new Date().toISOString().replace('T', ' ').replace('Z', '').slice(0, 19);
@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
       );
 
       const attachId = `ATT-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-      await db.insert(attachments).values({
+      await db.insert(files).values({
         id: attachId,
         ticketId,
         stage,

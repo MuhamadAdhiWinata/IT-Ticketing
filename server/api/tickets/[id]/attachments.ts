@@ -1,6 +1,6 @@
 import { eq, and, desc } from 'drizzle-orm';
 import { db } from '~/server/database/client';
-import { attachments, tickets } from '~/server/database/schema';
+import { files, tickets } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 import { getCurrentUser, getCurrentUserId } from '~/server/utils/user-context';
 
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
     // Filter visibility: USER_VISIBLE untuk semua, INTERNAL_ONLY hanya untuk IT_WORKER/SYSTEM_ADMIN
     const isIT = user.role === 'IT_WORKER' || user.role === 'SYSTEM_ADMIN';
 
-    const results = await db.query.attachments.findMany({
+    const results = await db.query.files.findMany({
       where: (a, { eq: e, and: aOp }) => {
         const conditions = [e(a.ticketId, id)];
         if (!isIT) {
@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
         }
         return aOp(...conditions);
       },
-      orderBy: [desc(attachments.uploadedAt)],
+      orderBy: [desc(files.uploadedAt)],
     });
 
     return successResponse(results.map(a => ({
@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
   const ts = new Date().toISOString().replace('T', ' ').replace('Z', '').slice(0, 19);
   const attachId = `ATT-${Date.now()}`;
 
-  await db.insert(attachments).values({
+  await db.insert(files).values({
     id: attachId,
     ticketId: id,
     stage: body.stage || 'REQUEST',
