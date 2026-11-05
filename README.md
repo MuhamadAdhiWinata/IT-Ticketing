@@ -185,6 +185,22 @@ docker compose down
 | `JWT_SECRET` | dari .env | Secret key JWT |
 | `JWT_EXPIRES_IN` | `7d` | Masa berlaku token |
 | `NODE_ENV` | `production` | Environment mode |
+| `S3_ENDPOINT` | kosong | Jika diisi, file disimpan di S3/MinIO. Kosong = disk (`UPLOAD_DIR`) |
+| `S3_BUCKET` | - | Wajib bila `S3_ENDPOINT` diisi. Dibuat otomatis bila belum ada |
+| `S3_ACCESS_KEY` / `S3_SECRET_KEY` | - | Wajib bila `S3_ENDPOINT` diisi |
+| `S3_REGION` | `us-east-1` | Region S3 |
+| `S3_FORCE_PATH_STYLE` | `true` | `true` untuk MinIO, `false` untuk AWS S3 |
+
+### Penyimpanan File (disk atau S3/MinIO)
+
+Backend dipilih dari environment saat start. URL di DB selalu `/api/uploads/...` dan diunduh lewat API (perlu login), jadi bucket tidak perlu publik dan data lama tetap valid. Saat S3 aktif, file lama yang masih di `UPLOAD_DIR` tetap bisa dibaca (fallback ke disk), tetapi tidak dipindahkan otomatis ke bucket.
+
+```bash
+# MinIO lewat Docker (API 127.0.0.1:9100, konsol 127.0.0.1:9101)
+S3_ACCESS_KEY=... S3_SECRET_KEY=... docker compose --profile s3 up -d minio
+```
+
+Isi `S3_*` di `.env`: `S3_ENDPOINT=http://minio:9000` bila app jalan di compose yang sama, `http://localhost:9100` bila `pnpm dev`. Image `minio/minio` di Docker Hub sudah tidak tersedia, jadi compose memakai `cgr.dev/chainguard/minio`. Cek manual: `npx tsx server/services/storage/storage.check.ts` (dengan atau tanpa `S3_*`).
 
 ### Development
 

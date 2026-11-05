@@ -17,10 +17,10 @@ const Schema = z.object({
 // Insert baris attachment untuk file yang sudah disimpan; dipakai ulang oleh aktivitas & workflow.
 export async function insertAttachments(
   tx: DbExec, track: string[], actor: Actor, ticketId: string, stage: string,
-  defaultVisibility: string, ts: string, files: UploadInput[],
+  defaultVisibility: string, ts: string, uploads: UploadInput[],
 ) {
   const out: ReturnType<typeof serializeAttachment>[] = [];
-  for (const f of files) {
+  for (const f of uploads) {
     const stored = await storeFile(track, ticketId, f);
     const row = {
       id: newId('ATT'),

@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import type { FileStorage } from './index';
+import type { FileStorage, StoredObject } from './index';
 
 export class LocalFileStorage implements FileStorage {
   private uploadDir: string;
@@ -25,6 +25,17 @@ export class LocalFileStorage implements FileStorage {
 
   getUrl(filePath: string): string {
     return `/api/uploads/${filePath}`;
+  }
+
+  async read(filePath: string): Promise<StoredObject | null> {
+    const fullPath = path.resolve(this.uploadDir, filePath);
+    if (!fullPath.startsWith(this.uploadDir + path.sep)) return null;
+    try {
+      const data = await fs.readFile(fullPath);
+      return { data, size: data.length };
+    } catch {
+      return null;
+    }
   }
 
   async delete(filePath: string): Promise<void> {

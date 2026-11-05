@@ -1,5 +1,5 @@
-import fs from 'fs/promises';
 import path from 'path';
+import { fileStorage } from '~/server/services/storage';
 import { createError, getRouterParam, setHeader } from 'h3';
 import { requireAuth } from '~/server/utils/authorize';
 
@@ -25,26 +25,18 @@ export default async function handler(event: any) {
   await requireAuth(event);
   const filePath = getRouterParam(event, 'path') || [];
   const relativePath = Array.isArray(filePath) ? filePath.join('/') : filePath;
-  const fullPath = (process.env.UPLOAD_DIR || './server/uploads') + '/' + relativePath;
 
-  try {
-    const stats = await fs.stat(fullPath);
-    if (stats.isDirectory()) {
-      throw createError({ statusCode: 404, statusMessage: 'Not found' });
-    }
+  const obj = await fileStorage.read(relativePath);
+  if (!obj) throw createError({ statusCode: 404, statusMessage: 'File not found' });
 
-    const data = await fs.readFile(fullPath);
-    const ext = path.extname(relativePath).slice(1).toLowerCase();
-    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-    const isImage = IMAGE_EXTS.has(ext);
-    const fileName = path.basename(relativePath);
+  const ext = path.extname(relativePath).slice(1).toLowerCase();
+  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+  const isImage = IMAGE_EXTS.has(ext);
+  const fileName = path.basename(relativePath);
 
-    setHeader(event, 'Content-Type', contentType);
-    setHeader(event, 'Content-Disposition', isImage ? `inline; filename="${fileName}"` : `attachment; filename="${fileName}"`);
-    setHeader(event, 'Content-Length', stats.size);
+  setHeader(event, 'Content-Type', contentType);
+  setHeader(event, 'Content-Disposition', isImage ? `inline; filename="${fileName}"` : `attachment; filename="${fileName}"`);
+  setHeader(event, 'Content-Length', obj.size);
 
-    return data;
-  } catch {
-    throw createError({ statusCode: 404, statusMessage: 'File not found' });
-  }
+  return obj.data;
 }

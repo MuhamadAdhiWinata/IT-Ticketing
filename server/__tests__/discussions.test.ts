@@ -16,9 +16,9 @@ describe('Diskusi Tiket (Komentar & Internal Note)', () => {
       expect(validate(CommentSchema, {}).success).toBe(false);
     });
 
-    it('menolak pesan lebih dari 2000 karakter', () => {
-      expect(validate(CommentSchema, { message: 'x'.repeat(2001) }).success).toBe(false);
-      expect(validate(CommentSchema, { message: 'x'.repeat(2000) }).success).toBe(true);
+    it('menolak pesan lebih dari 20000 karakter (HTML editor)', () => {
+      expect(validate(CommentSchema, { message: 'x'.repeat(20001) }).success).toBe(false);
+      expect(validate(CommentSchema, { message: 'x'.repeat(20000) }).success).toBe(true);
     });
   });
 
