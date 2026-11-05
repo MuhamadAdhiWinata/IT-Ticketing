@@ -442,20 +442,29 @@
         <div v-else-if="comments.length === 0" class="text-xs text-muted-foreground italic py-2">
           Belum ada komentar. Ajukan pertanyaan atau balasan lewat kolom di bawah.
         </div>
-        <div v-else class="space-y-2">
+        <div v-else class="space-y-3">
           <div
             v-for="c in comments"
             :key="c.id"
-            class="p-3 bg-muted/50 rounded-lg border border-border text-xs space-y-1"
+            :class="['flex', c.user_id === store.currentUser?.id ? 'justify-end' : 'justify-start']"
           >
-            <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
-              <span class="font-bold text-primary">
-                {{ c.user_name }}
-                <span class="ml-1 px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 font-semibold">{{ roleLabel(c.user_role) }}</span>
-              </span>
-              <span>{{ new Date(c.created_at).toLocaleString() }}</span>
+            <div
+              :class="[
+                'max-w-[85%] sm:max-w-[75%] p-3 rounded-lg text-xs space-y-1',
+                c.user_id === store.currentUser?.id
+                  ? 'bg-primary/10 border border-primary/20'
+                  : 'bg-muted/50 border border-border'
+              ]"
+            >
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+                <span class="font-bold text-primary">
+                  {{ c.user_name }}
+                  <span class="ml-1 px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 font-semibold">{{ roleLabel(c.user_role) }}</span>
+                </span>
+                <span>{{ new Date(c.created_at).toLocaleString() }}</span>
+              </div>
+              <p class="text-foreground whitespace-pre-line leading-relaxed">{{ c.message }}</p>
             </div>
-            <p class="text-foreground whitespace-pre-line leading-relaxed">{{ c.message }}</p>
           </div>
         </div>
 
