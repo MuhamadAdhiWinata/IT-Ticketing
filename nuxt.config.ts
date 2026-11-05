@@ -13,7 +13,7 @@ export default defineNuxtConfig({
       name: 'IT Ticketing & Work Monitoring',
       short_name: 'IT Ticketing',
       description: 'Aplikasi tracking tiket IT & work monitoring',
-      start_url: '/login',
+      start_url: '/',
       display: 'standalone',
       background_color: '#ffffff',
       theme_color: '#b10202',
@@ -24,10 +24,8 @@ export default defineNuxtConfig({
       ],
     },
     workbox: {
-      navigateFallback: '/login',
       navigateFallbackDenylist: [/^\/api\//],
       globPatterns: ['**/*.{js,css,png,svg,ico}'],
-      additionalManifestEntries: [{ url: '/login', revision: Date.now().toString() }],
       runtimeCaching: [
         {
           urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
