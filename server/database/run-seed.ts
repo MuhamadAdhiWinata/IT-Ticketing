@@ -7,7 +7,7 @@ import { sql } from 'drizzle-orm';
 import { db } from './client';
 import {
   users, categories, projectKendala, submodules,
-  tickets, ticketMembers, worklogs, auditLogs, files, comments, worklogFiles, commentFiles,
+  tickets, ticketMembers, worklogs, auditLogs, files, comments, worklogFiles, commentFiles, companySettings,
 } from './schema';
 
 function ts(date: string, time = '09:00:00'): string {
@@ -26,7 +26,7 @@ async function cleanup() {
     'audit_logs', 'worklogs',
     'ticket_members', 'tickets',
     'user_preferences', 'submodules', 'project_kendala', 'categories', 'users',
-    'divisions', 'companies',
+    'divisions', 'companies', 'company_settings',
   ];
   for (const table of tables) {
     await db.execute(sql.raw(`DELETE FROM ${table}`));
@@ -51,6 +51,29 @@ async function seedUsers(hash: string) {
   ];
   for (const u of data) await db.insert(users).values(u);
   console.log(`[SEED] ${data.length} users berhasil.`);
+}
+
+async function seedCompanySettings() {
+  console.log('[SEED] Seeding company settings...');
+  // Baris 'default' dibaca GET /api/settings/company; tanpa baris ini tema jatuh ke bawaan kode.
+  await db.insert(companySettings).values({
+    id: 'default',
+    companyName: 'Neutron',
+    logoUrl: 'https://career.amikom.ac.id/images/company/cover/1720853154.png',
+    primaryColor: '#b10202',
+    primaryHoverColor: '#920202',
+    primaryActiveColor: '#740101',
+    primaryMutedColor: '#e6f1f8',
+    primaryForegroundColor: '#ffffff',
+    secondaryColor: '#475569',
+    secondaryHoverColor: '#334155',
+    secondaryForegroundColor: '#ffffff',
+    accentColor: '#0ea5e9',
+    accentForegroundColor: '#ffffff',
+    createdAt: ts('2026-09-26', '07:08:47'),
+    updatedAt: ts('2026-09-29', '07:07:50'),
+  });
+  console.log('[SEED] 1 company settings berhasil.');
 }
 
 async function seedCategories() {
@@ -282,6 +305,7 @@ await cleanup();
 const hash = await bcrypt.hash('password123', 10);
 
 await seedUsers(hash);
+await seedCompanySettings();
 await seedCategories();
 await seedProjectKendala();
 await seedSubmodules();
