@@ -16,12 +16,10 @@ export default defineEventHandler(async (event) => {
 
   if (method === 'GET') {
     const query = getQuery(event);
-    const me = getCurrentUser(event);
-    if (!me) throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
 
+    // Sengaja tanpa filter per user: halaman utama menampilkan semua pekerjaan IT ke semua role.
     const results = await getTicketsWithRelations((t: any, { eq: e, or: o, like: l, and: a }: any) => {
       const conditions: any[] = [];
-      if (me.role === 'USER_NON_IT') conditions.push(o(e(t.createdBy, me.id), e(t.requestedBy, me.id)));
       if (query.status) conditions.push(e(t.status, query.status as string));
       if (query.search) conditions.push(o(l(t.id, `%${query.search}%`), l(t.title, `%${query.search}%`)));
       return conditions.length === 0 ? undefined : (conditions.length === 1 ? conditions[0] : a(...conditions));

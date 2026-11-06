@@ -27,7 +27,7 @@ Keputusan desain: prioritas tetap 4 level (`LOW/MEDIUM/HIGH/CRITICAL`). P1-P4 di
 | 001a | CRITICAL wajib lampiran | SEBAGIAN (client bisa memalsukan `attachmentCount`) | SEBAGIAN: server kini menolak `DRAFT>PROCESS` CRITICAL tanpa berkas di tabel `files` | Sisa: tiket dibuat sebelum upload, belum ada rollback. KERJAKAN nanti |
 | 001b | Log tiket masuk IT terlihat user | SEBAGIAN (user hanya lihat miliknya) | ADA: ringkasan hari/7 hari/bulan kini memuat semua tiket; daftar log tetap milik sendiri | Selesai |
 | 002 | Aplikasi/Project + Sub Modul bertingkat | SEBAGIAN | SEBAGIAN | Label "Project/Kendala" belum jadi "Aplikasi/Project", server belum memeriksa submodul milik project. HOLD sampai ada keputusan penamaan |
-| 003 | Menu Tiket Saya | ADA | ADA (+ `GET /api/tickets` kini difilter untuk USER_NON_IT) | Selesai |
+| 003 | Menu Tiket Saya | ADA | ADA (`GET /api/tickets` sengaja tetap menampilkan semua tiket ke semua role) | Selesai |
 | 004 | Lokasi disembunyikan untuk IT Programmer | ADA | ADA | Selesai |
 | 005 | Perusahaan/Divisi | ADA fungsional, API tanpa guard | ADA: API users/companies/divisions kini wajib SYSTEM_ADMIN untuk tulis | Selesai |
 | 006 | Gambar inline di komentar | SEBAGIAN | SEBAGIAN: `GET comments` kini cek akses tiket; tautan `comment_files` untuk gambar inline belum | `/api/upload` belum validasi tipe/akses tiket. KERJAKAN nanti |
@@ -47,7 +47,7 @@ Keputusan desain: prioritas tetap 4 level (`LOW/MEDIUM/HIGH/CRITICAL`). P1-P4 di
 | # | Pekerjaan | Issue | Status |
 |---|-----------|-------|--------|
 | 1 | Guard `requireRole('SYSTEM_ADMIN')` untuk tulis users/companies/divisions (celah keamanan: user biasa bisa mengubah role) | 005 | [x] |
-| 2 | `GET /api/tickets` hanya tiket milik sendiri untuk USER_NON_IT | 003 | [x] |
+| 2 | `GET /api/tickets` TIDAK difilter: halaman utama menampilkan semua pekerjaan IT agar user tahu beban kerja IT | 003 | dibatalkan (disengaja) |
 | 3 | `GET /api/tickets/[id]/comments` cek akses tiket | 006 | [x] |
 | 4 | CRITICAL wajib lampiran dihitung server dari tabel `files` saat mulai proses | 001a | [x] |
 | 5 | Ringkasan incoming log mencakup semua tiket | 001b | [x] |
@@ -78,7 +78,7 @@ Keputusan desain: prioritas tetap 4 level (`LOW/MEDIUM/HIGH/CRITICAL`). P1-P4 di
 
 ## 5. Risiko dan catatan
 
-- Perubahan perilaku: USER_NON_IT tidak lagi melihat tiket orang lain dari `GET /api/tickets`. Halaman yang bergantung pada daftar penuh (mis. pelacakan) kini hanya menampilkan tiket miliknya.
+- Daftar tiket penuh terlihat semua role secara sengaja (transparansi beban kerja IT). Akses detail, komentar, dan aksi tetap dibatasi per tiket.
 - Menu Master Data untuk non-admin memang sudah tersembunyi; guard server kini sejalan.
 - `acknowledged_at` dan `accepted_at` belum terisi sampai H3 dikerjakan.
 - Migrasi `0004` harus dijalankan (`npx drizzle-kit migrate`) sebelum kode ini dideploy.
