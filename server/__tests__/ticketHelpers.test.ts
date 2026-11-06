@@ -6,12 +6,12 @@ describe('getProjectKendalaLabel', () => {
     expect(getProjectKendalaLabel('Support IT')).toBe('Kendala');
   });
 
-  it('kategori pengembangan memakai istilah Project', () => {
-    expect(getProjectKendalaLabel('IT Programmer')).toBe('Project');
+  it('kategori pengembangan memakai istilah Aplikasi', () => {
+    expect(getProjectKendalaLabel('IT Programmer')).toBe('Aplikasi');
   });
 
   it('nama kategori yang tak dikenal jatuh ke label gabungan', () => {
-    expect(getProjectKendalaLabel('Jaringan')).toBe('Project/Kendala');
-    expect(getProjectKendalaLabel('')).toBe('Project/Kendala');
+    expect(getProjectKendalaLabel('Jaringan')).toBe('Aplikasi/Kendala');
+    expect(getProjectKendalaLabel('')).toBe('Aplikasi/Kendala');
   });
 });

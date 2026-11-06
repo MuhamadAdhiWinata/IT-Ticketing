@@ -106,20 +106,20 @@
         />
       </div>
 
-      <!-- Project/Kendala & Sub Modul Row -->
+      <!-- Aplikasi/Kendala & Modul Row -->
       <div :class="[serviceView === 'SUPPORT_IT' ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2', 'grid gap-4']">
         <AppSelect
           v-model="projectKendala"
           :options="currentProjectKendala"
-          :label="serviceView === 'SUPPORT_IT' ? 'Kendala' : 'Project'"
-          :placeholder="serviceView === 'SUPPORT_IT' ? '-- Pilih Kendala --' : '-- Pilih Project --'"
+          :label="serviceView === 'SUPPORT_IT' ? 'Kendala' : 'Aplikasi'"
+          :placeholder="serviceView === 'SUPPORT_IT' ? '-- Pilih Kendala --' : '-- Pilih Aplikasi --'"
         />
         <AppSelect
           v-if="serviceView === 'IT_PROGRAMMER'"
           v-model="submodule"
           :options="currentSubmodules"
-          label="Sub Modul"
-          placeholder="-- Pilih Sub Modul --"
+          label="Modul"
+          placeholder="-- Pilih Modul --"
         />
       </div>
 
@@ -404,7 +404,7 @@ const handleSubmit = async (shouldAssign: boolean) => {
       'Formulir Tidak Lengkap',
       serviceView.value === 'SUPPORT_IT'
         ? 'Mohon pilih Kendala yang dialami.'
-        : 'Mohon pilih Project yang sedang dikerjakan.'
+        : 'Mohon pilih Aplikasi yang sedang dikerjakan.'
     );
     return;
   }

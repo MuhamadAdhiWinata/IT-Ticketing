@@ -26,9 +26,9 @@ export function getProjectKendalaLabel(categoryName: string): string {
     case 'Support IT':
       return 'Kendala';
     case 'IT Programmer':
-      return 'Project';
+      return 'Aplikasi';
     default:
-      return 'Project/Kendala';
+      return 'Aplikasi/Kendala';
   }
 }
 

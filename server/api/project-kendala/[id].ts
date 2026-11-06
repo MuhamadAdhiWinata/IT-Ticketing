@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
   const method = event.method;
 
   if (!id) {
-    throw createError({ statusCode: 400, statusMessage: 'Project/Kendala ID required' });
+    throw createError({ statusCode: 400, statusMessage: 'Aplikasi/Kendala ID required' });
   }
 
   if (method === 'GET') {
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
       where: (s, { eq: e }) => e(s.id, id),
     });
     if (!row) {
-      throw createError({ statusCode: 404, statusMessage: 'Project/Kendala not found' });
+      throw createError({ statusCode: 404, statusMessage: 'Aplikasi/Kendala not found' });
     }
     return successResponse(serializeProjectKendala(row));
   }

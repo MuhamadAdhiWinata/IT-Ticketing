@@ -1,4 +1,4 @@
-// Pembuat ID otomatis untuk master data (Kategori, Project/Kendala, Sub Modul,
+// Pembuat ID otomatis untuk master data (Kategori, Aplikasi/Kendala, Modul,
 // Perusahaan, Divisi, Pengguna).
 //
 // Nomor berikutnya dihitung dari ID tertinggi yang sudah ada, bukan dari jumlah
