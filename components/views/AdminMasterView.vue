@@ -11,7 +11,7 @@
           Manajemen Master Data
         </h1>
         <p class="text-xs text-muted-foreground">
-          Kelola master kategori, Project/Kendala &amp; Sub Modul layanan IT terpisah, prioritas tiket, serta akun pengguna sistem.
+          Kelola master kategori, Aplikasi/Kendala &amp; Modul layanan IT terpisah, prioritas tiket, serta akun pengguna sistem.
         </p>
       </div>
 
@@ -35,7 +35,7 @@
           :class="activeTab === 'CATEGORIES' ? 'bg-surface text-primary shadow-xs' : 'text-muted-foreground hover:text-foreground'"
         >
           <FolderTree class="w-4 h-4" />
-          <span>Kategori & Project/Kendala ({{ store.categories.length }} Kategori, {{ store.projectKendala.length }} Project/Kendala)</span>
+          <span>Kategori & Aplikasi/Kendala ({{ store.categories.length }} Kategori, {{ store.projectKendala.length }} Aplikasi/Kendala)</span>
         </button>
 
         <button
@@ -143,10 +143,10 @@
             <div>
               <h3 class="text-sm font-bold text-foreground flex items-center gap-2">
                 <Tag class="w-4 h-4 text-success" />
-                <span>Tabel Master Project/Kendala (Relational DB Records)</span>
+                <span>Tabel Master Aplikasi/Kendala (Relational DB Records)</span>
               </h3>
               <p class="text-[11px] text-muted-foreground">
-                Setiap baris adalah record Project/Kendala terpisah yang terhubung via Foreign Key <code class="font-mono text-primary">category_id</code>
+                Setiap baris adalah record Aplikasi/Kendala terpisah yang terhubung via Foreign Key <code class="font-mono text-primary">category_id</code>
               </p>
             </div>
             <button
@@ -154,7 +154,7 @@
               class="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs"
             >
               <Plus class="w-4 h-4" />
-              <span>Tambah Project/Kendala Baru</span>
+              <span>Tambah Aplikasi/Kendala Baru</span>
             </button>
           </div>
 
@@ -174,7 +174,7 @@
               <input
                 v-model="projectKendalaSearch"
                 type="text"
-                placeholder="Cari nama/ID Project/Kendala..."
+                placeholder="Cari nama/ID Aplikasi/Kendala..."
                 class="w-full px-3 py-2 rounded-xl border border-border bg-surface text-xs"
               />
             </div>
@@ -185,10 +185,10 @@
             <table class="w-full text-left border-collapse text-xs">
               <thead>
                 <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-muted-foreground">
-                  <th class="p-3">ID Project/Kendala</th>
+                  <th class="p-3">ID Aplikasi/Kendala</th>
                   <th class="p-3">Kategori Induk (FK: category_id)</th>
-                  <th class="p-3">Nama Project/Kendala</th>
-                  <th class="p-3">Total Sub Modul</th>
+                  <th class="p-3">Nama Aplikasi/Kendala</th>
+                  <th class="p-3">Total Modul</th>
                   <th class="p-3 text-right">Aksi Record</th>
                 </tr>
               </thead>
@@ -214,8 +214,8 @@
                 <tr v-if="filteredProjectKendala.length === 0">
                   <td colspan="5" class="p-8 text-center text-muted-foreground text-xs">
                     {{ selectedCategoryFilter === 'ALL' && !projectKendalaSearch
-                      ? 'Belum ada data Project/Kendala. Klik "Tambah Project/Kendala Baru" untuk menambah.'
-                      : `Tidak ditemukan Project/Kendala${projectKendalaSearch ? ` untuk "${projectKendalaSearch}"` : ''}${selectedCategoryFilter !== 'ALL' ? ' pada kategori ini' : ''}.` }}
+                      ? 'Belum ada data Aplikasi/Kendala. Klik "Tambah Aplikasi/Kendala Baru" untuk menambah.'
+                      : `Tidak ditemukan Aplikasi/Kendala${projectKendalaSearch ? ` untuk "${projectKendalaSearch}"` : ''}${selectedCategoryFilter !== 'ALL' ? ' pada kategori ini' : ''}.` }}
                   </td>
                 </tr>
               </tbody>
@@ -231,10 +231,10 @@
             <div>
               <h3 class="text-sm font-bold text-foreground flex items-center gap-2">
                 <Layers class="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span>Tabel Master Sub Modul (Relational DB Records)</span>
+                <span>Tabel Master Modul (Relational DB Records)</span>
               </h3>
               <p class="text-[11px] text-muted-foreground">
-                Setiap baris adalah record Sub Modul yang terhubung via Foreign Key <code class="font-mono text-primary">project_kendala_id</code>
+                Setiap baris adalah record Modul yang terhubung via Foreign Key <code class="font-mono text-primary">project_kendala_id</code>
               </p>
             </div>
             <button
@@ -242,27 +242,27 @@
               class="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs"
             >
               <Plus class="w-4 h-4" />
-              <span>Tambah Sub Modul Baru</span>
+              <span>Tambah Modul Baru</span>
             </button>
           </div>
 
-          <!-- Filter Project/Kendala Induk + Search -->
+          <!-- Filter Aplikasi/Kendala Induk + Search -->
           <div class="flex items-center gap-2 bg-muted p-3 rounded-xl border border-border text-xs">
-            <span class="font-bold text-foreground shrink-0">Filter Project/Kendala:</span>
+            <span class="font-bold text-foreground shrink-0">Filter Aplikasi/Kendala:</span>
             <div class="min-w-[200px] flex-1">
               <AppSelect
                 v-model="selectedProjectKendalaFilter"
                 :options="projectKendalaFilterOptions"
                 size="sm"
                 searchable
-                searchPlaceholder="Cari Project/Kendala..."
+                searchPlaceholder="Cari Aplikasi/Kendala..."
               />
             </div>
             <div class="min-w-[200px] flex-1">
               <input
                 v-model="submoduleSearch"
                 type="text"
-                placeholder="Cari nama/ID Sub Modul..."
+                placeholder="Cari nama/ID Modul..."
                 class="w-full px-3 py-2 rounded-xl border border-border bg-surface text-xs"
               />
             </div>
@@ -273,9 +273,9 @@
             <table class="w-full text-left border-collapse text-xs">
               <thead>
                 <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-muted-foreground">
-                  <th class="p-3">ID Sub Modul</th>
-                  <th class="p-3">Project/Kendala (FK: project_kendala_id)</th>
-                  <th class="p-3">Nama Sub Modul</th>
+                  <th class="p-3">ID Modul</th>
+                  <th class="p-3">Aplikasi/Kendala (FK: project_kendala_id)</th>
+                  <th class="p-3">Nama Modul</th>
                   <th class="p-3 text-right">Aksi Record</th>
                 </tr>
               </thead>
@@ -300,8 +300,8 @@
                 <tr v-if="filteredSubmodules.length === 0">
                   <td colspan="4" class="p-8 text-center text-muted-foreground text-xs">
                     {{ selectedProjectKendalaFilter === 'ALL' && !submoduleSearch
-                      ? 'Belum ada data Sub Modul. Klik "Tambah Sub Modul Baru" untuk menambah.'
-                      : `Tidak ditemukan Sub Modul${submoduleSearch ? ` untuk "${submoduleSearch}"` : ''}${selectedProjectKendalaFilter !== 'ALL' ? ' pada Project/Kendala ini' : ''}.` }}
+                      ? 'Belum ada data Modul. Klik "Tambah Modul Baru" untuk menambah.'
+                      : `Tidak ditemukan Modul${submoduleSearch ? ` untuk "${submoduleSearch}"` : ''}${selectedProjectKendalaFilter !== 'ALL' ? ' pada Aplikasi/Kendala ini' : ''}.` }}
                   </td>
                 </tr>
               </tbody>
@@ -660,23 +660,23 @@
       <div v-if="isSubmoduleModalOpen" class="fixed inset-0 bg-foreground/40 backdrop-blur-sm z-modal flex items-center justify-center p-4">
         <div class="bg-surface rounded-lg border border-border p-6 max-w-md w-full shadow-lg space-y-4">
           <h3 class="text-base font-bold text-foreground">
-            {{ editingSmId ? 'Edit Record Sub Modul' : 'Tambah Record Sub Modul Baru' }}
+            {{ editingSmId ? 'Edit Record Modul' : 'Tambah Record Modul Baru' }}
           </h3>
           <form @submit.prevent="saveSubmoduleForm" class="space-y-3 text-xs">
             <div>
-              <label class="block font-bold text-foreground mb-1">ID Sub Modul</label>
+              <label class="block font-bold text-foreground mb-1">ID Modul</label>
               <input v-model="smForm.id" required :disabled="!!editingSmId" class="w-full px-3 py-2 rounded-xl border border-border bg-surface text-xs font-mono" />
             </div>
             <div>
               <AppSelect
                 v-model="smForm.project_kendala_id"
                 :options="projectKendalaFormOptions"
-                label="Pilih Project/Kendala Induk (FK: project_kendala_id)"
-                placeholder="-- Pilih Project/Kendala --"
+                label="Pilih Aplikasi/Kendala Induk (FK: project_kendala_id)"
+                placeholder="-- Pilih Aplikasi/Kendala --"
               />
             </div>
             <div>
-              <label class="block font-bold text-foreground mb-1">Nama Sub Modul</label>
+              <label class="block font-bold text-foreground mb-1">Nama Modul</label>
               <input v-model="smForm.name" required placeholder="Cth: Modul Payroll / Modul Printer" class="w-full px-3 py-2 rounded-xl border border-border bg-surface text-xs font-medium" />
             </div>
             <div class="pt-2 flex justify-end gap-2">
@@ -864,7 +864,7 @@ const categoryFilterOptions = computed(() => [
 ]);
 
 const projectKendalaFilterOptions = computed(() => [
-  { value: 'ALL', label: `Semua Project/Kendala (${store.submodules.length} record)` },
+  { value: 'ALL', label: `Semua Aplikasi/Kendala (${store.submodules.length} record)` },
   ...store.projectKendala.map(s => ({ value: s.id, label: `[${s.id}] ${s.name}` }))
 ]);
 
@@ -993,7 +993,7 @@ const saveCategoryForm = async () => {
 
 const deleteCategory = async (id: string) => {
   const itemLabel = getProjectKendalaLabel(getCategoryName(id));
-  const ok = await doConfirm('Hapus Kategori', `Hapus kategori ${id}? Semua ${itemLabel} & Sub Modul terkait juga akan terhapus.`);
+  const ok = await doConfirm('Hapus Kategori', `Hapus kategori ${id}? Semua ${itemLabel} & Modul terkait juga akan terhapus.`);
   if (ok) {
     await store.deleteCategory(id);
   }
@@ -1008,7 +1008,7 @@ const getCategoryName = (catId: string) => {
   return found ? found.name : catId;
 };
 
-// Nama benda untuk isi modal Project/Kendala, mengikuti kategori induk yang
+// Nama benda untuk isi modal Aplikasi/Kendala, mengikuti kategori induk yang
 // sedang dipilih di form. Masih kosong saat modal baru dibuka (sebelum kategori
 // terpilih) dan nama kategori tak dikenal — keduanya jatuh ke label gabungan.
 const projectKendalaModalLabel = computed(() =>
@@ -1087,7 +1087,7 @@ const saveProjectKendalaForm = async () => {
 };
 
 const deleteProjectKendala = async (id: string) => {
-  const ok = await doConfirm('Hapus Project/Kendala', `Hapus Project/Kendala ${id}? Semua Sub Modul terkait juga akan terhapus.`);
+  const ok = await doConfirm('Hapus Aplikasi/Kendala', `Hapus Aplikasi/Kendala ${id}? Semua Modul terkait juga akan terhapus.`);
   if (ok) {
     await store.deleteProjectKendala(id);
   }
@@ -1128,7 +1128,7 @@ const saveSubmoduleForm = async () => {
 };
 
 const deleteSubmodule = async (id: string) => {
-  const ok = await doConfirm('Hapus Sub Modul', `Hapus Sub Modul ${id}?`);
+  const ok = await doConfirm('Hapus Modul', `Hapus Modul ${id}?`);
   if (ok) {
     await store.deleteSubmodule(id);
   }

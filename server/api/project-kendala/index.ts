@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
 
     const id = body.id || `SCAT-${Date.now()}`;
     const idTaken = await db.query.projectKendala.findFirst({ where: (pk, { eq: e }) => e(pk.id, id) });
-    if (idTaken) throw createError({ statusCode: 409, statusMessage: 'ID Project/Kendala sudah dipakai' });
+    if (idTaken) throw createError({ statusCode: 409, statusMessage: 'ID Aplikasi/Kendala sudah dipakai' });
     await db.insert(projectKendala).values({
       id,
       name: body.name,
