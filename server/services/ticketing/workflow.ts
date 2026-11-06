@@ -18,7 +18,7 @@ const DelegationSchema = z.object({
   technician_id: z.string().optional(),
   technician_name: z.string().optional(),
   reference_no: z.string().max(100).optional(),
-  notes: z.string().max(5000).optional(),
+  notes: z.string().max(20000).optional(),
 }).superRefine((d, ctx) => {
   if (d.type === 'DELEGASI_VENDOR' && !d.vendor_id && !d.vendor_name) {
     ctx.addIssue({ code: 'custom', message: 'vendor_id atau vendor_name wajib untuk DELEGASI_VENDOR', path: ['vendor_id'] });
@@ -44,7 +44,7 @@ const SolutionSchema = z.object({
 const TransitionSchema = z.object({
   ticketId: z.string().min(1),
   to: z.enum(STATUSES),
-  notes: z.string().trim().max(5000).optional(),
+  notes: z.string().trim().max(20000).optional(),
   delegation: DelegationSchema.optional(),
   solution: SolutionSchema.optional(),
 });

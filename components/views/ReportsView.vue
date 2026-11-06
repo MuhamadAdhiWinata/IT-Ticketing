@@ -308,7 +308,7 @@
                   {{ item.wl.duration_minutes }} mnt
                 </td>
                 <td class="p-3 text-foreground leading-relaxed max-w-sm">
-                  {{ item.wl.description }}
+                  <div class="rich-text" v-html="toSafeHtml(item.wl.description)"></div>
                 </td>
               </tr>
               <tr v-if="filteredWorklogs.length === 0">
@@ -393,6 +393,7 @@ import { exportTicketsToExcel, exportWorklogsToExcel, triggerPrintPDF } from '~/
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
 import { formatOrgLabel } from '~/utils/identity';
 import AppSelect from '~/components/common/AppSelect.vue';
+import { toSafeHtml } from '~/utils/richText';
 import type { Ticket } from '~/types';
 
 const props = defineProps<{ tickets: Ticket[] }>();

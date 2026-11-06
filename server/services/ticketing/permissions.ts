@@ -74,7 +74,7 @@ export async function getAllowedActions(exec: DbExec, actor: Actor, ticketId: st
     transitions,
     actions: {
       add_ticket_activity: { ...need(it, notIT), stages },
-      log_work_time: need(it && t.status !== 'DRAFT', it ? 'Tiket masih DRAFT; mulai proses dahulu' : notIT),
+      log_work_time: { ...need(it, notIT), stages },
       add_comment: need(canViewTicket(t, actor), 'Bukan pihak tiket ini'),
       add_internal_note: need(it, notIT),
       add_attachment: need(it, notIT),

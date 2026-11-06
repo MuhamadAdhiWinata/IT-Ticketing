@@ -21,7 +21,7 @@ const localDate = (d = new Date()) =>
 const ActivitySchema = z.object({
   ticketId: z.string().min(1),
   stageKey: z.string().min(1).optional(),
-  description: z.string().trim().max(5000, 'Deskripsi maksimal 5000 karakter').default(''),
+  description: z.string().trim().max(20000, 'Deskripsi terlalu panjang').default(''),
 });
 
 // "Kirim" di UI: worklog baru tanpa mengubah status (Rule 18). Setiap panggilan = satu record baru.
@@ -79,7 +79,7 @@ const TimeSchema = z.object({
   start_at: z.string().regex(TIME, 'start_at harus HH:MM'),
   finish_at: z.string().regex(TIME, 'finish_at harus HH:MM'),
   duration_minutes: z.number().int().min(0).max(24 * 60).optional(),
-  description: z.string().trim().min(1, 'Deskripsi wajib diisi').max(5000),
+  description: z.string().trim().min(1, 'Deskripsi wajib diisi').max(20000, 'Deskripsi terlalu panjang'),
   stageKey: z.enum(['ASSIGN', 'IN_PROGRESS', 'COMPLETION']).default('IN_PROGRESS'),
 });
 
@@ -99,7 +99,8 @@ export async function logWorkTime(
 
   return inTx(exec, async (tx) => {
     const ticket = await lockTicket(tx, v.ticketId);
-    if (ticket.status === 'DRAFT') fail(409, 'Tiket masih DRAFT; mulai proses dahulu sebelum mencatat jam kerja');
+    // Tiket DRAFT hanya menerima log tahap ASSIGN (sama dengan "Kirim" di tahap Assign pada detail tiket).
+    if (ticket.status === 'DRAFT' && v.stageKey !== 'ASSIGN') fail(409, 'Tiket masih DRAFT; mulai proses dahulu, atau catat pada tahap ASSIGN');
 
     let workerId = actor.id;
     let workerName = actor.name;

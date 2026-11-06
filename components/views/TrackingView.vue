@@ -190,7 +190,7 @@
               </div>
               <p class="text-xs text-muted-foreground mt-1">Oleh: {{ log.performed_by_name }}</p>
               <p v-if="log.notes" class="text-xs text-muted-foreground italic mt-0.5">"{{ log.notes }}"</p>
-              <p v-for="wl in matchingWorklogs(log.action)" :key="wl.id" class="text-xs text-muted-foreground italic mt-0.5">"{{ wl.description }}"</p>
+              <p v-for="wl in matchingWorklogs(log.action)" :key="wl.id" class="text-xs text-muted-foreground italic mt-0.5">"{{ toPlainText(wl.description) }}"</p>
             </div>
           </div>
         </div>
@@ -222,6 +222,7 @@ import { apiFetch } from '~/services/api';
 import { useCompany } from '~/composables/useCompany';
 import NetworkTopology from '~/components/common/NetworkTopology.vue';
 import { debounce } from '~/utils/debounce';
+import { toPlainText } from '~/utils/richText';
 import { formatRequesterIdentity } from '~/utils/identity';
 import TicketIncomingLog from '~/components/common/TicketIncomingLog.vue';
 
