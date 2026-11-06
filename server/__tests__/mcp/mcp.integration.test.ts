@@ -205,6 +205,24 @@ describe('10. permissions', () => {
     expect((await a.call('log_work_time', { ...base, start_at: '12:00', finish_at: '11:00' })).isError).toBe(true);
     const draft = await seedTicket({ status: 'DRAFT' });
     expect((await a.call('log_work_time', { ticketId: draft, description: 'x', start_at: '09:00', finish_at: '10:00' })).data.status).toBe(409);
+    expect((await a.call('log_work_time', { ticketId: draft, description: 'x', start_at: '09:00', finish_at: '10:00', stageKey: 'IN_PROGRESS' })).data.status).toBe(409);
+  });
+
+  it('log_work_time on DRAFT is accepted for stage ASSIGN and keeps the stage', async () => {
+    const draft = await seedTicket({ status: 'DRAFT' });
+    const a = await as(IT_A);
+    const r = await a.call('log_work_time', { ticketId: draft, description: '<p>assign <strong>log</strong></p>', start_at: '13:00', finish_at: '13:30', date: '2026-10-07', stageKey: 'ASSIGN' });
+    expect(r.isError).toBe(false);
+    expect(r.data.activity.stageKey).toBe('ASSIGN');
+    const [row] = await db.select().from(worklogs).where(eq(worklogs.ticketId, draft));
+    expect([row!.stageKey, row!.description]).toEqual(['ASSIGN', '<p>assign <strong>log</strong></p>']);
+  });
+
+  it('accepts rich-text description beyond 5000 chars', async () => {
+    const id = await seedTicket({ status: 'PROCESS' });
+    const html = `<p>${'x'.repeat(6000)}</p>`;
+    const r = await (await as(IT_A)).call('log_work_time', { ticketId: id, description: html, start_at: '15:00', finish_at: '16:00', date: '2026-10-08' });
+    expect(r.isError).toBe(false);
   });
 });
 

@@ -84,17 +84,17 @@ export function buildMcpServer(actor: Actor) {
     'Tambah aktivitas (worklog "Kirim") baru pada tiket. Selalu membuat record baru, tidak menimpa yang lama, dan TIDAK mengubah status tiket.',
     {
       ticketId,
-      description: z.string().min(1).max(5000).describe('Catatan pekerjaan'),
+      description: z.string().min(1).max(20000).describe('Catatan pekerjaan'),
       stageKey: z.enum(['ASSIGN', 'IN_PROGRESS', 'COMPLETION']).optional().describe('Default mengikuti status tiket; lihat get_allowed_actions.add_ticket_activity.stages'),
       idempotencyKey: idem,
     },
     a => idempotent('add_ticket_activity', a, tx => addActivity(actor, a, tx)), { write: true });
 
   def('log_work_time', 'write',
-    'Catat log jam kerja (seperti Log Harian) pada tiket yang sudah diproses. Ditolak bila jam tumpang tindih dengan log lain milik caller.',
+    'Catat log jam kerja (seperti Log Harian) pada tiket. Tiket DRAFT hanya menerima stageKey ASSIGN. Ditolak bila jam tumpang tindih dengan log lain milik caller.',
     {
       ticketId,
-      description: z.string().min(1).max(5000),
+      description: z.string().min(1).max(20000),
       start_at: z.string().describe('HH:MM'),
       finish_at: z.string().describe('HH:MM'),
       date: z.string().optional().describe('YYYY-MM-DD, default hari ini'),
@@ -118,7 +118,7 @@ export function buildMcpServer(actor: Actor) {
     {
       ticketId,
       to: z.enum(STATUSES),
-      notes: z.string().max(5000).optional().describe('Dicatat sebagai audit note dan worklog tahap terkait'),
+      notes: z.string().max(20000).optional().describe('Dicatat sebagai audit note dan worklog tahap terkait'),
       delegation: z.object({
         type: z.enum(['DELEGASI_VENDOR', 'DELEGASI_TEKNISI']),
         vendor_id: z.string().optional(),

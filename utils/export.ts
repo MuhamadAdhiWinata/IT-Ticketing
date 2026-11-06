@@ -1,3 +1,4 @@
+import { toPlainText } from '~/utils/richText';
 import type { Ticket, Worklog } from '~/types';
 
 /**
@@ -107,7 +108,7 @@ export function exportWorklogsToExcel(tickets: Ticket[], workerFilter?: string, 
           wl.finish_at,
           wl.duration_minutes,
           (wl.duration_minutes / 60).toFixed(2),
-          wl.description,
+          toPlainText(wl.description),
         ]);
       }
     });

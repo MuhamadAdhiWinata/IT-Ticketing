@@ -20,3 +20,15 @@ export function isRichTextEmpty(html: string): boolean {
   if (/<img\s/i.test(html)) return false;
   return !html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 }
+
+// Untuk CSV/ringkasan: buang tag, pertahankan jeda baris antar blok.
+export function toPlainText(content: string | null | undefined): string {
+  const raw = content ?? '';
+  if (!raw.trimStart().startsWith('<')) return raw;
+  return raw
+    .replace(/<\/(p|li|h[1-3]|blockquote|pre)>|<br\s*\/?>/gi, '\n')
+    .replace(/<img[^>]*>/gi, '[gambar]')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+    .replace(/\n{2,}/g, '\n').trim();
+}

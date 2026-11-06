@@ -227,6 +227,9 @@
               </div>
 
               <div class="flex items-center gap-2 text-[11px]">
+                <span v-if="item.wl.stageKey" class="font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                  {{ STAGE_LABELS[item.wl.stageKey] || item.wl.stageKey }}
+                </span>
                 <span class="font-bold px-2 py-0.5 rounded bg-info/10 text-info flex items-center gap-1">
                   <Clock class="w-3 h-3 text-info" />
                   {{ item.wl.start_at }} - {{ item.wl.finish_at }} ({{ item.wl.duration_minutes }} mnt)
@@ -242,9 +245,7 @@
 
             <!-- Description and Worker -->
             <div class="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-border/50">
-              <p class="text-xs text-foreground font-medium whitespace-pre-line leading-relaxed">
-                {{ item.wl.description }}
-              </p>
+              <div class="rich-text text-xs text-foreground font-medium" v-html="toSafeHtml(item.wl.description)"></div>
               <div class="flex items-center gap-1.5 shrink-0 text-[11px] text-muted-foreground">
                 <User class="w-3.5 h-3.5" />
                 <span>Teknisi: <strong class="text-foreground">{{ item.wl.worker_name }}</strong></span>
@@ -295,6 +296,13 @@
               />
             </div>
 
+            <AppSelect
+              v-model="newWlStage"
+              :options="stageOptions"
+              label="Tahap"
+              placeholder="-- Pilih Tahap --"
+            />
+
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs font-bold text-foreground mb-1">Tanggal Pengerjaan</label>
@@ -343,13 +351,11 @@
               <label class="block text-xs font-bold text-foreground mb-1">
                 Rincian Aktivitas / Troubleshooting <span class="text-red-500">*</span>
               </label>
-              <textarea
+              <RichTextEditor
                 v-model="newWlDesc"
-                rows="3"
-                required
                 placeholder="Jelaskan tindakan teknis yang telah dilakukan..."
-                class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-              ></textarea>
+                :upload="uploadInlineImage"
+              />
             </div>
 
             <div class="pt-2 flex items-center justify-end gap-2 border-t border-border">
@@ -375,10 +381,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { useToast } from '~/composables/useToast';
 import AppSelect from '~/components/common/AppSelect.vue';
+import RichTextEditor from '~/components/common/RichTextEditor.vue';
+import { apiFetch } from '~/services/api';
+import { toSafeHtml, isRichTextEmpty } from '~/utils/richText';
 import {
   CalendarDays,
   Calendar,
@@ -435,6 +444,7 @@ const newWlStart = ref('09:00');
 const newWlFinish = ref('09:45');
 const newWlDuration = ref(45);
 const newWlDesc = ref('');
+const newWlStage = ref('ASSIGN');
 
 const itWorkers = computed(() => {
   return store.allUsers.filter(u => u.role === 'IT_WORKER');
@@ -578,9 +588,22 @@ const totalHoursInRange = computed(() => {
   return (totalMinutes / 60).toFixed(1);
 });
 
-const activeCandidateTickets = computed(() => {
-  return store.tickets.filter(t => t.status !== 'DRAFT');
+// Semua tiket bisa dipilih; tahap yang tersedia mengikuti status (sama dengan detail tiket).
+const activeCandidateTickets = computed(() => store.tickets);
+
+const STAGE_LABELS: Record<string, string> = {
+  ASSIGN: 'Assigned (Penugasan)',
+  IN_PROGRESS: 'Process (Pengerjaan)',
+  COMPLETION: 'Selesai Internal',
+};
+const defaultStageFor = (status?: string) => status === 'PROCESS' ? 'IN_PROGRESS' : status === 'SELESAI' ? 'COMPLETION' : 'ASSIGN';
+const selectedWlTicket = computed(() => store.tickets.find(t => t.id === newWlTicketId.value));
+const stageOptions = computed(() => {
+  const status = selectedWlTicket.value?.status;
+  const keys = ['ASSIGN', ...(status === 'PROCESS' ? ['IN_PROGRESS'] : []), ...(status === 'SELESAI' ? ['COMPLETION'] : [])];
+  return keys.map(k => ({ value: k, label: STAGE_LABELS[k]! }));
 });
+watch(newWlTicketId, () => { newWlStage.value = defaultStageFor(selectedWlTicket.value?.status); });
 
 const workerOptions = computed(() => {
   return [
@@ -596,8 +619,23 @@ const candidateTicketOptions = computed(() => {
   }));
 });
 
+// Gambar inline disimpan sebagai berkas tiket (FK), jadi tiket harus dipilih dulu.
+const uploadInlineImage = async (file: File): Promise<string> => {
+  if (!newWlTicketId.value) {
+    toast('Pilih tiket dulu sebelum menyisipkan gambar.', 'error');
+    throw new Error('Tiket belum dipilih');
+  }
+  const fd = new FormData();
+  fd.append('ticketId', newWlTicketId.value);
+  fd.append('file', file);
+  const res = await apiFetch<{ success: boolean; data: { file_url: string }[] }>('/api/upload', { method: 'POST', body: fd });
+  const url = res.data?.[0]?.file_url;
+  if (!url) throw new Error('URL gambar tidak ditemukan');
+  return url;
+};
+
 const submitWorklog = async () => {
-  if (!newWlTicketId.value || !newWlDesc.value.trim()) return;
+  if (!newWlTicketId.value || isRichTextEmpty(newWlDesc.value)) return;
 
   const currentWorker = store.allUsers.find(u => u.id === selectedWorkerId.value) || store.currentUser;
 
@@ -607,7 +645,7 @@ const submitWorklog = async () => {
     finish_at: newWlFinish.value,
     duration_minutes: newWlDuration.value,
     description: newWlDesc.value.trim(),
-    stageKey: 'IN_PROGRESS',
+    stageKey: newWlStage.value,
     worker_id: currentWorker?.id,
     worker_name: currentWorker?.name,
   });
@@ -615,6 +653,7 @@ const submitWorklog = async () => {
   toast('Log pekerjaan berhasil disimpan.', 'success');
   newWlDesc.value = '';
   newWlTicketId.value = '';
+  newWlStage.value = 'ASSIGN';
   isAddModalOpen.value = false;
 };
 
