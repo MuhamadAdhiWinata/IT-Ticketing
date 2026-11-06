@@ -58,7 +58,7 @@ Sistem informasi tiket dan monitoring pekerjaan IT: pembuatan tiket, pelacakan p
 │   ├── database/
 │   │   ├── schema.ts        # Skema Drizzle (21 tabel), sumber kebenaran skema
 │   │   ├── client.ts        # Koneksi database
-│   │   ├── seed-production.ts # Seeder production: hanya admin + company_settings (pnpm seed)
+│   │   ├── seed-production.ts # Seeder production: admin + company_settings + 2 kategori (pnpm seed)
 │   │   ├── run-seed.ts      # Seeder demo/dev, MENGHAPUS data (pnpm seed:demo)
 │   │   ├── seed.ts          # Salinan lama, tidak dipakai
 │   │   └── migrate.ts       # Skrip lama pemindah data JSON ke tabel, bukan migrasi skema
@@ -122,7 +122,7 @@ mariadb -u root -p -e "CREATE DATABASE ticketing_db CHARACTER SET utf8mb4 COLLAT
 # 1. Terapkan semua migrasi di drizzle/
 DATABASE_URL="mysql2://root:PASSWORD@localhost:3306/ticketing_db" npx drizzle-kit migrate
 
-# 2. Production: akun admin + company_settings saja (tidak menghapus apa pun)
+# 2. Production: admin + company_settings + 2 kategori (tidak menghapus apa pun)
 DATABASE_URL="mysql2://root:PASSWORD@localhost:3306/ticketing_db" pnpm seed
 
 # 2'. Dev/staging: data demo lengkap (MENGHAPUS data yang ada)
@@ -168,18 +168,17 @@ Dua seeder, pilih sesuai lingkungan. Skema harus sudah dimigrasi lebih dulu.
 
 #### `pnpm seed` (production)
 
-Hanya membuat dua hal, sisanya kosong dan diisi admin lewat menu Master Data:
+Hanya membuat tiga hal, sisanya kosong dan diisi admin lewat menu Master Data:
 
 - Akun `sysadmin@company.co.id` (`SYSTEM_ADMIN`, id `ADMIN-001`). Bila akun sudah ada, dilewati dan password tidak diubah.
 - Baris `company_settings` `default` (nama "Neutron", warna primer merah). **Wajib**, dibaca oleh `GET /api/settings/company` (halaman login).
+- Kategori `Support IT` dan `IT Programmer`. **Wajib**, form tiket mencari kategori dengan nama persis ini.
 
 Password admin: dari env `ADMIN_PASSWORD` bila diisi, kalau tidak dibuat acak dan dicetak **sekali** di output. Catat lalu ganti setelah login pertama.
 
 ```bash
 ADMIN_PASSWORD="isi-password-kuat" DATABASE_URL="mysql2://..." pnpm seed
 ```
-
-Kategori (Support IT, IT Programmer) belum ada setelah seed ini; buat lewat Master Data sebelum user membuat tiket.
 
 #### `pnpm seed:demo` (dev/staging)
 
