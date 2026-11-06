@@ -58,7 +58,8 @@ Sistem informasi tiket dan monitoring pekerjaan IT: pembuatan tiket, pelacakan p
 │   ├── database/
 │   │   ├── schema.ts        # Skema Drizzle (21 tabel), sumber kebenaran skema
 │   │   ├── client.ts        # Koneksi database
-│   │   ├── run-seed.ts      # Seeder yang dipakai (pnpm seed)
+│   │   ├── seed-production.ts # Seeder production: hanya admin + company_settings (pnpm seed)
+│   │   ├── run-seed.ts      # Seeder demo/dev, MENGHAPUS data (pnpm seed:demo)
 │   │   ├── seed.ts          # Salinan lama, tidak dipakai
 │   │   └── migrate.ts       # Skrip lama pemindah data JSON ke tabel, bukan migrasi skema
 │   ├── services/
@@ -121,8 +122,11 @@ mariadb -u root -p -e "CREATE DATABASE ticketing_db CHARACTER SET utf8mb4 COLLAT
 # 1. Terapkan semua migrasi di drizzle/
 DATABASE_URL="mysql2://root:PASSWORD@localhost:3306/ticketing_db" npx drizzle-kit migrate
 
-# 2. Isi data rujukan
+# 2. Production: akun admin + company_settings saja (tidak menghapus apa pun)
 DATABASE_URL="mysql2://root:PASSWORD@localhost:3306/ticketing_db" pnpm seed
+
+# 2'. Dev/staging: data demo lengkap (MENGHAPUS data yang ada)
+DATABASE_URL="mysql2://root:PASSWORD@localhost:3306/ticketing_db" pnpm seed:demo
 ```
 
 Migrasi bisa diulang: yang sudah tercatat di `__drizzle_migrations` dilewati.
@@ -131,7 +135,7 @@ Migrasi bisa diulang: yang sudah tercatat di `__drizzle_migrations` dilewati.
 
 ```bash
 mariadb -u root -p -e "DROP DATABASE IF EXISTS ticketing_db; CREATE DATABASE ticketing_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
-DATABASE_URL="..." npx drizzle-kit migrate && DATABASE_URL="..." pnpm seed
+DATABASE_URL="..." npx drizzle-kit migrate && DATABASE_URL="..." pnpm seed:demo
 ```
 
 Reset menghapus semua data, termasuk token MCP. Buat ulang token di menu Token MCP. Ambil backup dulu kalau isinya masih berharga:
@@ -155,9 +159,31 @@ Jangan jalankan `drizzle-kit migrate` di database yang tabelnya sudah ada tetapi
 
 ### Seeder
 
-`server/database/run-seed.ts` dijalankan lewat `pnpm seed`.
+Dua seeder, pilih sesuai lingkungan. Skema harus sudah dimigrasi lebih dulu.
 
-**Seeder menghapus data semua tabel yang ia isi, lalu mengisi ulang.** Jangan dijalankan di database yang berisi data nyata. Skema harus sudah dimigrasi lebih dulu. ID bersifat tetap (mis. `TCK-202609-001`, `WL-001`, `CMT-001`), jadi seed ulang menghasilkan data identik dan aman diulang.
+| Perintah | File | Untuk | Menghapus data? |
+|----------|------|-------|-----------------|
+| `pnpm seed` | `server/database/seed-production.ts` | Production, data kosong | Tidak. Aman diulang |
+| `pnpm seed:demo` | `server/database/run-seed.ts` | Dev/staging, data demo | **Ya**, semua tabel yang ia isi |
+
+#### `pnpm seed` (production)
+
+Hanya membuat dua hal, sisanya kosong dan diisi admin lewat menu Master Data:
+
+- Akun `sysadmin@company.co.id` (`SYSTEM_ADMIN`, id `ADMIN-001`). Bila akun sudah ada, dilewati dan password tidak diubah.
+- Baris `company_settings` `default` (nama "Neutron", warna primer merah). **Wajib**, dibaca oleh `GET /api/settings/company` (halaman login).
+
+Password admin: dari env `ADMIN_PASSWORD` bila diisi, kalau tidak dibuat acak dan dicetak **sekali** di output. Catat lalu ganti setelah login pertama.
+
+```bash
+ADMIN_PASSWORD="isi-password-kuat" DATABASE_URL="mysql2://..." pnpm seed
+```
+
+Kategori (Support IT, IT Programmer) belum ada setelah seed ini; buat lewat Master Data sebelum user membuat tiket.
+
+#### `pnpm seed:demo` (dev/staging)
+
+**Menghapus data semua tabel yang ia isi, lalu mengisi ulang.** Jangan dijalankan di database yang berisi data nyata. ID bersifat tetap (mis. `TCK-202609-001`, `WL-001`, `CMT-001`), jadi seed ulang menghasilkan data identik.
 
 | Tabel | Jumlah | Keterangan |
 |-------|--------|------------|
@@ -188,9 +214,9 @@ Tidak di-seed: `mcp_tokens` dan `mcp_idempotency`. Token berisi rahasia dan dibu
 mariadb -u root -p ticketing_db -e "SELECT COUNT(*) AS migrasi FROM __drizzle_migrations; SELECT status, COUNT(*) FROM tickets GROUP BY status; SELECT id, company_name FROM company_settings;"
 ```
 
-Hasil yang diharapkan setelah setup baru: 5 migrasi, 15 tiket, dan satu baris `default` di `company_settings`.
+Hasil yang diharapkan setelah setup baru: 5 migrasi dan satu baris `default` di `company_settings`. Tiket: 0 setelah `pnpm seed`, 15 setelah `pnpm seed:demo`.
 
-### Default Credentials (data seed)
+### Default Credentials (hanya `pnpm seed:demo`)
 
 | Email | Password | Role |
 |-------|----------|------|
@@ -198,7 +224,7 @@ Hasil yang diharapkan setelah setup baru: 5 migrasi, 15 tiket, dan satu baris `d
 | budi.santoso@it.company.co.id | password123 | IT_WORKER |
 | rina.wulandari@company.co.id | password123 | USER_NON_IT |
 
-Semua user seed memakai password `password123`. Ganti di lingkungan selain dev.
+Semua user demo memakai password `password123`. Jangan dipakai di production: `pnpm seed` membuat admin dengan password sendiri.
 
 ## Docker
 
