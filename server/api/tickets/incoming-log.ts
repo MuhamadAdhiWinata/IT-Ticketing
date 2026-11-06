@@ -25,16 +25,16 @@ export default defineEventHandler(async (event) => {
     ? eq(tickets.requestedBy, userId)
     : undefined;
 
-  // Summary counts (all tickets, not filtered by period)
+  // Ringkasan: semua tiket (beban kerja IT, terlihat semua role). Daftar log: USER_NON_IT hanya miliknya.
   const [todayCount, sevenDayCount, monthCount] = await Promise.all([
     db.select({ cnt: sql<number>`COUNT(*)` }).from(tickets)
-      .where(and(userFilter, gte(tickets.createdAt, todayStart), lte(tickets.createdAt, todayEnd)))
+      .where(and(gte(tickets.createdAt, todayStart), lte(tickets.createdAt, todayEnd)))
       .then(r => Number(r[0]?.cnt || 0)),
     db.select({ cnt: sql<number>`COUNT(*)` }).from(tickets)
-      .where(and(userFilter, gte(tickets.createdAt, sevenDaysStart), lte(tickets.createdAt, todayEnd)))
+      .where(and(gte(tickets.createdAt, sevenDaysStart), lte(tickets.createdAt, todayEnd)))
       .then(r => Number(r[0]?.cnt || 0)),
     db.select({ cnt: sql<number>`COUNT(*)` }).from(tickets)
-      .where(and(userFilter, gte(tickets.createdAt, monthStart), lte(tickets.createdAt, todayEnd)))
+      .where(and(gte(tickets.createdAt, monthStart), lte(tickets.createdAt, todayEnd)))
       .then(r => Number(r[0]?.cnt || 0)),
   ]);
 

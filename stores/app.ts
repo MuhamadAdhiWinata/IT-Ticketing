@@ -347,7 +347,7 @@ export const useAppStore = defineStore('app', {
       }
     },
 
-    async completeStage(ticketId: string, stageKey: string, notes?: string, pendingFiles?: PendingAttachment[], targetStatus?: Ticket['status'], delegation?: any) {
+    async completeStage(ticketId: string, stageKey: string, notes?: string, pendingFiles?: PendingAttachment[], targetStatus?: Ticket['status'], delegation?: any, solution?: any) {
       if (!this.currentUser) return;
 
       try {
@@ -359,6 +359,7 @@ export const useAppStore = defineStore('app', {
           if (notes) fd.append('notes', notes);
           if (targetStatus) fd.append('targetStatus', targetStatus);
           if (delegation) fd.append('delegation', JSON.stringify(delegation));
+          if (solution) fd.append('solution', JSON.stringify(solution));
           for (const pf of pendingFiles) {
             fd.append('files', pf.file);
           }
@@ -369,7 +370,7 @@ export const useAppStore = defineStore('app', {
         } else {
           res = await apiFetch<{ success: boolean; data: Ticket }>(`/api/tickets/${ticketId}/stages/complete`, {
             method: 'POST',
-            body: { stageKey, notes, targetStatus, delegation },
+            body: { stageKey, notes, targetStatus, delegation, solution },
           });
         }
 
@@ -379,6 +380,7 @@ export const useAppStore = defineStore('app', {
         }
       } catch (e) {
         console.error('Failed to complete stage:', e);
+        throw e;
       }
     },
 

@@ -107,6 +107,7 @@ const TICKETS: TicketIn[] = [
     description: 'Akun terkunci setelah salah memasukkan password tiga kali.',
     category: 'IT Programmer', projectKendala: 'Maintenance ERP Desktop', submodule: 'Modul Payroll', location: 'Gedung A, Lantai 3',
     priority: 'CRITICAL', status: 'SELESAI', requester: 'USR-001', assignee: 'IT-002',
+    solutionType: 'PERMANEN', resolutionSummary: 'Akun di-unlock dan kebijakan lockout diperbarui.',
     createdAt: ts('2026-09-02', '13:50:00'), issued: ts('2026-09-02', '14:02:00'), started: ts('2026-09-02', '14:05:00'), completed: ts('2026-09-02', '14:45:00'),
   }),
   ticket({
@@ -136,6 +137,7 @@ const TICKETS: TicketIn[] = [
     description: 'Monitor Dell muncul garis hijau vertikal.',
     category: 'Support IT', projectKendala: 'Hardware Laptop, PC & Monitor', location: 'Cabang Thamrin',
     priority: 'MEDIUM', status: 'SELESAI', requester: 'USR-004', assignee: 'IT-001',
+    solutionType: 'SEMENTARA', resolutionSummary: 'Workaround via konfigurasi manual; perbaikan permanen dijadwalkan.', odooTaskUrl: 'https://odoo.example.com/web#id=1042&model=project.task', techDebtUrl: 'https://odoo.example.com/web#id=1043&model=project.task',
     createdAt: ts('2026-09-06', '10:00:00'), issued: ts('2026-09-06', '10:05:00'), started: ts('2026-09-06', '10:20:00'), completed: ts('2026-09-06', '11:45:00'),
   }),
   ticket({
@@ -157,6 +159,7 @@ const TICKETS: TicketIn[] = [
     description: 'Lampu LED di plafon ruang rapat mati total.',
     category: 'Support IT', projectKendala: 'CCTV & Keamanan Akses Fisik IT', location: 'Gedung Utama, Lantai 3 - Ruang Rapat',
     priority: 'MEDIUM', status: 'SELESAI', requester: 'USR-002', assignee: 'IT-005',
+    solutionType: 'PERMANEN', resolutionSummary: 'Konfigurasi dikoreksi dan diverifikasi pengguna.',
     createdAt: ts('2026-09-09', '10:45:00'), issued: ts('2026-09-09', '10:50:00'), started: ts('2026-09-09', '11:20:00'), completed: ts('2026-09-09', '13:00:00'),
   }),
   ticket({
@@ -196,6 +199,7 @@ const TICKETS: TicketIn[] = [
     description: 'Akun kembali terkunci dengan gejala sama seperti tiket sebelumnya.',
     category: 'IT Programmer', projectKendala: 'Maintenance ERP Desktop', submodule: 'Modul Payroll', location: 'Gedung A, Lantai 3',
     priority: 'HIGH', status: 'SELESAI', requester: 'USR-001', assignee: 'IT-002', referencedTicketId: 'TCK-202609-002',
+    solutionType: 'PERMANEN', resolutionSummary: 'Masalah berulang diselesaikan dengan perbaikan akar penyebab.', reopenCount: 1,
     createdAt: ts('2026-10-14', '09:00:00'), issued: ts('2026-10-14', '09:05:00'), started: ts('2026-10-14', '09:15:00'), completed: ts('2026-10-14', '10:30:00'),
   }),
   ticket({

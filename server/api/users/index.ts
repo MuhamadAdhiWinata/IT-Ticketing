@@ -3,9 +3,11 @@ import { db } from '~/server/database/client';
 import { users } from '~/server/database/schema';
 import { successResponse, errorResponse } from '~/server/utils/response';
 import { departmentFromDivision, shapeUserRow, shapeUsers } from '~/server/utils/org';
+import { requireRole } from '~/server/utils/authorize';
 
 export default defineEventHandler(async (event) => {
   const method = event.method;
+  if (method !== 'GET') await requireRole(event, 'SYSTEM_ADMIN');
 
   if (method === 'GET') {
     const query = getQuery(event);

@@ -122,6 +122,12 @@ export function serializeTicket(t: any) {
 
     referenced_ticket_id: t.referencedTicketId ?? null,
 
+    reopen_count: t.reopenCount ?? 0,
+    solution_type: t.solutionType ?? null,
+    resolution_summary: t.resolutionSummary ?? null,
+    odoo_task_url: t.odooTaskUrl ?? null,
+    tech_debt_url: t.techDebtUrl ?? null,
+
     attachments: (t.attachments || []).map(serializeAttachment),
     worklogs: (t.worklogs || []).map(serializeWorklog),
     audit_logs: (t.auditLogs || []).map(serializeAuditLog),
@@ -129,6 +135,8 @@ export function serializeTicket(t: any) {
     created_at: t.createdAt,
     ticket_number: t.ticketNumber ?? null,
     issued_at: t.issuedAt ?? null,
+    acknowledged_at: t.acknowledgedAt ?? null,
+    accepted_at: t.acceptedAt ?? null,
     process_started_at: t.processStartedAt ?? null,
     completed_at: t.completedAt ?? null,
   };
