@@ -253,6 +253,7 @@ Container membaca `.env` lewat `env_file`. Database tidak ada di compose: `DATAB
 | `S3_ACCESS_KEY`, `S3_SECRET_KEY` | - | Wajib bila `S3_ENDPOINT` diisi. Compose MinIO memakai nilai yang sama sebagai kunci root |
 | `S3_REGION` | `us-east-1` | Region S3 |
 | `S3_FORCE_PATH_STYLE` | `true` | `true` untuk MinIO, `false` untuk AWS S3 |
+| `ADMIN_PASSWORD` | acak | Password awal `sysadmin@company.co.id`, hanya dibaca `pnpm seed` saat admin belum ada. Kosong = acak, dicetak sekali di output seeder |
 | `DATABASE_URL_TEST` | - | DB terpisah untuk test integrasi (nama harus memuat "test") |
 
 ### Penyimpanan File (disk atau S3/MinIO)
