@@ -8,11 +8,13 @@ import type { Actor } from '~/server/services/ticketing/common';
 export const IT_A: Actor = { id: 'T-IT-A', name: 'Worker A', role: 'IT_WORKER' };
 export const IT_B: Actor = { id: 'T-IT-B', name: 'Worker B', role: 'IT_WORKER' };
 export const ADMIN: Actor = { id: 'T-ADMIN', name: 'Admin', role: 'SYSTEM_ADMIN' };
+export const PM: Actor = { id: 'T-PM', name: 'PM', role: 'PM' };
+export const DUTY: Actor = { id: 'T-DUTY', name: 'Duty', role: 'DUTY_ENGINEER' };
 export const REQ: Actor = { id: 'T-REQ', name: 'Requester', role: 'USER_NON_IT' };
 export const OTHER_REQ: Actor = { id: 'T-REQ2', name: 'Other Requester', role: 'USER_NON_IT' };
 
 export async function seedUsers() {
-  for (const a of [IT_A, IT_B, ADMIN, REQ, OTHER_REQ]) {
+  for (const a of [IT_A, IT_B, ADMIN, PM, DUTY, REQ, OTHER_REQ]) {
     await db.insert(users).values({
       id: a.id, name: a.name, email: `${a.id.toLowerCase()}@test.local`, role: a.role, department: 'Test',
     }).onDuplicateKeyUpdate({ set: { role: a.role } });
@@ -21,14 +23,14 @@ export async function seedUsers() {
 
 let seq = 0;
 export async function seedTicket(opts: {
-  status?: string; requester?: Actor; assignedTo?: string | null; priority?: string; activities?: string[]; members?: string[];
+  status?: string; ticketType?: string; requester?: Actor; assignedTo?: string | null; priority?: string; activities?: string[]; members?: string[];
 } = {}) {
   const id = `TCK-T-${Date.now()}-${++seq}`;
   const requester = opts.requester ?? REQ;
   const ts = '2026-10-01 08:00:00';
   await db.insert(tickets).values({
     id, title: `Test ${id}`, description: 'desc', category: 'Support IT', location: 'Lantai 1',
-    priority: opts.priority ?? 'MEDIUM', status: opts.status ?? 'PROCESS',
+    priority: opts.priority ?? 'MEDIUM', ticketType: opts.ticketType ?? null, status: opts.status ?? 'PROCESS',
     createdBy: requester.id, createdByDept: 'Test', requestedBy: requester.id, requestedByDept: 'Test',
     assignedTo: opts.assignedTo ?? null, createdAt: ts, ticketNumber: `TIKSP-${seq}`,
   });

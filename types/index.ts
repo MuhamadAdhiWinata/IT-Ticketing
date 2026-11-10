@@ -150,7 +150,7 @@ export interface Ticket {
 
   referenced_ticket_id?: string | null;
   reopen_count?: number;
-  solution_type?: 'SEMENTARA' | 'PERMANEN' | null;
+  solution_type?: string | null;
   resolution_summary?: string | null;
   odoo_task_url?: string | null;
   tech_debt_url?: string | null;

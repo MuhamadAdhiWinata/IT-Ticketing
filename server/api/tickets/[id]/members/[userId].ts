@@ -1,3 +1,4 @@
+import { IT_ROLES } from '~/utils/roles';
 import { eq, and } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { ticketMembers } from '~/server/database/schema';
@@ -7,7 +8,7 @@ import { getTicketRow } from '~/server/services/ticketing/common';
 import { isLocked } from '~/server/services/ticketing/permissions';
 
 export default defineEventHandler(async (event) => {
-  await requireRole(event, 'IT_WORKER', 'SYSTEM_ADMIN');
+  await requireRole(event, ...IT_ROLES);
   const ticketId = getRouterParam(event, 'id');
   const userId = getRouterParam(event, 'userId');
 

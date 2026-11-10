@@ -1,3 +1,4 @@
+import { isITRole } from '~/utils/roles';
 import { eq, and, desc } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { files, tickets } from '~/server/database/schema';
@@ -27,7 +28,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Filter visibility: USER_VISIBLE untuk semua, INTERNAL_ONLY hanya untuk IT_WORKER/SYSTEM_ADMIN
-    const isIT = user.role === 'IT_WORKER' || user.role === 'SYSTEM_ADMIN';
+    const isIT = isITRole(user.role);
 
     const results = await db.query.files.findMany({
       where: (a, { eq: e, and: aOp }) => {
@@ -56,7 +57,7 @@ export default defineEventHandler(async (event) => {
   const user = getCurrentUser(event);
   const userId = getCurrentUserId(event);
   if (!user) throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
-  if (user.role !== 'IT_WORKER' && user.role !== 'SYSTEM_ADMIN') {
+  if (!isITRole(user.role)) {
     throw createError({ statusCode: 403, statusMessage: 'Forbidden' });
   }
 

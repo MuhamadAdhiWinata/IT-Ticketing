@@ -5,6 +5,7 @@ import { db } from '~/server/database/client';
 import { tickets, ticketMembers } from '~/server/database/schema';
 import { fileStorage } from '~/server/services/storage';
 import { sanitizeFilename } from '~/server/utils/upload';
+import { IT_ROLES } from '~/utils/roles';
 
 export type DbExec = typeof db;
 
@@ -14,7 +15,7 @@ export interface Actor {
   role: string;
 }
 
-export const IT_ROLES = ['IT_WORKER', 'SYSTEM_ADMIN'];
+export { IT_ROLES };
 export const isIT = (a: Actor) => IT_ROLES.includes(a.role);
 
 export function toActor(user: { id: string; name: string; role: string }): Actor {

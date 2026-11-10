@@ -4,6 +4,7 @@ import { users } from '~/server/database/schema';
 import { successResponse, errorResponse } from '~/server/utils/response';
 import { departmentFromDivision, shapeUserRow } from '~/server/utils/org';
 import { requireRole } from '~/server/utils/authorize';
+import { UNITS } from '~/utils/ticketSpec';
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
@@ -64,6 +65,8 @@ export default defineEventHandler(async (event) => {
       companyId: finalCompanyId,
       divisionId,
       avatarUrl: body.avatarUrl ?? existing.avatarUrl,
+      unit: body.unit === undefined ? existing.unit : ((UNITS as readonly string[]).includes(body.unit) ? body.unit : null),
+      isPic: body.isPic === undefined ? existing.isPic : (body.isPic ? 1 : 0),
     }).where(eq(users.id, id)).execute();
 
     const result = await db.query.users.findFirst({

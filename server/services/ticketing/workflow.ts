@@ -8,6 +8,7 @@ import {
   fail, hm, inTx, lockTicket, newId, nowTs, parse, requireIT, ticketSummary, withFileCleanup,
 } from './common';
 import { insertAttachments } from './attachments';
+import { SOLUTION_TYPES, needsDutyConfirm, values } from '~/utils/ticketSpec';
 
 export const STATUSES = ['DRAFT', 'PROCESS', 'DELEGASI', 'SELESAI'] as const;
 
@@ -31,13 +32,12 @@ const DelegationSchema = z.object({
 const urlField = z.string().trim().max(500).refine(u => /^https?:\/\/\S+$/i.test(u), 'harus URL http(s)');
 
 const SolutionSchema = z.object({
-  type: z.enum(['SEMENTARA', 'PERMANEN']),
+  type: z.enum(values(SOLUTION_TYPES)),
   summary: z.string().trim().min(1).max(5000),
   odoo_task_url: urlField.optional(),
   tech_debt_url: urlField.optional(),
 }).superRefine((d, ctx) => {
   if (d.type !== 'SEMENTARA') return;
-  if (!d.odoo_task_url) ctx.addIssue({ code: 'custom', message: 'odoo_task_url wajib untuk solusi SEMENTARA', path: ['odoo_task_url'] });
   if (!d.tech_debt_url) ctx.addIssue({ code: 'custom', message: 'tech_debt_url wajib untuk solusi SEMENTARA', path: ['tech_debt_url'] });
 });
 
@@ -90,6 +90,9 @@ export async function transitionStatus(
         const [row] = await tx.select({ cnt: count() }).from(filesTbl).where(eq(filesTbl.ticketId, t.id));
         if (!row?.cnt) fail(400, 'Tiket CRITICAL membutuhkan minimal 1 lampiran dokumen pendukung sebelum diproses');
       }
+      if (needsDutyConfirm(t.ticketType, t.priority) && !t.dutyConfirmedAt) {
+        fail(400, 'Insiden P1/P2 wajib dikonfirmasi Duty Engineer sebelum diproses');
+      }
       patch.processStartedAt = t.processStartedAt || ts;
       patch.issuedAt = t.issuedAt || ts;
     } else if (stageKey === 'IN_PROGRESS') {
@@ -97,7 +100,7 @@ export async function transitionStatus(
       if (v.solution) {
         patch.solutionType = v.solution.type;
         patch.resolutionSummary = v.solution.summary;
-        patch.odooTaskUrl = v.solution.odoo_task_url ?? null;
+        if (v.solution.odoo_task_url) patch.odooTaskUrl = v.solution.odoo_task_url;
         patch.techDebtUrl = v.solution.tech_debt_url ?? null;
       }
     } else if (stageKey === 'DELEGATION' && v.delegation) {
@@ -171,7 +174,7 @@ export async function transitionStatus(
 
 async function reopenIn(tx: DbExec, actor: Actor, t: typeof tickets.$inferSelect) {
   if (t.status !== 'SELESAI') fail(409, 'Hanya tiket dengan status SELESAI yang dapat dibuka ulang', { current_status: t.status });
-  await tx.update(tickets).set({ status: 'PROCESS', completedAt: null, reopenCount: t.reopenCount + 1 }).where(eq(tickets.id, t.id));
+  await tx.update(tickets).set({ status: 'PROCESS', completedAt: null, closedAt: null, transferTarget: null, reopenCount: t.reopenCount + 1 }).where(eq(tickets.id, t.id));
   await createNotification({
     userId: t.requestedBy,
     ticketId: t.id,

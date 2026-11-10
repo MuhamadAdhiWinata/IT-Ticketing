@@ -1,6 +1,7 @@
 // Serializer: Drizzle result → Frontend snake_case
 // Includes name resolution via JOINs to users table
 // (Identitas user/company/division di-resolve lewat server/utils/org.ts)
+import { deriveStatusLabel, priorityToP } from '~/utils/ticketSpec';
 
 export function serializeCategory(c: any) {
   return { id: c.id, name: c.name };
@@ -127,6 +128,32 @@ export function serializeTicket(t: any) {
     resolution_summary: t.resolutionSummary ?? null,
     odoo_task_url: t.odooTaskUrl ?? null,
     tech_debt_url: t.techDebtUrl ?? null,
+
+    unit: t.unit ?? null,
+    expected_behavior: t.expectedBehavior ?? null,
+    since_at: t.sinceAt ?? null,
+    affected_scope: t.affectedScope ?? null,
+    work_status: t.workStatus ?? null,
+    workaround: t.workaround ?? null,
+    is_event: !!t.isEvent,
+    evidence_steps: t.evidenceSteps ?? null,
+    channel: t.channel ?? 'FORM',
+
+    ticket_type: t.ticketType ?? null,
+    impact: t.impact ?? null,
+    urgency: t.urgency ?? null,
+    p_level: priorityToP(t.priority),
+    change_reason: t.changeReason ?? null,
+    catalog_item: t.catalogItem ?? null,
+    data_approval_note: t.dataApprovalNote ?? null,
+    transfer_target: t.transferTarget ?? null,
+    duty_confirmed_by: t.dutyConfirmedBy ?? null,
+    duty_confirmed_at: t.dutyConfirmedAt ?? null,
+    waiting_started_at: t.waitingStartedAt ?? null,
+    waiting_ended_at: t.waitingEndedAt ?? null,
+    blocked_by: t.blockedBy ?? null,
+    closed_at: t.closedAt ?? null,
+    status_label: deriveStatusLabel(t),
 
     attachments: (t.attachments || []).map(serializeAttachment),
     worklogs: (t.worklogs || []).map(serializeWorklog),

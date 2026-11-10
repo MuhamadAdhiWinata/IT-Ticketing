@@ -1,31 +1,40 @@
 import { z } from 'zod';
+import { UNITS, AFFECTED_SCOPES, WORK_STATUSES, CHANNELS, values } from '~/utils/ticketSpec';
 
 export const LoginSchema = z.object({
   email: z.string().email('Email tidak valid'),
   password: z.string().min(1, 'Password wajib diisi'),
 });
 
+const SINCE = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?$/;
+
 export const CreateTicketSchema = z.object({
-  title: z.string().min(1, 'Judul wajib diisi'),
-  description: z.string().min(1, 'Deskripsi wajib diisi'),
+  title: z.string().trim().min(1, 'Judul wajib diisi').max(120, 'Judul maksimal 120 karakter'),
+  description: z.string().trim().min(1, 'Yang terjadi wajib diisi'),
+  expected_behavior: z.string().trim().min(1, 'Yang seharusnya terjadi wajib diisi'),
   category: z.enum(['Support IT', 'IT Programmer']),
-  project_kendala: z.string().min(1),
+  project_kendala: z.string().min(1, 'Aplikasi wajib dipilih'),
   submodule: z.string().max(500).nullable().optional(),
   location: z.string().max(500).nullable().optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).default('MEDIUM'),
+  unit: z.enum(UNITS).optional(),
+  since_at: z.string().regex(SINCE, 'Sejak kapan: format tanggal dan jam tidak valid'),
+  affected_scope: z.enum(values(AFFECTED_SCOPES), { message: 'Jumlah terdampak wajib dipilih' }),
+  work_status: z.enum(values(WORK_STATUSES), { message: 'Status pekerjaan wajib dipilih' }),
+  workaround: z.string().trim().max(2000).nullable().optional(),
+  is_event: z.boolean().optional(),
+  evidence_steps: z.string().trim().max(5000).nullable().optional(),
+  channel: z.enum(values(CHANNELS)).optional(),
   shouldIssue: z.boolean().optional(),
   behalfUserId: z.string().nullable().optional(),
   requestedByName: z.string().optional(),
   requestedByDept: z.string().optional(),
   attachmentCount: z.number().optional(),
 }).superRefine((data, ctx) => {
-  if (data.category === 'Support IT' && (!data.location || data.location.trim() === '')) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Lokasi wajib diisi',
-      path: ['location'],
-    });
-  }
+  const issue = (message: string, path: string) => ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: [path] });
+  if (data.category === 'Support IT' && (!data.location || data.location.trim() === '')) issue('Lokasi wajib diisi', 'location');
+  if (data.work_status === 'TERGANGGU' && !data.workaround?.trim()) issue('Cara lain yang dipakai wajib diisi', 'workaround');
+  if (!data.evidence_steps?.trim() && !data.attachmentCount) issue('Bukti wajib: unggah berkas atau tulis langkah', 'evidence_steps');
 });
 
 export const UpdateTicketSchema = z.object({
