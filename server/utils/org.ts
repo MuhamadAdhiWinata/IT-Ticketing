@@ -74,6 +74,8 @@ export function shapeUser(
     companyName: resolveCompanyOf(u, maps),
     divisionName: resolveDivisionOf(u, maps),
     avatarUrl: u.avatarUrl ?? null,
+    unit: u.unit ?? null,
+    isPic: !!u.isPic,
   };
 }
 

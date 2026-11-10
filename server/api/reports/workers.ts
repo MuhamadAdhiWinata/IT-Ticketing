@@ -1,4 +1,4 @@
-import { eq, and, or, like, between, sql } from 'drizzle-orm';
+import { eq, and, or, like, between, sql, inArray } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { tickets, worklogs, users } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
@@ -6,7 +6,7 @@ import { getTicketsWithRelations } from '~/server/utils/tickets';
 
 export default defineEventHandler(async (event) => {
   const usersRes = await db.query.users.findMany({
-    where: (u, { eq: e }) => e(u.role, 'IT_WORKER'),
+    where: (u) => inArray(u.role, ['IT_WORKER', 'PM', 'DUTY_ENGINEER']),
   });
 
   const ticketsRes = await getTicketsWithRelations();

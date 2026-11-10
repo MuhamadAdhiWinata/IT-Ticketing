@@ -1,3 +1,4 @@
+import { IT_ROLES } from '~/utils/roles';
 import { db } from '~/server/database/client';
 import { successResponse } from '~/server/utils/response';
 import { requireRole } from '~/server/utils/authorize';
@@ -11,7 +12,7 @@ export default defineEventHandler(async (event) => {
   if (!id) throw createError({ statusCode: 400, statusMessage: 'Ticket ID required' });
 
   if (event.method === 'GET') {
-    await requireRole(event, 'IT_WORKER', 'SYSTEM_ADMIN');
+    await requireRole(event, ...IT_ROLES);
 
     const existing = await db.query.tickets.findFirst({
       where: (t, { eq: e }) => e(t.id, id),
@@ -26,7 +27,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (event.method === 'POST') {
-    const user = await requireRole(event, 'IT_WORKER', 'SYSTEM_ADMIN');
+    const user = await requireRole(event, ...IT_ROLES);
     const body = await readBody(event);
     const { note } = await addInternalNote(toActor(user), { ticketId: id, note: body?.note });
     return successResponse(note);

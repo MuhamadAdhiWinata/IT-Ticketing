@@ -1,3 +1,4 @@
+import { canTriageRole } from '~/utils/roles';
 import { getValidTransitions } from '~/server/utils/ticket-lifecycle';
 import { type Actor, type DbExec, getMemberIds, getTicketRow, isIT } from './common';
 
@@ -37,7 +38,7 @@ export function canAssign(t: TicketLike, a: Actor) {
 
 // Worker hanya boleh mengambil untuk dirinya (PRD: self-assign); SYSTEM_ADMIN boleh menunjuk siapa saja.
 export function canTargetOther(a: Actor) {
-  return a.role === 'SYSTEM_ADMIN';
+  return canTriageRole(a.role);
 }
 
 export interface AllowedActions {

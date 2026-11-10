@@ -1,0 +1,36 @@
+No,Bagian,Field,Diisi oleh,Tipe,Pilihan / format,Wajib,Kolom DB (tickets/users),API,UI,Status
+1,Formulir pemohon,Unit,Otomatis dari akun,Otomatis,LNY / IIE / REN / Holding,Ya,unit (users.unit),POST /api/tickets,CreateTicketView (read-only dari akun; dropdown bila akun belum punya unit),Terpenuhi
+2,Formulir pemohon,Aplikasi,Pemohon,Dropdown,Nama aplikasi (pengganti Project; Support IT tetap berlabel Kendala),Ya,project_kendala,POST /api/tickets,CreateTicketView,Terpenuhi
+3,Formulir pemohon,Sub Modul (Modul),Pemohon,Dropdown,Mengikuti Aplikasi,Tidak,submodule,POST /api/tickets,CreateTicketView (muncul bila Aplikasi punya modul),Terpenuhi
+4,Formulir pemohon,Judul,Pemohon,Teks,Maks. 120 karakter,Ya,title,POST /api/tickets (zod max 120),CreateTicketView (counter 120),Terpenuhi
+5,Formulir pemohon,Yang terjadi,Pemohon,Teks panjang,,Ya,description,POST /api/tickets,CreateTicketView,Terpenuhi
+6,Formulir pemohon,Yang seharusnya terjadi,Pemohon,Teks panjang,,Ya,expected_behavior,POST /api/tickets,CreateTicketView + TicketTriagePanel,Terpenuhi
+7,Formulir pemohon,Sejak kapan,Pemohon,Tanggal + jam,,Ya,since_at,POST /api/tickets,CreateTicketView (datetime-local, maks. sekarang),Terpenuhi
+8,Formulir pemohon,Jumlah terdampak,Pemohon,Pilihan,Satu pengguna / Satu unit atau banyak pengguna / Beberapa unit atau seluruh pengguna,Ya,affected_scope,POST /api/tickets,CreateTicketView,Terpenuhi
+9,Formulir pemohon,Pekerjaan masih bisa berjalan?,Pemohon,Pilihan,Berhenti total / Terganggu ada cara lain / Dapat menunggu,Ya,work_status,POST /api/tickets,CreateTicketView,Terpenuhi
+10,Formulir pemohon,Cara lain yang dipakai,Pemohon,Teks,Muncul bila memilih "ada cara lain",Bersyarat,workaround,POST /api/tickets (wajib bila TERGANGGU),CreateTicketView (tampil bersyarat),Terpenuhi
+11,Formulir pemohon,Sedang ujian/tryout (Acara),Pemohon,Centang,Ya / Tidak,Tidak,is_event,POST /api/tickets,CreateTicketView,Terpenuhi
+12,Formulir pemohon,Bukti,Pemohon,Unggah berkas atau teks langkah,Minimal salah satu,Ya,evidence_steps + files,POST /api/tickets + upload,CreateTicketView (validasi minimal satu),Terpenuhi
+13,PM / Duty Engineer saat membuat,Kanal Asal,PM / Duty Engineer,Pilihan,Formulir / Percakapan / Internal (user biasa = Formulir),Ya,channel,POST /api/tickets (role lain dipaksa FORM),CreateTicketView (hanya PM/Duty/Admin),Terpenuhi
+14,PM / Duty Engineer saat membuat,Buat atas nama,PM / Duty Engineer,Daftar pengguna,PIC diberi label [PIC],Tidak,requested_by (users.is_pic),POST /api/tickets (behalf),CreateTicketView (label [PIC]),Terpenuhi
+15,Triase dan detail,Status,Sistem / PM,Fase,Baru / Diakui / Ditriase / Dikerjakan / Menunggu Pemohon / Selesai (hasil: Selesai / Ditutup / Dialihkan),-,turunan dari status + acknowledged_at + ticket_type + waiting_* + closed_at + transfer_target,status_phase / status_outcome / status_label di setiap tiket,Badge di semua daftar + kanban fase + filter fase + penanda fase di detail,Terpenuhi
+16,Triase dan detail,Jenis Tiket,PM,Pilihan,Insiden / PL: Akses dan Konfigurasi / PL: Data / Pertanyaan Penggunaan / Permintaan Pengembangan / Proyek Baru / Di Luar Layanan Aplikasi,PM saat triase,ticket_type,POST /api/tickets/:id/triage,TicketTriagePanel,Terpenuhi
+17,Triase dan detail,Dampak,PM (triase),Pilihan,Luas / Sedang / Terbatas,PM saat triase,impact,POST /api/tickets/:id/triage,TicketTriagePanel,Terpenuhi
+18,Triase dan detail,Urgensi,PM (triase),Pilihan,Tinggi / Sedang / Rendah,PM saat triase,urgency,POST /api/tickets/:id/triage,TicketTriagePanel,Terpenuhi
+19,Triase dan detail,Prioritas,Otomatis dari matriks; PM dapat mengubah,Pilihan,P1 / P2 / P3 / P4 (hanya Insiden),Insiden,priority (P1=CRITICAL P2=HIGH P3=MEDIUM P4=LOW),POST /api/tickets/:id/triage,TicketTriagePanel (saran matriks),Terpenuhi (isi matriks usulan - menunggu persetujuan PM)
+20,Triase dan detail,Konfirmasi Duty Engineer,Duty Engineer,Nama + waktu,Wajib untuk P1 dan P2,P1/P2,duty_confirmed_by + duty_confirmed_at,POST /api/tickets/:id/duty-confirm (gerbang DRAFT->PROCESS),Tombol di TicketTriagePanel,Terpenuhi
+21,Triase dan detail,Alasan perubahan jenis/prioritas,PM,Teks,,Bersyarat (saat jenis/prioritas diubah),change_reason,POST /api/tickets/:id/triage,TicketTriagePanel,Terpenuhi
+22,Triase dan detail,Butir katalog,PM,Pilihan,PL-01 sampai PL-05,Tidak,catalog_item,POST /api/tickets/:id/triage,TicketTriagePanel,Terpenuhi
+23,Triase dan detail,Persetujuan PIC data,PM,Lampiran / catatan,Wajib untuk PL: Data,PL: Data,data_approval_note atau berkas tiket,POST /api/tickets/:id/triage,TicketTriagePanel,Terpenuhi
+24,Triase dan detail,Pelaksana,PM,Satu pengguna,,Tidak,assigned_to,POST /api/tickets/:id/assignee + triage,Dropdown di detail (PM/Admin) + TicketTriagePanel,Terpenuhi
+25,Triase dan detail,Waktu diterima Pelaksana,Otomatis,Waktu,Dari tombol Terima,-,accepted_at,POST /api/tickets/:id/accept,Tombol Terima (hanya Pelaksana),Terpenuhi
+26,Triase dan detail,Tanggal Diakui,Otomatis,Waktu,Dari tombol Akui,-,acknowledged_at,POST /api/tickets/:id/acknowledge,Tombol Akui Tiket,Terpenuhi
+27,Triase dan detail,Mulai/akhir Menunggu Pemohon,Otomatis,Waktu,,-,waiting_started_at + waiting_ended_at,POST /api/tickets/:id/execution,Tombol Menunggu Pemohon / Pemohon Sudah Menjawab,Terpenuhi
+28,Triase dan detail,Tertahan Oleh,Pelaksana,Pilihan,Rilis / Pihak ketiga / Lainnya,Tidak,blocked_by,POST /api/tickets/:id/execution,TicketTriagePanel,Terpenuhi
+29,Triase dan detail,Tujuan pengalihan,PM,Pilihan,IT Support / Pemilik Permintaan Pengembangan / Pimpinan HO / Duplikat,Tidak,transfer_target,POST /api/tickets/:id/triage (status akhir Dialihkan),TicketTriagePanel,Terpenuhi
+30,Triase dan detail,Duplikat dari,PM,Nomor tiket,,Bila tujuan = Duplikat,referenced_ticket_id,POST /api/tickets/:id/triage (validasi tiket ada),TicketTriagePanel,Terpenuhi
+31,Triase dan detail,Tautan Task Odoo,Engineer,URL,,Tidak,odoo_task_url,POST /api/tickets/:id/execution (validasi http/https),TicketTriagePanel,Terpenuhi
+32,Triase dan detail,Jenis Solusi,Pelaksana,Pilihan,Panduan / Data atau Konfigurasi / Perbaikan Kode / Solusi Sementara,Saat selesai,solution_type,POST /api/tickets/:id/stages/complete,Form penyelesaian TicketDetailView,Terpenuhi
+33,Triase dan detail,Solusi Penyelesaian,Pelaksana,Teks,,Saat selesai,resolution_summary,POST /api/tickets/:id/stages/complete,Form penyelesaian TicketDetailView,Terpenuhi
+34,Triase dan detail,Tautan utang teknis,Pelaksana,URL,Wajib bila Solusi Sementara,Bersyarat,tech_debt_url,POST /api/tickets/:id/stages/complete,Form penyelesaian TicketDetailView,Terpenuhi
+35,Triase dan detail,Jumlah pembukaan ulang,Otomatis,Angka,,-,reopen_count,POST /api/tickets/:id/reopen (increment),Detail tiket (Dibuka ulang Nx),Terpenuhi

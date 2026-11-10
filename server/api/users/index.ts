@@ -4,6 +4,7 @@ import { users } from '~/server/database/schema';
 import { successResponse, errorResponse } from '~/server/utils/response';
 import { departmentFromDivision, shapeUserRow, shapeUsers } from '~/server/utils/org';
 import { requireRole } from '~/server/utils/authorize';
+import { UNITS } from '~/utils/ticketSpec';
 
 export default defineEventHandler(async (event) => {
   const method = event.method;
@@ -93,6 +94,8 @@ export default defineEventHandler(async (event) => {
       companyId: finalCompanyId,
       divisionId,
       avatarUrl: body.avatarUrl || null,
+      unit: (UNITS as readonly string[]).includes(body.unit) ? body.unit : null,
+      isPic: body.isPic ? 1 : 0,
     }).execute();
 
     const result = await db.query.users.findFirst({

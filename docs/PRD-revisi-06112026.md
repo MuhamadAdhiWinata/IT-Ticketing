@@ -2,7 +2,7 @@
 
 **Sumber:** `docs/06112026.md` (issue 001-011)
 **Branch:** `dev`
-**Diperbarui:** 6 November 2026
+**Diperbarui:** 10 November 2026
 **Stack:** Nuxt 4 + Nitro + Drizzle + MariaDB (dokumen sumber menyebut NestJS DTO/Multer; itu tidak berlaku, padanannya zod + `parseMultipart`).
 
 Legenda status: **ADA** = selesai dan terverifikasi, **SEBAGIAN** = ada tapi ada celah, **BELUM** = tidak ada.
@@ -16,9 +16,9 @@ Legenda keputusan: **KERJAKAN** = spesifikasi pasti, **HOLD** = menunggu keteran
 | SEBAGIAN | 3 (001, 002, 006) |
 | BELUM | 5 (007-011) |
 
-Alasan HOLD utama: 35 "Point" field form PIC (issue 007-011) tidak didefinisikan di repo maupun di `docs/06112026.md`. Setiap item yang bergantung pada nama, jenis, atau aturan field itu tidak bisa dibangun tanpa menebak.
+Spesifikasi 35 field sudah diberikan (10 November 2026) dan seluruh item 007-010 dikerjakan. Lihat bagian 4 untuk pemetaan field.
 
-Keputusan desain: prioritas tetap 4 level (`LOW/MEDIUM/HIGH/CRITICAL`). P1-P4 dipetakan ke level itu agar `categories.sla_*` tidak berubah.
+Keputusan desain: prioritas tetap 4 level di DB (`LOW/MEDIUM/HIGH/CRITICAL`). P1-P4 dipetakan P1=CRITICAL, P2=HIGH, P3=MEDIUM, P4=LOW agar `categories.sla_*` tidak berubah. Status alur DB tetap `DRAFT/PROCESS/DELEGASI/SELESAI`; fase tampilan diturunkan di `status_phase`: Baru, Diakui, Ditriase, Dikerjakan, Menunggu Pemohon, Selesai. "Selesai" satu fase akhir dengan tiga hasil (`status_outcome`): Selesai, Ditutup, Dialihkan. `status_label` = hasil akhir bila sudah di fase akhir, selain itu fase. Jenis, dampak, urgensi, dan prioritas diisi PM pada fase Ditriase.
 
 ## 2. Status per issue (kondisi awal vs sekarang)
 
@@ -31,13 +31,13 @@ Keputusan desain: prioritas tetap 4 level (`LOW/MEDIUM/HIGH/CRITICAL`). P1-P4 di
 | 004 | Lokasi disembunyikan untuk IT Programmer | ADA | ADA | Selesai |
 | 005 | Perusahaan/Divisi | ADA fungsional, API tanpa guard | ADA: API users/companies/divisions kini wajib SYSTEM_ADMIN untuk tulis | Selesai |
 | 006 | Gambar inline di komentar | SEBAGIAN | SEBAGIAN: `GET comments` kini cek akses tiket; tautan `comment_files` untuk gambar inline belum | `/api/upload` belum validasi tipe/akses tiket. KERJAKAN nanti |
-| 007 | Form PIC 12 field | BELUM | BELUM | HOLD (butuh daftar Point) |
-| 008 | Role PM / Duty Engineer, Kanal Asal | BELUM | BELUM | HOLD |
-| 009 | Matriks Dampak x Urgensi, `/accept`, `/acknowledge`, Jenis Tiket | BELUM | BELUM. Kolom `acknowledged_at`, `accepted_at` sudah disiapkan di skema | HOLD (bergantung role 008) |
+| 007 | Form PIC 12 field | BELUM | ADA: field 1-12 di form, validasi zod server (judul 120, cara lain bersyarat, bukti minimal salah satu) | Selesai |
+| 008 | Role PM / Duty Engineer, Kanal Asal | BELUM | ADA: role `PM`, `DUTY_ENGINEER`; Kanal Asal dan Buat atas nama untuk PM/Duty/Admin; unit + label PIC di master user | Selesai |
+| 009 | Matriks Dampak x Urgensi, `/accept`, `/acknowledge`, Jenis Tiket | BELUM | ADA: `/triage`, `/acknowledge`, `/accept`, `/duty-confirm`, `/close`; matriks di `utils/ticketSpec.ts` | Selesai. Nilai matriks adalah usulan, perlu persetujuan PM |
 | 010a | Pelaksana tunggal | BELUM (backend ada, UI tidak) | ADA: dropdown Pelaksana di detail tiket untuk SYSTEM_ADMIN memakai `/assignee` | Selesai |
-| 010b | Tertahan Oleh, Tujuan Pengalihan, PL Data, Duplikat dari | BELUM | BELUM | HOLD (butuh definisi Point; kolom `referenced_ticket_id` sudah ada) |
-| 011a | Solusi Penyelesaian (ringkasan + jenis) | BELUM | ADA: wajib diisi saat menyelesaikan tiket | Selesai |
-| 011b | Tautan Odoo + utang teknis wajib untuk Solusi Sementara | BELUM | ADA: divalidasi server (http/https saja) dan di form | Selesai |
+| 010b | Tertahan Oleh, Tujuan Pengalihan, PL Data, Duplikat dari | BELUM | ADA: `/execution` (Tertahan Oleh, Menunggu Pemohon, Task Odoo), pengalihan + Duplikat via `/triage`, PL Data wajib persetujuan PIC | Selesai |
+| 011a | Solusi Penyelesaian (ringkasan + jenis) | BELUM | ADA: jenis Panduan / Data atau Konfigurasi / Perbaikan Kode / Solusi Sementara | Selesai |
+| 011b | Tautan utang teknis wajib untuk Solusi Sementara; Task Odoo diisi Engineer | BELUM | ADA: divalidasi server (http/https saja) dan di form | Selesai |
 | 011c | Counter buka ulang | BELUM | ADA: `reopen_count` naik setiap `SELESAI>PROCESS`, tampil di detail | Selesai |
 
 ## 3. Tabel keputusan
@@ -56,15 +56,18 @@ Keputusan desain: prioritas tetap 4 level (`LOW/MEDIUM/HIGH/CRITICAL`). P1-P4 di
 | 8 | Solusi penyelesaian + tautan Odoo/utang teknis (server, form, tampilan) | 011a/b | [x] |
 | 9 | Dropdown Pelaksana | 010a | [x] |
 | 10 | Test integrasi (solusi, reopen, CRITICAL) | - | [x] |
+| 11 | Migrasi `0005_ticket_intake_triage` (22 kolom `tickets`, `users.unit`, `users.is_pic`) + seeder | 007-010 | [x] |
+| 12 | Formulir pemohon 12 field + validasi server | 007 | [x] |
+| 13 | Role `PM`, `DUTY_ENGINEER`, Kanal Asal, Buat atas nama | 008 | [x] |
+| 14 | Triase PM, matriks P1-P4, Akui, Terima, konfirmasi Duty Engineer P1/P2 | 009 | [x] |
+| 15 | Eksekusi Pelaksana, pengalihan, Duplikat, PL Data, Tutup | 010b | [x] |
+| 16 | Test: validasi form, matriks, triase, Duty, eksekusi (122 test) | - | [x] |
 
 ### 3.2 Hold atau ditunda
 
 | # | Pekerjaan | Issue | Alasan |
 |---|-----------|-------|--------|
-| H1 | 12 field form PIC, field kondisional | 007 | Daftar Point tidak ada |
-| H2 | Role PM / Duty Engineer, Kanal Asal, "Buat atas nama" untuk PM | 008 | Hak akses dan nama role belum jelas |
-| H3 | Matriks Dampak x Urgensi, endpoint `/accept` dan `/acknowledge`, Jenis Tiket, konfirmasi Duty Engineer P1/P2, countdown SLA | 009 | Bergantung H2 dan definisi matriks |
-| H4 | Tertahan Oleh, Tujuan Pengalihan, PL Data, Duplikat dari | 010b | Definisi Point |
+| H1-H4 | Form PIC, role PM/Duty, matriks + Akui/Terima, Tertahan Oleh/pengalihan/PL Data/Duplikat | 007-010 | Dikerjakan 10 November 2026 (lihat bagian 3.1 #11-16) |
 | H5 | Rename "Project/Kendala" ke "Aplikasi/Project", validasi submodul milik project | 002 | Perlu keputusan penamaan dan dampak ke data lama |
 | H6 | Rollback tiket CRITICAL bila upload gagal | 001a | Perlu desain ulang alur buat tiket + upload |
 | H7 | Tautan `comment_files` untuk gambar inline, validasi tipe dan akses di `/api/upload` | 006 | Pekerjaan terpisah |
@@ -80,12 +83,19 @@ Keputusan desain: prioritas tetap 4 level (`LOW/MEDIUM/HIGH/CRITICAL`). P1-P4 di
 
 - Daftar tiket penuh terlihat semua role secara sengaja (transparansi beban kerja IT). Akses detail, komentar, dan aksi tetap dibatasi per tiket.
 - Menu Master Data untuk non-admin memang sudah tersembunyi; guard server kini sejalan.
-- `acknowledged_at` dan `accepted_at` belum terisi sampai H3 dikerjakan.
-- Migrasi `0004` harus dijalankan (`npx drizzle-kit migrate`) sebelum kode ini dideploy.
+- Migrasi `0004` dan `0005` harus dijalankan (`npx drizzle-kit migrate`) sebelum kode ini dideploy.
+- Matriks Dampak x Urgensi belum ada angkanya di spesifikasi. Nilai awal: Luas/Tinggi=P1, Luas/Sedang=P2, Sedang/Tinggi=P2, Luas/Rendah=P3, Sedang/Sedang=P3, Terbatas/Tinggi=P3, sisanya P4. Ubah di `utils/ticketSpec.ts`.
+- Prioritas P1-P4 hanya untuk Insiden; jenis lain tidak punya prioritas dan memakai nilai bawaan form.
+- Tiket lama tidak punya field baru (kolom nullable); tampil kosong.
+- Peran `PM` dan `DUTY_ENGINEER` dianggap tim IT (akses sama dengan IT_WORKER); PM dan SYSTEM_ADMIN boleh triase.
 
-## 6. Yang dibutuhkan untuk membuka HOLD
+## 6. Sisa pekerjaan
 
-1. Daftar lengkap 35 Point form PIC: nama, tipe, wajib atau tidak, aturan kondisional.
-2. Nama dan hak akses role PM dan Duty Engineer.
-3. Aturan matriks Dampak x Urgensi dan pemetaan P1-P4 ke prioritas.
-4. Keputusan penamaan "Aplikasi/Project".
+1. Persetujuan nilai matriks Dampak x Urgensi oleh PM.
+2. Countdown SLA berdasarkan P1-P4 (SLA kategori lama masih dipakai).
+3. H5 validasi server submodul milik aplikasi, H6 rollback upload CRITICAL, H7 `comment_files` untuk gambar inline.
+4. Uji visual UI di browser (formulir pemohon, panel triase) belum dilakukan; yang diuji adalah API dan type check.
+
+## Matriks kepatuhan 35 field
+
+Lihat [spesifikasi-field-tiket.csv](./spesifikasi-field-tiket.csv): tiap field dipetakan ke kolom DB, endpoint, dan UI. Kanban/filter Dashboard dan Laporan memakai fase (Baru, Diakui, Ditriase, Dikerjakan, Menunggu Pemohon, Selesai dengan hasil Selesai/Ditutup/Dialihkan). Pelaksana dapat ditunjuk PM/Admin dari detail tiket.

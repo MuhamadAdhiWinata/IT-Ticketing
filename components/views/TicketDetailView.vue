@@ -42,7 +42,7 @@
       <!-- SLA & Status Header Grid -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="md:col-span-2 bg-muted/50 p-4 rounded-lg border border-border">
-          <span class="text-[10px] uppercase tracking-wider text-muted-foreground font-bold block mb-1">Deskripsi Laporan</span>
+          <span class="text-[10px] uppercase tracking-wider text-muted-foreground font-bold block mb-1">Yang Terjadi</span>
           <p class="text-xs text-foreground whitespace-pre-line leading-relaxed">{{ ticket.description }}</p>
         </div>
 
@@ -57,7 +57,7 @@
           <div class="flex items-center justify-between">
             <span class="text-xs text-muted-foreground">Status Saat Ini:</span>
             <span class="px-2 py-0.5 rounded text-xs font-bold bg-blue-100 dark:bg-blue-900/60 text-primary">
-              {{ ticket.status }}
+              {{ ticket.status_label || ticket.status }}
             </span>
           </div>
           <div class="flex flex-col gap-1">
@@ -78,7 +78,7 @@
               <span v-else class="text-xs text-muted-foreground italic">Belum ditugaskan</span>
             </div>
           </div>
-          <div v-if="store.currentUser?.role === 'SYSTEM_ADMIN' && ticket.status !== 'SELESAI'" class="flex flex-col gap-1">
+          <div v-if="canTriageRole(store.currentUser?.role) && ticket.status !== 'SELESAI'" class="flex flex-col gap-1">
             <label for="pelaksana" class="text-xs text-muted-foreground">Pelaksana:</label>
             <select
               id="pelaksana"
@@ -97,8 +97,21 @@
         </div>
       </div>
 
+      <ol class="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold" aria-label="Fase tiket">
+        <li
+          v-for="(p, i) in PHASES"
+          :key="p"
+          :class="[
+            'px-2.5 py-1 rounded-md border',
+            p === ticket.status_phase ? 'bg-primary text-primary-foreground border-primary' : i < phaseIndex ? 'bg-muted text-foreground border-border' : 'text-muted-foreground border-dashed border-border',
+          ]"
+        >{{ p === 'Selesai' && ticket.status_phase === 'Selesai' ? ticket.status_label : p }}</li>
+      </ol>
+
+      <TicketTriagePanel v-if="store.currentUser" :ticket="ticket" />
+
       <div v-if="ticket.solution_type" class="bg-muted/50 p-4 rounded-lg border border-border space-y-1.5">
-        <span class="text-[10px] uppercase tracking-wider text-muted-foreground font-bold block">Solusi Penyelesaian ({{ ticket.solution_type === 'SEMENTARA' ? 'Sementara' : 'Permanen' }})</span>
+        <span class="text-[10px] uppercase tracking-wider text-muted-foreground font-bold block">Solusi Penyelesaian ({{ labelOf(SOLUTION_TYPES, ticket.solution_type) }})</span>
         <p class="text-xs text-foreground whitespace-pre-line leading-relaxed">{{ ticket.resolution_summary }}</p>
         <p v-if="ticket.odoo_task_url" class="text-xs">Task Odoo: <a :href="ticket.odoo_task_url" target="_blank" rel="noopener noreferrer" class="text-primary underline break-all">{{ ticket.odoo_task_url }}</a></p>
         <p v-if="ticket.tech_debt_url" class="text-xs">Utang teknis: <a :href="ticket.tech_debt_url" target="_blank" rel="noopener noreferrer" class="text-primary underline break-all">{{ ticket.tech_debt_url }}</a></p>
@@ -369,12 +382,10 @@
                 <div class="space-y-2 p-3 rounded-lg border border-border bg-muted/30">
                   <p class="text-[11px] font-bold text-foreground">Solusi Penyelesaian (diisi saat menyelesaikan tiket):</p>
                   <select v-model="solution.type" aria-label="Jenis solusi" class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground">
-                    <option value="PERMANEN">Solusi Permanen</option>
-                    <option value="SEMENTARA">Solusi Sementara</option>
+                    <option v-for="o in SOLUTION_TYPES" :key="o.value" :value="o.value">{{ o.label }}</option>
                   </select>
                   <textarea v-model="solution.summary" rows="3" aria-label="Ringkasan solusi" placeholder="Jelaskan solusi yang diterapkan..." class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground" />
                   <template v-if="solution.type === 'SEMENTARA'">
-                    <input v-model="solution.odoo_task_url" type="url" aria-label="Tautan task Odoo" placeholder="Tautan task Odoo (wajib)" class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground" />
                     <input v-model="solution.tech_debt_url" type="url" aria-label="Tautan utang teknis" placeholder="Tautan utang teknis (wajib)" class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground" />
                   </template>
                 </div>
@@ -568,6 +579,8 @@
 </template>
 
 <script setup lang="ts">
+import { isITRole, canTriageRole } from '~/utils/roles';
+import { PHASES } from '~/utils/ticketSpec';
 import { ref, computed, watch, nextTick } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { apiFetch } from '~/services/api';
@@ -581,12 +594,15 @@ import { useModal } from '~/composables/useModal';
 import { useToast } from '~/composables/useToast';
 import RichTextEditor from '~/components/common/RichTextEditor.vue';
 import { toSafeHtml, isRichTextEmpty } from '~/utils/richText';
+import { SOLUTION_TYPES, labelOf } from '~/utils/ticketSpec';
+import TicketTriagePanel from '~/components/features/Triage/TicketTriagePanel.vue';
 
 const store = useAppStore();
 const { showError } = useModal();
 const { toast } = useToast();
 const isOpen = computed(() => store.activeView === 'ticket-detail');
 const ticket = computed(() => store.selectedTicket);
+const phaseIndex = computed(() => PHASES.indexOf((ticket.value?.status_phase ?? 'Baru') as (typeof PHASES)[number]));
 
 const requesterIdentityLabel = computed(() => {
   const t = ticket.value;
@@ -604,8 +620,8 @@ const selectedStepIndex = ref(0);
 const activeStepEl = ref<HTMLElement | null>(null);
 const hasInitializedStep = ref(false);
 const stageNotes = ref('');
-const solution = ref({ type: 'PERMANEN' as 'PERMANEN' | 'SEMENTARA', summary: '', odoo_task_url: '', tech_debt_url: '' });
-const itWorkers = computed(() => store.allUsers.filter(u => u.role === 'IT_WORKER' || u.role === 'SYSTEM_ADMIN'));
+const solution = ref({ type: 'PANDUAN', summary: '', tech_debt_url: '' });
+const itWorkers = computed(() => store.allUsers.filter(u => isITRole(u.role)));
 const previewImage = ref<{ url: string; name: string } | null>(null);
 
 const activeStep = computed(() => stepperStages.value[selectedStepIndex.value]?.stageKey || 'ASSIGN');
@@ -643,16 +659,16 @@ const handleSubmitCurrentStage = async (targetStatus?: TicketStatus) => {
   if (ticket.value.status === 'PROCESS' && currentStage.stageKey === 'IN_PROGRESS' && targetStatus !== 'DELEGASI') {
     const f = solution.value;
     if (!f.summary.trim()) return showError('Solusi Belum Diisi', 'Isi ringkasan solusi penyelesaian.');
-    if (f.type === 'SEMENTARA' && (!f.odoo_task_url.trim() || !f.tech_debt_url.trim())) {
-      return showError('Tautan Wajib', 'Solusi sementara wajib menyertakan tautan task Odoo dan tautan utang teknis.');
+    if (f.type === 'SEMENTARA' && !f.tech_debt_url.trim()) {
+      return showError('Tautan Wajib', 'Solusi sementara wajib menyertakan tautan utang teknis.');
     }
     sol = { type: f.type, summary: f.summary.trim() };
-    if (f.type === 'SEMENTARA') { sol.odoo_task_url = f.odoo_task_url.trim(); sol.tech_debt_url = f.tech_debt_url.trim(); }
+    if (f.type === 'SEMENTARA') sol.tech_debt_url = f.tech_debt_url.trim();
   }
 
   try {
     await store.completeStage(ticket.value.id, currentStage.stageKey, isRichTextEmpty(stageNotes.value) ? undefined : stageNotes.value, undefined, targetStatus, undefined, sol);
-    solution.value = { type: 'PERMANEN', summary: '', odoo_task_url: '', tech_debt_url: '' };
+    solution.value = { type: 'PANDUAN', summary: '', tech_debt_url: '' };
     const newStatus = store.selectedTicket?.status;
     if (newStatus) {
       selectedStepIndex.value = getDefaultStepIndex(newStatus);
@@ -836,6 +852,8 @@ const isViewerNonIT = computed(() => store.currentUser?.role === 'USER_NON_IT');
 
 const roleLabel = (role: string): string => {
   if (role === 'SYSTEM_ADMIN') return 'Admin';
+  if (role === 'PM') return 'PM';
+  if (role === 'DUTY_ENGINEER') return 'Duty Engineer';
   if (role === 'IT_WORKER') return 'IT';
   return 'User';
 };

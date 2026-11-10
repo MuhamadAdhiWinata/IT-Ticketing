@@ -14,19 +14,18 @@ const finish = (id: string, solution?: any) => transitionStatus(IT_A, { ticketId
 describe('solusi penyelesaian', () => {
   it('PERMANEN tersimpan saat SELESAI', async () => {
     const id = await seedTicket({ status: 'PROCESS', assignedTo: IT_A.id });
-    await finish(id, { type: 'PERMANEN', summary: 'akar masalah diperbaiki' });
+    await finish(id, { type: 'PANDUAN', summary: 'akar masalah diperbaiki' });
     const t = await row(id);
-    expect(t.solutionType).toBe('PERMANEN');
+    expect(t.solutionType).toBe('PANDUAN');
     expect(t.resolutionSummary).toBe('akar masalah diperbaiki');
     expect(t.odooTaskUrl).toBeNull();
   });
 
-  it('SEMENTARA wajib kedua tautan', async () => {
+  it('SEMENTARA wajib tautan utang teknis', async () => {
     const id = await seedTicket({ status: 'PROCESS', assignedTo: IT_A.id });
     await expect(finish(id, { type: 'SEMENTARA', summary: 'workaround' })).rejects.toMatchObject({ statusCode: 400 });
-    await expect(finish(id, { type: 'SEMENTARA', summary: 'workaround', odoo_task_url: 'https://odoo.test/1' })).rejects.toMatchObject({ statusCode: 400 });
     expect((await row(id)).status).toBe('PROCESS');
-    await finish(id, { type: 'SEMENTARA', summary: 'workaround', odoo_task_url: 'https://odoo.test/1', tech_debt_url: 'https://odoo.test/2' });
+    await finish(id, { type: 'SEMENTARA', summary: 'workaround', tech_debt_url: 'https://odoo.test/2' });
     const t = await row(id);
     expect([t.status, t.techDebtUrl]).toEqual(['SELESAI', 'https://odoo.test/2']);
   });
@@ -38,7 +37,7 @@ describe('solusi penyelesaian', () => {
 
   it('solution hanya untuk transisi ke SELESAI', async () => {
     const id = await seedTicket({ status: 'DRAFT', assignedTo: IT_A.id });
-    await expect(transitionStatus(IT_A, { ticketId: id, to: 'PROCESS', solution: { type: 'PERMANEN', summary: 'x' } })).rejects.toMatchObject({ statusCode: 400 });
+    await expect(transitionStatus(IT_A, { ticketId: id, to: 'PROCESS', solution: { type: 'PANDUAN', summary: 'x' } })).rejects.toMatchObject({ statusCode: 400 });
   });
 });
 

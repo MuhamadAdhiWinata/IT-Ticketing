@@ -53,6 +53,7 @@
 </template>
 
 <script setup lang="ts">
+import { isITRole } from '~/utils/roles';
 import { ref, computed } from 'vue';
 import { Check } from 'lucide-vue-next';
 import type { AppUser } from '~/types';
@@ -71,10 +72,10 @@ const search = ref('');
 const selected = ref<string[]>([]);
 
 const filteredWorkers = computed(() => {
-  if (!search.value) return props.users.filter(u => u.role === 'IT_WORKER');
+  if (!search.value) return props.users.filter(u => isITRole(u.role));
   const q = search.value.toLowerCase();
   return props.users.filter(u =>
-    u.role === 'IT_WORKER' && (
+    isITRole(u.role) && (
       u.name.toLowerCase().includes(q) ||
       u.department.toLowerCase().includes(q) ||
       u.email.toLowerCase().includes(q)

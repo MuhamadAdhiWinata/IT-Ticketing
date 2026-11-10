@@ -48,6 +48,10 @@ export const users = mysqlTable('users', {
   companyId: varchar('company_id', { length: 50 }).references(() => companies.id),
   divisionId: varchar('division_id', { length: 50 }).references(() => divisions.id),
   avatarUrl: text('avatar_url'),
+  // Unit pemohon: LNY | IIE | REN | Holding. Dipakai otomatis di formulir tiket.
+  unit: varchar('unit', { length: 20 }),
+  // PIC unit: diberi label saat PM/Duty Engineer membuat tiket atas nama.
+  isPic: int('is_pic', { unsigned: true }).notNull().default(0),
 }, (table) => ({
   idxCompany: index('idx_users_company').on(table.companyId),
   idxDivision: index('idx_users_division').on(table.divisionId),
@@ -193,6 +197,34 @@ export const tickets = mysqlTable('tickets', {
   solutionType: varchar('solution_type', { length: 20 }),
   odooTaskUrl: varchar('odoo_task_url', { length: 500 }),
   techDebtUrl: varchar('tech_debt_url', { length: 500 }),
+
+  // Formulir pemohon (PIC unit)
+  unit: varchar('unit', { length: 20 }),
+  expectedBehavior: text('expected_behavior'),
+  sinceAt: timestamp('since_at', { mode: 'string' }),
+  affectedScope: varchar('affected_scope', { length: 30 }), // SATU_PENGGUNA | SATU_UNIT | SEMUA_PENGGUNA
+  workStatus: varchar('work_status', { length: 30 }), // BERHENTI_TOTAL | TERGANGGU | DAPAT_MENUNGGU
+  workaround: text('workaround'),
+  isEvent: int('is_event', { unsigned: true }).notNull().default(0),
+  evidenceSteps: text('evidence_steps'),
+  channel: varchar('channel', { length: 20 }).notNull().default('FORM'), // FORM | PERCAKAPAN | INTERNAL
+
+  // Triase (PM)
+  ticketType: varchar('ticket_type', { length: 30 }),
+  impact: varchar('impact', { length: 20 }), // LUAS | SEDANG | TERBATAS
+  urgency: varchar('urgency', { length: 20 }), // TINGGI | SEDANG | RENDAH
+  changeReason: text('change_reason'),
+  catalogItem: varchar('catalog_item', { length: 10 }),
+  dataApprovalNote: text('data_approval_note'),
+  transferTarget: varchar('transfer_target', { length: 40 }),
+  dutyConfirmedBy: varchar('duty_confirmed_by', { length: 255 }), // nama Duty Engineer
+  dutyConfirmedAt: timestamp('duty_confirmed_at', { mode: 'string' }),
+
+  // Eksekusi (Pelaksana)
+  waitingStartedAt: timestamp('waiting_started_at', { mode: 'string' }),
+  waitingEndedAt: timestamp('waiting_ended_at', { mode: 'string' }),
+  blockedBy: varchar('blocked_by', { length: 20 }), // RILIS | PIHAK_KETIGA | LAINNYA
+  closedAt: timestamp('closed_at', { mode: 'string' }),
 
   // Timestamps
   createdAt: timestamp('created_at', { mode: 'string' }).notNull(),

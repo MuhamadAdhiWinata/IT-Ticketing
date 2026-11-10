@@ -6,6 +6,7 @@ import { generateTicketId, generateTicketNumber } from '~/server/utils/ticket-id
 import { getTicketsWithRelations, getTicketById } from '~/server/utils/tickets';
 import { getCurrentUserId, getCurrentUser } from '~/server/utils/user-context';
 import { CreateTicketSchema, validate } from '~/server/utils/validate';
+import { isIntakeRole } from '~/utils/roles';
 
 function now(): string {
   return new Date().toISOString().replace('T', ' ').replace('Z', '').slice(0, 19);
@@ -53,12 +54,15 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const intake = isIntakeRole(user?.role);
     let requestedBy = userId;
     let requestedByName = user?.name || body.requestedByName || userId;
     let requestedByDept = user?.department || body.requestedByDept || '';
+    let requesterUnit: string | null = user?.unit ?? null;
     let createdByAdminId: string | null = null;
+    const onBehalf = !!body.behalfUserId && intake;
 
-    if (body.behalfUserId && user?.role === 'SYSTEM_ADMIN') {
+    if (onBehalf) {
       const behalfUser = await db.query.users.findFirst({
         where: (u, { eq: e }) => e(u.id, body.behalfUserId),
       });
@@ -66,20 +70,37 @@ export default defineEventHandler(async (event) => {
         requestedBy = behalfUser.id;
         requestedByName = behalfUser.name;
         requestedByDept = behalfUser.department;
+        requesterUnit = behalfUser.unit ?? null;
         createdByAdminId = userId;
       }
     }
 
+    const unit = requesterUnit || v.data.unit;
+    if (!unit) {
+      throw createError({ statusCode: 400, statusMessage: 'Unit akun belum diatur; pilih Unit (LNY/IIE/REN/Holding)' });
+    }
+    // Kanal Asal hanya untuk PM/Duty Engineer; pemohon biasa selalu FORM.
+    const channel = intake ? (v.data.channel || 'FORM') : 'FORM';
+
     await db.insert(tickets).values({
       id: newId,
-      title: body.title || '',
-      description: body.description || '',
+      title: v.data.title,
+      description: v.data.description,
       category: body.category || 'Support IT',
       projectKendala: body.project_kendala || '',
       submodule: body.submodule || null,
       location: body.location?.trim() || (body.category === 'IT Programmer' ? '' : 'Lantai 1'),
       priority: body.priority || 'MEDIUM',
       status: 'DRAFT',
+      unit,
+      expectedBehavior: v.data.expected_behavior,
+      sinceAt: v.data.since_at.replace('T', ' ').slice(0, 19),
+      affectedScope: v.data.affected_scope,
+      workStatus: v.data.work_status,
+      workaround: v.data.work_status === 'TERGANGGU' ? v.data.workaround?.trim() || null : null,
+      isEvent: v.data.is_event ? 1 : 0,
+      evidenceSteps: v.data.evidence_steps?.trim() || null,
+      channel,
       createdBy: userId,
       createdByDept: requestedByDept,
       createdByAdminId,
@@ -113,7 +134,7 @@ export default defineEventHandler(async (event) => {
       performedBy: userId,
     }).execute();
 
-    if (body.behalfUserId && user?.role === 'SYSTEM_ADMIN') {
+    if (createdByAdminId) {
       await db.insert(auditLogs).values({
         id: `AUD-${Date.now() + 1}`,
         ticketId: newId,

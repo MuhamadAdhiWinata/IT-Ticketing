@@ -75,12 +75,13 @@
       </div>
 
       <!-- Buat Atas Nama (Hanya untuk SYSTEM_ADMIN) -->
-      <div v-if="store.currentUser?.role === 'SYSTEM_ADMIN'" class="p-3.5 bg-amber-50/60 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800/40 space-y-2">
+      <div v-if="isIntake" class="p-3.5 bg-amber-50/60 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800/40 space-y-2">
         <div class="flex items-center gap-2">
           <Shield class="w-4 h-4 text-warning" />
-          <span class="text-xs font-bold text-amber-700 dark:text-amber-300">Buat Atas Nama (Opsional)</span>
+          <span class="text-xs font-bold text-amber-700 dark:text-amber-300">Kanal Asal dan Buat Atas Nama</span>
         </div>
         <p class="text-[11px] text-warning">Pilih user lain sebagai pelapor tiket. Jika tidak dipilih, tiket dibuat atas nama Anda sendiri.</p>
+        <AppSelect v-model="channel" :options="CHANNELS" label="Kanal Asal" size="sm" />
         <AppSelect
           :modelValue="behalfUserId ?? ''"
           @update:modelValue="val => behalfUserId = val || null"
@@ -93,13 +94,24 @@
         />
       </div>
 
+      <!-- Unit -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div v-if="pelaporIdentity?.unit">
+          <label class="block text-xs font-semibold text-foreground mb-1.5">Unit</label>
+          <div class="px-3 py-2.5 rounded-lg border border-border bg-muted/50 text-xs font-bold text-foreground">{{ pelaporIdentity.unit }}</div>
+        </div>
+        <AppSelect v-else v-model="unit" :options="UNITS.map(u => ({ value: u, label: u }))" label="Unit *" placeholder="-- Pilih Unit --" />
+      </div>
+
       <!-- Title -->
       <div>
-        <label class="block text-xs font-semibold text-foreground mb-1.5">
-          Judul Kendala / Permintaan <span class="text-red-500">*</span>
+        <label class="flex justify-between text-xs font-semibold text-foreground mb-1.5">
+          <span>Judul Kendala / Permintaan <span class="text-red-500">*</span></span>
+          <span :class="title.length >= 120 ? 'text-red-500' : 'text-muted-foreground font-normal'">{{ title.length }}/120</span>
         </label>
         <input 
           v-model="title"
+          maxlength="120"
           type="text" 
           placeholder="Cth: Printer lantai 2 macet tidak bisa cetak warna"
           class="w-full px-4 py-3 rounded-lg border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium"
@@ -107,7 +119,7 @@
       </div>
 
       <!-- Aplikasi/Kendala & Modul Row -->
-      <div :class="[serviceView === 'SUPPORT_IT' ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2', 'grid gap-4']">
+      <div :class="[currentSubmodules.length || serviceView === 'IT_PROGRAMMER' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1', 'grid gap-4']">
         <AppSelect
           v-model="projectKendala"
           :options="currentProjectKendala"
@@ -115,75 +127,91 @@
           :placeholder="serviceView === 'SUPPORT_IT' ? '-- Pilih Kendala --' : '-- Pilih Aplikasi --'"
         />
         <AppSelect
-          v-if="serviceView === 'IT_PROGRAMMER'"
+          v-if="serviceView === 'IT_PROGRAMMER' || currentSubmodules.length"
           v-model="submodule"
           :options="currentSubmodules"
-          label="Modul"
+          label="Modul (opsional)"
           placeholder="-- Pilih Modul --"
         />
       </div>
 
-      <!-- Location & Priority Row -->
-      <div :class="[serviceView === 'SUPPORT_IT' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1', 'grid gap-4']">
-        <div v-if="serviceView === 'SUPPORT_IT'">
-          <label class="block text-xs font-semibold text-foreground mb-1.5">Lokasi / Ruangan Anda</label>
-          <input 
-            v-model="location"
-            type="text" 
-            placeholder="Cth: Lantai 3, Ruang Finance"
-            class="w-full px-4 py-3 rounded-lg border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium"
-          />
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-foreground mb-1.5">Prioritas Kendala</label>
-          <div class="grid grid-cols-4 gap-2">
-            <button
-              v-for="p in priorities"
-              :key="p.id"
-              type="button"
-              @click="priority = p.id"
-              :class="[
-                'py-2.5 px-2 rounded-lg text-xs font-bold border transition-all flex items-center justify-center',
-                priority === p.id 
-                  ? p.activeClass 
-                  : 'bg-surface border-border text-muted-foreground hover:bg-muted'
-              ]"
-            >
-              <span>{{ p.label }}</span>
-            </button>
-          </div>
-        </div>
+      <!-- Lokasi (Support IT) -->
+      <div v-if="serviceView === 'SUPPORT_IT'">
+        <label class="block text-xs font-semibold text-foreground mb-1.5">Lokasi / Ruangan Anda <span class="text-red-500">*</span></label>
+        <input 
+          v-model="location"
+          type="text" 
+          placeholder="Cth: Lantai 3, Ruang Finance"
+          class="w-full px-4 py-3 rounded-lg border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium"
+        />
       </div>
 
-      <!-- CRITICAL Attachment Warning -->
-      <div v-if="priority === 'CRITICAL'" class="p-3.5 bg-red-50/60 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800/40 flex items-start gap-2.5">
-        <AlertTriangle class="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-        <p class="text-[11px] text-red-700 dark:text-red-300 leading-relaxed">
-          Untuk priority <strong>CRITICAL</strong>, lampiran dokumen pendukung wajib disertakan agar tingkat urgensi dapat diverifikasi. Contoh: surat permintaan resmi, bukti kondisi urgent, screenshot, atau dokumen pendukung lainnya.
-        </p>
-      </div>
-
-      <!-- Description -->
+      <!-- Yang terjadi / seharusnya -->
       <div>
         <label class="block text-xs font-semibold text-foreground mb-1.5">
-          Deskripsi Detail Permasalahan <span class="text-red-500">*</span>
+          Yang Terjadi <span class="text-red-500">*</span>
         </label>
-        <textarea 
+        <textarea
           v-model="description"
-          rows="5"
-          placeholder="Jelaskan kendala secara rinci..."
+          rows="4"
+          placeholder="Jelaskan apa yang terjadi..."
+          class="w-full px-4 py-3 rounded-lg border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium resize-none"
+        ></textarea>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-foreground mb-1.5">
+          Yang Seharusnya Terjadi <span class="text-red-500">*</span>
+        </label>
+        <textarea
+          v-model="expectedBehavior"
+          rows="3"
+          placeholder="Jelaskan hasil yang diharapkan..."
           class="w-full px-4 py-3 rounded-lg border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium resize-none"
         ></textarea>
       </div>
 
-      <!-- File Upload -->
-      <div ref="uploadSection">
-        <label class="block text-xs font-semibold text-foreground mb-1.5">
-          Lampiran Foto / Dokumen
-          <span v-if="priority === 'CRITICAL'" class="text-red-500">(Wajib untuk CRITICAL)</span>
-          <span v-else class="text-muted-foreground font-normal">(Opsional)</span>
+      <!-- Sejak kapan, terdampak, status pekerjaan -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-foreground mb-1.5">Sejak Kapan <span class="text-red-500">*</span></label>
+          <input
+            v-model="sinceAt"
+            type="datetime-local"
+            :max="nowLocal"
+            class="w-full px-3 py-2.5 rounded-lg border border-border bg-surface text-foreground text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+        <AppSelect v-model="affectedScope" :options="AFFECTED_SCOPES" label="Jumlah Terdampak *" placeholder="-- Pilih --" />
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <AppSelect v-model="workStatus" :options="WORK_STATUSES" label="Pekerjaan Masih Bisa Berjalan? *" placeholder="-- Pilih --" />
+        <label class="flex items-center gap-2 text-xs font-semibold text-foreground sm:pt-6">
+          <input v-model="isEvent" type="checkbox" class="rounded border-border" />
+          Sedang ujian / tryout (Acara)
         </label>
+      </div>
+      <div v-if="workStatus === 'TERGANGGU'">
+        <label class="block text-xs font-semibold text-foreground mb-1.5">Cara Lain yang Dipakai <span class="text-red-500">*</span></label>
+        <input
+          v-model="workaround"
+          type="text"
+          placeholder="Cth: sementara input manual lewat Excel"
+          class="w-full px-4 py-3 rounded-lg border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary font-medium"
+        />
+      </div>
+
+      <!-- Bukti -->
+      <div ref="uploadSection" class="space-y-3">
+        <label class="block text-xs font-semibold text-foreground">
+          Bukti <span class="text-red-500">*</span>
+          <span class="text-muted-foreground font-normal">(unggah berkas atau tulis langkah, minimal salah satu)</span>
+        </label>
+        <textarea
+          v-model="evidenceSteps"
+          rows="3"
+          placeholder="Langkah untuk mengulang kendala..."
+          class="w-full px-4 py-3 rounded-lg border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium resize-none"
+        ></textarea>
         <div class="border-2 border-dashed border-border rounded-lg p-5 text-center bg-muted/30 relative">
           <input 
             type="file" 
@@ -293,13 +321,15 @@ import { ArrowLeft, Upload, Check, CheckCircle2, Eye, X, Shield, AlertTriangle }
 import { useAppStore } from '~/stores/app';
 import { apiFetch } from '~/services/api';
 import { useModal } from '~/composables/useModal';
-import type { TicketPriority, Ticket, PendingAttachment } from '~/types';
+import type { Ticket, PendingAttachment } from '~/types';
+import { UNITS, AFFECTED_SCOPES, WORK_STATUSES, CHANNELS } from '~/utils/ticketSpec';
 import { formatOrgLabel, formatRequesterIdentity } from '~/utils/identity';
 import AppSelect from '~/components/common/AppSelect.vue';
 import WorkerPickerModal from '~/components/common/WorkerPickerModal.vue';
 
 const store = useAppStore();
 const { showError, showSuccess } = useModal();
+const isIntake = computed(() => store.currentUser && ['PM', 'DUTY_ENGINEER', 'SYSTEM_ADMIN'].includes(store.currentUser.role));
 const isOpen = computed(() => store.activeView === 'create-ticket');
 
 const serviceView = ref<'SUPPORT_IT' | 'IT_PROGRAMMER'>('SUPPORT_IT');
@@ -314,7 +344,7 @@ const behalfUserOptions = computed(() => [
   { value: '', label: '-- Buat untuk diri sendiri --' },
   ...store.allUsers
     .filter(u => u.id !== store.currentUser?.id)
-    .map(u => ({ value: u.id, label: formatRequesterIdentity(u, u.name) }))
+    .map(u => ({ value: u.id, label: formatRequesterIdentity(u, u.name) + (u.isPic ? ' [PIC]' : '') }))
 ]);
 
 const pelaporIdentity = computed(() => {
@@ -332,8 +362,17 @@ const title = ref('');
 const projectKendala = ref('');
 const submodule = ref('');
 const location = ref('Lantai 2');
-const priority = ref<TicketPriority>('MEDIUM');
 const description = ref('');
+const expectedBehavior = ref('');
+const unit = ref('');
+const channel = ref('FORM');
+const sinceAt = ref('');
+const affectedScope = ref('');
+const workStatus = ref('');
+const workaround = ref('');
+const isEvent = ref(false);
+const evidenceSteps = ref('');
+const nowLocal = computed(() => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16));
 const pendingFiles = ref<PendingAttachment[]>([]);
 const createdTicketSuccess = ref<Ticket | null>(null);
 const uploadSection = ref<HTMLElement | null>(null);
@@ -358,13 +397,6 @@ const currentSubmodules = computed(() => {
     .filter(m => m.project_kendala_id === parent.id)
     .map(m => m.name);
 });
-
-const priorities: { id: TicketPriority; label: string; activeClass: string }[] = [
-  { id: 'LOW', label: 'Low', activeClass: 'bg-muted border-border text-muted-foreground' },
-  { id: 'MEDIUM', label: 'Med', activeClass: 'bg-primary/5 border-primary text-primary' },
-  { id: 'HIGH', label: 'High', activeClass: 'bg-amber-50 dark:bg-amber-950/60 border-amber-400 text-amber-700 dark:text-amber-300' },
-  { id: 'CRITICAL', label: 'Critical', activeClass: 'bg-red-50 dark:bg-red-950/60 border-red-400 text-red-700 dark:text-red-300' },
-];
 
 watch(serviceView, (newView) => {
   projectKendala.value = '';
@@ -395,24 +427,21 @@ const removePendingFile = (index: number) => {
 };
 
 const handleSubmit = async (shouldAssign: boolean) => {
-  if (!title.value.trim() || !description.value.trim()) {
-    showError('Formulir Tidak Lengkap', 'Mohon isi Judul Tiket dan Deskripsi Masalah.');
-    return;
-  }
+  const missing = (msg: string) => { showError('Formulir Tidak Lengkap', msg); return true; };
+  if (!pelaporIdentity.value?.unit && !unit.value) return void missing('Mohon pilih Unit.');
   if (!projectKendala.value.trim()) {
-    showError(
-      'Formulir Tidak Lengkap',
-      serviceView.value === 'SUPPORT_IT'
-        ? 'Mohon pilih Kendala yang dialami.'
-        : 'Mohon pilih Aplikasi yang sedang dikerjakan.'
-    );
-    return;
+    return void missing(serviceView.value === 'SUPPORT_IT' ? 'Mohon pilih Kendala yang dialami.' : 'Mohon pilih Aplikasi yang sedang dikerjakan.');
   }
-  if (priority.value === 'CRITICAL' && pendingFiles.value.length === 0) {
-    showError('Lampiran Wajib', 'Ticket CRITICAL membutuhkan minimal 1 lampiran dokumen pendukung. Silakan tambahkan lampiran sebelum melanjutkan.');
-    nextTick(() => {
-      uploadSection.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
+  if (!title.value.trim()) return void missing('Mohon isi Judul (maksimal 120 karakter).');
+  if (!description.value.trim()) return void missing('Mohon isi "Yang Terjadi".');
+  if (!expectedBehavior.value.trim()) return void missing('Mohon isi "Yang Seharusnya Terjadi".');
+  if (!sinceAt.value) return void missing('Mohon isi "Sejak Kapan".');
+  if (!affectedScope.value) return void missing('Mohon pilih "Jumlah Terdampak".');
+  if (!workStatus.value) return void missing('Mohon pilih status pekerjaan.');
+  if (workStatus.value === 'TERGANGGU' && !workaround.value.trim()) return void missing('Mohon isi "Cara Lain yang Dipakai".');
+  if (!evidenceSteps.value.trim() && pendingFiles.value.length === 0) {
+    showError('Bukti Wajib', 'Unggah berkas atau tulis langkah sebagai bukti (minimal salah satu).');
+    nextTick(() => uploadSection.value?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
     return;
   }
   if (shouldAssign) {
@@ -431,14 +460,22 @@ const handleWorkerConfirm = async (userIds: string[]) => {
 const createTicket = async (shouldIssue: boolean = false) => {
   isSaving.value = true;
   try {
-    const ticketPayload: Partial<Ticket> = {
+    const ticketPayload = {
       title: title.value.trim(),
       category: serviceView.value === 'SUPPORT_IT' ? 'Support IT' : 'IT Programmer',
       project_kendala: projectKendala.value,
       submodule: submodule.value,
       location: serviceView.value === 'IT_PROGRAMMER' ? '' : location.value.trim(),
-      priority: priority.value,
       description: description.value.trim(),
+      expected_behavior: expectedBehavior.value.trim(),
+      unit: pelaporIdentity.value?.unit || unit.value || undefined,
+      since_at: sinceAt.value,
+      affected_scope: affectedScope.value,
+      work_status: workStatus.value,
+      workaround: workStatus.value === 'TERGANGGU' ? workaround.value.trim() : null,
+      is_event: isEvent.value,
+      evidence_steps: evidenceSteps.value.trim() || null,
+      channel: isIntake.value ? channel.value : undefined,
     };
     const newTicket = await store.addTicket(ticketPayload, shouldIssue, behalfUserId.value || null, pendingFiles.value.length);
     if (newTicket) {
@@ -491,6 +528,14 @@ const closeSuccessModalAndGoMain = () => {
 const resetForm = () => {
   title.value = '';
   description.value = '';
+  expectedBehavior.value = '';
+  sinceAt.value = '';
+  affectedScope.value = '';
+  workStatus.value = '';
+  workaround.value = '';
+  isEvent.value = false;
+  evidenceSteps.value = '';
+  channel.value = 'FORM';
   pendingFiles.value = [];
   behalfUserId.value = null;
   selectedWorkers.value = [];

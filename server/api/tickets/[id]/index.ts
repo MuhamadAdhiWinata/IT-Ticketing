@@ -1,3 +1,4 @@
+import { IT_ROLES } from '~/utils/roles';
 import { eq, and, count } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { tickets, files, ticketMembers, worklogs, auditLogs, comments, internalNotes } from '~/server/database/schema';
@@ -24,7 +25,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (method === 'PUT') {
-    await requireRole(event, 'IT_WORKER', 'SYSTEM_ADMIN');
+    await requireRole(event, ...IT_ROLES);
     const body = await readBody(event);
 
     const existing = await db.query.tickets.findFirst({
