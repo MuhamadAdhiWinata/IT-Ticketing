@@ -86,7 +86,7 @@ function ticket(t: {
     sinceAt: t.createdAt,
     affectedScope: 'SATU_PENGGUNA',
     workStatus: 'DAPAT_MENUNGGU',
-    evidenceSteps: '1. Buka menu terkait. 2. Kendala muncul.',
+    evidenceSteps: '<ol><li>Buka menu terkait</li><li>Kendala <strong>muncul</strong></li></ol>',
     channel: 'FORM',
     ...rest,
     submodule: t.submodule ?? null,
@@ -103,7 +103,7 @@ function ticket(t: {
   };
 }
 
-const TICKETS: TicketIn[] = [
+const BASE_TICKETS: TicketIn[] = [
   ticket({
     id: 'TCK-202609-001', no: 'TIKSP-100001', title: 'Printer Lantai 2 Kehabisan Tinta',
     description: 'Printer EPSON L3150 tidak dapat mencetak invoice akhir bulan.',
@@ -220,6 +220,170 @@ const TICKETS: TicketIn[] = [
   }),
 ];
 
+// ── Field triase/eksekusi (spesifikasi 35 field) untuk tiket di atas ──
+// Insiden P1/P2 selalu punya konfirmasi Duty Engineer; prioritas mengikuti matriks Dampak x Urgensi.
+const DUTY = (at: string) => ({ dutyConfirmedBy: 'Yoga Prakoso', dutyConfirmedAt: at });
+const PATCH: Record<string, Partial<TicketIn>> = {
+  'TCK-202609-001': { ticketType: 'INSIDEN', impact: 'SEDANG', urgency: 'TINGGI', affectedScope: 'SATU_UNIT', workStatus: 'TERGANGGU', workaround: 'Mencetak lewat printer lantai 1', blockedBy: 'PIHAK_KETIGA', ...DUTY(ts('2026-09-01', '09:08:00')) },
+  'TCK-202609-002': { ticketType: 'INSIDEN', impact: 'LUAS', urgency: 'TINGGI', workStatus: 'BERHENTI_TOTAL', odooTaskUrl: 'https://odoo.example.com/web#id=1001&model=project.task', closedAt: ts('2026-09-03', '08:00:00'), ...DUTY(ts('2026-09-02', '14:03:00')) },
+  'TCK-202609-003': { ticketType: 'INSIDEN', impact: 'SEDANG', urgency: 'TINGGI', affectedScope: 'SATU_UNIT', workStatus: 'TERGANGGU', workaround: 'Rapat memakai jaringan kabel', blockedBy: 'PIHAK_KETIGA', ...DUTY(ts('2026-09-03', '08:40:00')) },
+  'TCK-202609-004': { acknowledgedAt: ts('2026-09-04', '10:30:00'), changeReason: null },
+  'TCK-202609-005': { ticketType: 'INSIDEN', impact: 'LUAS', urgency: 'TINGGI', affectedScope: 'SEMUA_PENGGUNA', workStatus: 'BERHENTI_TOTAL', ...DUTY(ts('2026-09-05', '07:58:00')) },
+  'TCK-202609-006': { ticketType: 'INSIDEN', impact: 'TERBATAS', urgency: 'TINGGI', workStatus: 'TERGANGGU', workaround: 'Memakai monitor cadangan' },
+  'TCK-202609-007': { ticketType: 'INSIDEN', impact: 'SEDANG', urgency: 'TINGGI', workStatus: 'TERGANGGU', workaround: 'Kirim lewat webmail', blockedBy: 'LAINNYA', ...DUTY(ts('2026-09-07', '13:08:00')) },
+  'TCK-202609-008': { ticketType: 'PL_AKSES', catalogItem: 'PL-02', affectedScope: 'SATU_UNIT', odooTaskUrl: 'https://odoo.example.com/web#id=1002&model=project.task' },
+  'TCK-202609-009': { ticketType: 'DI_LUAR_LAYANAN', closedAt: ts('2026-09-10', '08:00:00') },
+  'TCK-202609-010': { ticketType: 'INSIDEN', impact: 'LUAS', urgency: 'TINGGI', affectedScope: 'SATU_UNIT', workStatus: 'TERGANGGU', workaround: 'HR menghitung lembur manual di Excel', odooTaskUrl: 'https://odoo.example.com/web#id=1003&model=project.task', ...DUTY(ts('2026-09-10', '08:38:00')) },
+  'TCK-202610-001': { ticketType: 'INSIDEN', impact: 'LUAS', urgency: 'TINGGI', affectedScope: 'SATU_UNIT', workStatus: 'BERHENTI_TOTAL', blockedBy: 'PIHAK_KETIGA', ...DUTY(ts('2026-10-05', '09:08:00')) },
+  'TCK-202610-002': { ticketType: 'INSIDEN', impact: 'TERBATAS', urgency: 'TINGGI', workStatus: 'TERGANGGU', workaround: 'Scan lewat mesin fotokopi', blockedBy: 'PIHAK_KETIGA' },
+  'TCK-202610-003': { ticketType: 'PENGEMBANGAN', channel: 'PERCAKAPAN', acknowledgedAt: ts('2026-10-12', '14:30:00') },
+  'TCK-202610-004': { ticketType: 'INSIDEN', impact: 'SEDANG', urgency: 'TINGGI', workStatus: 'BERHENTI_TOTAL', changeReason: 'Berulang dari TIKPG-200001, urgensi dinaikkan', ...DUTY(ts('2026-10-14', '09:08:00')) },
+  'TCK-202610-005': { ticketType: 'PL_AKSES', catalogItem: 'PL-01', isEvent: 0 },
+};
+
+const nov = (day: string, time = '09:00:00') => ts(`2026-11-${day}`, time);
+// Tiket baru (November) agar setiap fase, jenis, hasil akhir, dan jenis solusi punya contoh.
+const EXTRA_TICKETS: TicketIn[] = [
+  // Fase Baru: belum diakui, ada cara lain, sedang tryout
+  ticket({
+    id: 'TCK-202611-001', no: 'TIKSP-100009', title: 'Wifi Ruang Ujian Putus-putus Saat Tryout',
+    description: 'Koneksi wifi ruang ujian sering terputus sehingga peserta tryout harus login ulang.',
+    expectedBehavior: 'Wifi stabil selama ujian berlangsung.',
+    category: 'Support IT', projectKendala: 'Koneksi Wifi & Jaringan Kantor', location: 'Gedung B, Lantai 1 - Ruang Ujian',
+    priority: 'MEDIUM', status: 'DRAFT', requester: 'USR-002', createdAt: nov('09', '07:30:00'),
+    affectedScope: 'SATU_UNIT', workStatus: 'TERGANGGU', workaround: 'Peserta berpindah ke hotspot ponsel', isEvent: 1,
+    evidenceSteps: `<ol><li>Hubungkan perangkat ke wifi <em>Ujian</em></li><li>Koneksi putus setelah 5-10 menit</li></ol><p>Tangkapan layar:</p><p><img src="${shot('Wifi Ujian terputus')}" alt="wifi terputus"></p>`,
+  }),
+  // Fase Diakui: dibuat PM atas nama PIC lewat percakapan
+  ticket({
+    id: 'TCK-202611-002', no: 'TIKPG-200008', title: 'Rekap Absensi Bulan Oktober Tidak Muncul',
+    description: 'Laporan rekap absensi Oktober kosong untuk seluruh karyawan Holding.',
+    expectedBehavior: 'Rekap absensi menampilkan data seluruh karyawan.',
+    category: 'IT Programmer', projectKendala: 'Maintenance ERP Web', submodule: 'Modul Absensi', location: 'Gedung Operasional, Lantai 1',
+    priority: 'MEDIUM', status: 'DRAFT', requester: 'USR-004', createdBy: 'PM-001', createdAt: nov('09', '10:15:00'),
+    channel: 'PERCAKAPAN', affectedScope: 'SEMUA_PENGGUNA', workStatus: 'DAPAT_MENUNGGU', acknowledgedAt: nov('09', '10:40:00'),
+  }),
+  // Fase Ditriase: Insiden P1 menunggu konfirmasi Duty Engineer (belum bisa diproses)
+  ticket({
+    id: 'TCK-202611-003', no: 'TIKPG-200009', title: 'ERP Desktop Tidak Bisa Dibuka Semua Cabang',
+    description: 'Aplikasi ERP desktop menampilkan error koneksi database di seluruh cabang.',
+    expectedBehavior: 'ERP desktop dapat dibuka dan terhubung ke database.',
+    category: 'IT Programmer', projectKendala: 'Maintenance ERP Desktop', location: 'Seluruh cabang',
+    priority: 'CRITICAL', status: 'DRAFT', requester: 'USR-001', assignee: 'IT-004', createdAt: nov('10', '07:45:00'),
+    affectedScope: 'SEMUA_PENGGUNA', workStatus: 'BERHENTI_TOTAL', acknowledgedAt: nov('10', '07:50:00'),
+    ticketType: 'INSIDEN', impact: 'LUAS', urgency: 'TINGGI',
+  }),
+  // Fase Ditriase: PL: Data dengan persetujuan PIC
+  ticket({
+    id: 'TCK-202611-004', no: 'TIKPG-200010', title: 'Koreksi Data Stok Gudang Akhir Oktober',
+    description: 'Selisih stok sistem dan fisik 12 item, perlu koreksi data langsung di database.',
+    expectedBehavior: 'Stok sistem sama dengan stok fisik.',
+    category: 'IT Programmer', projectKendala: 'Pengelolaan Database dan Backup Sistem ERP', location: 'Gudang Pusat',
+    priority: 'MEDIUM', status: 'DRAFT', requester: 'USR-004', assignee: 'IT-005', createdAt: nov('06', '13:00:00'),
+    affectedScope: 'SATU_UNIT', workStatus: 'DAPAT_MENUNGGU', acknowledgedAt: nov('06', '13:20:00'),
+    ticketType: 'PL_DATA', catalogItem: 'PL-04', dataApprovalNote: 'Persetujuan PIC data (Putri Amelia) via email 06 Nov 2026, daftar 12 item terlampir.',
+  }),
+  // Fase Dikerjakan: Permintaan Pengembangan dengan tautan Odoo
+  ticket({
+    id: 'TCK-202611-005', no: 'TIKPG-200011', title: 'Tambah Kolom Diskon Pada Laporan Penjualan',
+    description: 'Laporan penjualan perlu kolom diskon per item.',
+    expectedBehavior: 'Laporan menampilkan kolom diskon per item.',
+    category: 'IT Programmer', projectKendala: 'Permintaan Penambahan Fitur Baru ERP Web', location: 'Gedung B, Lantai 4 - Marketing',
+    priority: 'LOW', status: 'PROCESS', requester: 'USR-003', assignee: 'IT-002', createdAt: nov('03', '09:00:00'),
+    issued: nov('03', '09:10:00'), started: nov('04', '08:30:00'), acknowledgedAt: nov('03', '09:30:00'), acceptedAt: nov('04', '08:20:00'),
+    ticketType: 'PENGEMBANGAN', odooTaskUrl: 'https://odoo.example.com/web#id=1101&model=project.task',
+  }),
+  // Fase Menunggu Pemohon (mulai tercatat, belum berakhir)
+  ticket({
+    id: 'TCK-202611-006', no: 'TIKSP-100010', title: 'Cara Membuat Tanda Tangan Email di Outlook',
+    description: 'Staf baru ingin tahu cara membuat tanda tangan otomatis di Outlook.',
+    expectedBehavior: 'Tanda tangan muncul otomatis di email baru.',
+    category: 'Support IT', projectKendala: 'Email Perusahaan & Office 365', submodule: 'Outlook Desktop Client', location: 'Gedung Utama, Lantai 2 - HR',
+    priority: 'LOW', status: 'PROCESS', requester: 'USR-002', assignee: 'IT-001', createdAt: nov('05', '10:00:00'),
+    issued: nov('05', '10:05:00'), started: nov('05', '10:30:00'), acknowledgedAt: nov('05', '10:10:00'), acceptedAt: nov('05', '10:25:00'),
+    ticketType: 'PERTANYAAN', waitingStartedAt: nov('05', '11:00:00'),
+  }),
+  // Fase Dikerjakan: Proyek Baru tertahan rilis
+  ticket({
+    id: 'TCK-202611-007', no: 'TIKPG-200012', title: 'Portal Karyawan Versi Mobile',
+    description: 'Usulan portal karyawan versi mobile untuk pengajuan cuti.',
+    expectedBehavior: 'Karyawan dapat mengajukan cuti lewat ponsel.',
+    category: 'IT Programmer', projectKendala: 'Development Aplikasi / Sistem Baru', submodule: 'Portal Karyawan', location: 'Gedung Utama, Lantai 2 - HR',
+    priority: 'LOW', status: 'PROCESS', requester: 'USR-002', assignee: 'IT-004', createdAt: nov('02', '09:00:00'),
+    issued: nov('02', '09:10:00'), started: nov('04', '09:00:00'), acknowledgedAt: nov('02', '09:30:00'), acceptedAt: nov('04', '08:50:00'),
+    ticketType: 'PROYEK_BARU', blockedBy: 'RILIS', odooTaskUrl: 'https://odoo.example.com/web#id=1102&model=project.task',
+  }),
+  // Hasil Dialihkan: tiap tujuan pengalihan
+  ticket({
+    id: 'TCK-202611-008', no: 'TIKPG-200013', title: 'Printer Label Gudang Tidak Mencetak',
+    description: 'Printer label di gudang tidak mencetak, dilaporkan lewat kanal programmer.',
+    expectedBehavior: 'Printer label mencetak normal.',
+    category: 'IT Programmer', projectKendala: 'Maintenance ERP Desktop', location: 'Gudang Pusat',
+    priority: 'LOW', status: 'SELESAI', requester: 'USR-003', createdAt: nov('03', '14:00:00'), issued: nov('03', '14:05:00'), completed: nov('03', '14:30:00'),
+    acknowledgedAt: nov('03', '14:15:00'), ticketType: 'DI_LUAR_LAYANAN', transferTarget: 'IT_SUPPORT',
+    changeReason: 'Masalah perangkat keras, bukan aplikasi',
+  }),
+  ticket({
+    id: 'TCK-202611-009', no: 'TIKPG-200014', title: 'ERP Desktop Tidak Bisa Dibuka (Cabang Thamrin)',
+    description: 'ERP desktop di cabang Thamrin menampilkan error koneksi database.',
+    expectedBehavior: 'ERP desktop dapat dibuka.',
+    category: 'IT Programmer', projectKendala: 'Maintenance ERP Desktop', location: 'Cabang Thamrin',
+    priority: 'CRITICAL', status: 'SELESAI', requester: 'USR-004', createdAt: nov('10', '08:00:00'), issued: nov('10', '08:02:00'), completed: nov('10', '08:20:00'),
+    acknowledgedAt: nov('10', '08:10:00'), ticketType: 'INSIDEN', impact: 'LUAS', urgency: 'TINGGI', ...DUTY(nov('10', '08:12:00')),
+    transferTarget: 'DUPLIKAT', referencedTicketId: 'TCK-202611-003',
+  }),
+  ticket({
+    id: 'TCK-202611-010', no: 'TIKPG-200015', title: 'Tambah Fitur Persetujuan Cuti Bertingkat',
+    description: 'Permintaan alur persetujuan cuti dua tingkat.',
+    expectedBehavior: 'Cuti disetujui atasan lalu HR.',
+    category: 'IT Programmer', projectKendala: 'Permintaan Penambahan Fitur Baru ERP Web', location: 'Gedung Utama, Lantai 2 - HR',
+    priority: 'LOW', status: 'SELESAI', requester: 'USR-001', createdAt: nov('04', '11:00:00'), issued: nov('04', '11:05:00'), completed: nov('04', '11:40:00'),
+    acknowledgedAt: nov('04', '11:15:00'), ticketType: 'PENGEMBANGAN', transferTarget: 'PEMILIK_PP',
+  }),
+  ticket({
+    id: 'TCK-202611-011', no: 'TIKPG-200016', title: 'Integrasi ERP dengan Sistem Kantor Pusat',
+    description: 'Usulan integrasi data ERP cabang ke sistem pusat.',
+    expectedBehavior: 'Data cabang tersinkron ke pusat.',
+    category: 'IT Programmer', projectKendala: 'Integrasi API & Webhook Eksternal', submodule: 'Modul Integrasi Payment Gateway', location: 'Gedung Utama, Lantai 6',
+    priority: 'LOW', status: 'SELESAI', requester: 'USR-004', createdAt: nov('04', '15:00:00'), issued: nov('04', '15:05:00'), completed: nov('04', '15:35:00'),
+    acknowledgedAt: nov('04', '15:15:00'), ticketType: 'PROYEK_BARU', transferTarget: 'PIMPINAN_HO',
+    changeReason: 'Butuh keputusan anggaran pimpinan HO',
+  }),
+  // Hasil Ditutup: solusi Data atau Konfigurasi
+  ticket({
+    id: 'TCK-202611-012', no: 'TIKPG-200017', title: 'Tambah Akses Modul Inventory untuk Staf Gudang',
+    description: 'Dua staf gudang baru perlu akses modul Inventory.',
+    expectedBehavior: 'Staf gudang dapat membuka modul Inventory.',
+    category: 'IT Programmer', projectKendala: 'Maintenance ERP Desktop', submodule: 'Modul Inventory', location: 'Gudang Pusat',
+    priority: 'LOW', status: 'SELESAI', requester: 'USR-004', assignee: 'IT-002', createdAt: nov('02', '08:00:00'),
+    issued: nov('02', '08:05:00'), started: nov('02', '08:30:00'), completed: nov('02', '09:10:00'),
+    acknowledgedAt: nov('02', '08:10:00'), acceptedAt: nov('02', '08:25:00'), closedAt: nov('03', '08:00:00'),
+    ticketType: 'PL_AKSES', catalogItem: 'PL-05', solutionType: 'DATA_KONFIGURASI', resolutionSummary: 'Hak akses modul Inventory ditambahkan untuk dua akun staf gudang.',
+  }),
+  // Hasil Selesai: solusi Panduan
+  ticket({
+    id: 'TCK-202611-013', no: 'TIKSP-100011', title: 'Cara Mengatur Printer Default di Windows',
+    description: 'Staf bingung mengatur printer default setelah pindah meja.',
+    expectedBehavior: 'Dokumen otomatis tercetak di printer terdekat.',
+    category: 'Support IT', projectKendala: 'Printer & Mesin Fotokopi', location: 'Gedung A, Lantai 2',
+    priority: 'LOW', status: 'SELESAI', requester: 'USR-001', assignee: 'IT-001', createdAt: nov('04', '10:00:00'),
+    issued: nov('04', '10:05:00'), started: nov('04', '10:15:00'), completed: nov('04', '10:30:00'),
+    acknowledgedAt: nov('04', '10:08:00'), acceptedAt: nov('04', '10:12:00'),
+    ticketType: 'PERTANYAAN', solutionType: 'PANDUAN', resolutionSummary: 'Dikirim panduan langkah mengatur printer default lewat Settings > Printers.',
+  }),
+];
+
+const TICKETS: TicketIn[] = [
+  ...BASE_TICKETS.map((t): TicketIn => ({
+    ...t,
+    // Tiket lama: diakui 3 menit dan diterima Pelaksana 8 menit setelah terbit.
+    acknowledgedAt: t.issuedAt ? addMin(t.issuedAt, 3) : null,
+    acceptedAt: t.issuedAt && t.assignedTo ? addMin(t.issuedAt, 8) : null,
+    ...(PATCH[t.id] ?? {}),
+  })),
+  ...EXTRA_TICKETS,
+];
+
 // Riwayat audit diturunkan dari data tiket agar selalu cocok dengan status dan timestamp-nya.
 function auditRows() {
   const rows: (typeof auditLogs.$inferInsert)[] = [];
@@ -234,7 +398,17 @@ function auditRows() {
     if (t.processStartedAt) add(id, 'TAHAP_START_WORK_SELESAI', t.assignedTo!, t.processStartedAt, 'DRAFT -> PROCESS');
     if (t.delegatedAt) add(id, 'TAHAP_DELEGATION_SELESAI', t.assignedTo!, t.delegatedAt, 'PROCESS -> DELEGASI', t.delegationNotes ?? undefined);
     if (t.returnedAt) add(id, 'STATUS_DIUBAH', t.assignedTo!, t.returnedAt, 'DELEGASI -> PROCESS', t.returnedNotes ?? undefined);
-    if (t.completedAt) add(id, 'TAHAP_IN_PROGRESS_SELESAI', t.assignedTo!, t.completedAt, 'PROCESS -> SELESAI');
+    if (t.completedAt && !t.transferTarget) add(id, 'TAHAP_IN_PROGRESS_SELESAI', t.assignedTo ?? 'PM-001', t.completedAt, 'PROCESS -> SELESAI');
+  }
+  // Aksi triase/eksekusi, urut sesuai kolom tiket.
+  for (const t of TICKETS) {
+    const id = t.id;
+    if (t.acknowledgedAt) add(id, 'TIKET_DIAKUI', 'IT-001', t.acknowledgedAt);
+    if (t.ticketType) add(id, t.transferTarget ? 'TIKET_DIALIHKAN' : 'TIKET_DITRIASE', 'PM-001', addMin(t.acknowledgedAt ?? t.createdAt, 10), t.transferTarget ?? 'ticketType', t.changeReason ?? undefined);
+    if (t.dutyConfirmedAt) add(id, 'KONFIRMASI_DUTY_ENGINEER', 'DE-001', t.dutyConfirmedAt, `Dikonfirmasi ${t.dutyConfirmedBy}`);
+    if (t.acceptedAt && t.assignedTo) add(id, 'TIKET_DITERIMA', t.assignedTo, t.acceptedAt);
+    if (t.waitingStartedAt) add(id, 'MENUNGGU_PEMOHON_MULAI', t.assignedTo ?? 'IT-001', t.waitingStartedAt);
+    if (t.closedAt) add(id, 'TIKET_DITUTUP', 'PM-001', t.closedAt);
   }
   return rows;
 }
@@ -250,6 +424,9 @@ const MEMBERS: [string, string][] = [
   ['TCK-202610-001', 'IT-003'],
   ['TCK-202610-002', 'IT-001'],
   ['TCK-202610-005', 'IT-001'],
+  ['TCK-202611-003', 'IT-004'], ['TCK-202611-004', 'IT-005'], ['TCK-202611-005', 'IT-002'],
+  ['TCK-202611-006', 'IT-001'], ['TCK-202611-007', 'IT-004'], ['TCK-202611-012', 'IT-002'],
+  ['TCK-202611-013', 'IT-001'],
 ];
 
 // ── Worklog (HTML dari editor Tiptap) ──
