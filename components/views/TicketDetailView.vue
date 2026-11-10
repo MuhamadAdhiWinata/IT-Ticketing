@@ -78,7 +78,7 @@
               <span v-else class="text-xs text-muted-foreground italic">Belum ditugaskan</span>
             </div>
           </div>
-          <div v-if="store.currentUser?.role === 'SYSTEM_ADMIN' && ticket.status !== 'SELESAI'" class="flex flex-col gap-1">
+          <div v-if="canTriageRole(store.currentUser?.role) && ticket.status !== 'SELESAI'" class="flex flex-col gap-1">
             <label for="pelaksana" class="text-xs text-muted-foreground">Pelaksana:</label>
             <select
               id="pelaksana"
@@ -96,6 +96,17 @@
           </div>
         </div>
       </div>
+
+      <ol class="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold" aria-label="Fase tiket">
+        <li
+          v-for="(p, i) in PHASES"
+          :key="p"
+          :class="[
+            'px-2.5 py-1 rounded-md border',
+            p === ticket.status_phase ? 'bg-primary text-primary-foreground border-primary' : i < phaseIndex ? 'bg-muted text-foreground border-border' : 'text-muted-foreground border-dashed border-border',
+          ]"
+        >{{ p === 'Selesai' && ticket.status_phase === 'Selesai' ? ticket.status_label : p }}</li>
+      </ol>
 
       <TicketTriagePanel v-if="store.currentUser" :ticket="ticket" />
 
@@ -568,7 +579,8 @@
 </template>
 
 <script setup lang="ts">
-import { isITRole } from '~/utils/roles';
+import { isITRole, canTriageRole } from '~/utils/roles';
+import { PHASES } from '~/utils/ticketSpec';
 import { ref, computed, watch, nextTick } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { apiFetch } from '~/services/api';
@@ -590,6 +602,7 @@ const { showError } = useModal();
 const { toast } = useToast();
 const isOpen = computed(() => store.activeView === 'ticket-detail');
 const ticket = computed(() => store.selectedTicket);
+const phaseIndex = computed(() => PHASES.indexOf((ticket.value?.status_phase ?? 'Baru') as (typeof PHASES)[number]));
 
 const requesterIdentityLabel = computed(() => {
   const t = ticket.value;

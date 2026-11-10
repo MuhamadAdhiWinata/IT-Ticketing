@@ -95,3 +95,7 @@ Keputusan desain: prioritas tetap 4 level di DB (`LOW/MEDIUM/HIGH/CRITICAL`). P1
 2. Countdown SLA berdasarkan P1-P4 (SLA kategori lama masih dipakai).
 3. H5 validasi server submodul milik aplikasi, H6 rollback upload CRITICAL, H7 `comment_files` untuk gambar inline.
 4. Uji visual UI di browser (formulir pemohon, panel triase) belum dilakukan; yang diuji adalah API dan type check.
+
+## Matriks kepatuhan 35 field
+
+Lihat [spesifikasi-field-tiket.csv](./spesifikasi-field-tiket.csv): tiap field dipetakan ke kolom DB, endpoint, dan UI. Kanban/filter Dashboard dan Laporan memakai fase (Baru, Diakui, Ditriase, Dikerjakan, Menunggu Pemohon, Selesai dengan hasil Selesai/Ditutup/Dialihkan). Pelaksana dapat ditunjuk PM/Admin dari detail tiket.

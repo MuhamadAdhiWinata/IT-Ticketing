@@ -119,7 +119,7 @@
       </div>
 
       <!-- Aplikasi/Kendala & Modul Row -->
-      <div :class="[serviceView === 'SUPPORT_IT' ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2', 'grid gap-4']">
+      <div :class="[currentSubmodules.length || serviceView === 'IT_PROGRAMMER' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1', 'grid gap-4']">
         <AppSelect
           v-model="projectKendala"
           :options="currentProjectKendala"
@@ -127,10 +127,10 @@
           :placeholder="serviceView === 'SUPPORT_IT' ? '-- Pilih Kendala --' : '-- Pilih Aplikasi --'"
         />
         <AppSelect
-          v-if="serviceView === 'IT_PROGRAMMER'"
+          v-if="serviceView === 'IT_PROGRAMMER' || currentSubmodules.length"
           v-model="submodule"
           :options="currentSubmodules"
-          label="Modul"
+          label="Modul (opsional)"
           placeholder="-- Pilih Modul --"
         />
       </div>
@@ -344,7 +344,7 @@ const behalfUserOptions = computed(() => [
   { value: '', label: '-- Buat untuk diri sendiri --' },
   ...store.allUsers
     .filter(u => u.id !== store.currentUser?.id)
-    .map(u => ({ value: u.id, label: formatRequesterIdentity(u, u.name) }))
+    .map(u => ({ value: u.id, label: formatRequesterIdentity(u, u.name) + (u.isPic ? ' [PIC]' : '') }))
 ]);
 
 const pelaporIdentity = computed(() => {

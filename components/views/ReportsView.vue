@@ -430,10 +430,7 @@ const workerOptions = computed(() => [
 
 const statusOptions = [
   { value: 'ALL', label: 'Semua Status' },
-  { value: 'PROCESS', label: 'PROCESS (Dikerjakan)' },
-  { value: 'SELESAI', label: 'SELESAI' },
-  { value: 'DELEGASI', label: 'DELEGASI VENDOR' },
-  { value: 'DRAFT', label: 'DRAFT' },
+  ...['Baru', 'Diakui', 'Ditriase', 'Dikerjakan', 'Menunggu Pemohon', 'Selesai', 'Ditutup', 'Dialihkan'].map(v => ({ value: v, label: v })),
 ];
 
 const categoryOptions = computed(() => [
@@ -472,7 +469,7 @@ const getTicketContributors = (t: Ticket): string => {
 const filteredTickets = computed(() => {
   return props.tickets.filter(t => {
     // Status Filter
-    if (filterStatus.value !== 'ALL' && t.status !== filterStatus.value) return false;
+    if (filterStatus.value !== 'ALL' && t.status_phase !== filterStatus.value && t.status_label !== filterStatus.value) return false;
 
     // Category Filter
     if (filterCategory.value !== 'ALL' && t.category !== filterCategory.value) return false;

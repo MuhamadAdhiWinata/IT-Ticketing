@@ -138,17 +138,17 @@
     <!-- Kanban -->
     <div
       v-if="viewMode === 'kanban'"
-      class="flex overflow-x-auto gap-4 pb-4 w-full custom-scrollbar lg:grid lg:grid-cols-4 lg:overflow-visible lg:pb-0 items-start"
+      class="flex overflow-x-auto gap-4 pb-4 w-full custom-scrollbar xl:grid xl:grid-cols-6 xl:overflow-visible xl:pb-0 items-start"
     >
       <div
         v-for="col in kanbanColumns"
         :key="col.id"
         @dragover.prevent="draggedOverCol = col.id"
         @dragleave="draggedOverCol = null"
-        @drop="handleDrop($event, col.id as TicketStatus)"
+        @drop="handleDrop($event, col.id)"
         :class="[
           'bg-muted/40 p-3 rounded-lg border transition-all space-y-3 min-h-[400px]',
-          'w-[85vw] sm:w-[300px] lg:w-full shrink-0',
+          'w-[85vw] sm:w-[260px] xl:w-full shrink-0',
           draggedOverCol === col.id
             ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
             : 'border-border'
@@ -300,6 +300,7 @@ import type { AppUser, Ticket, TicketStatus } from '~/types';
 import TicketIncomingLog from '~/components/common/TicketIncomingLog.vue';
 import AppSelect from '~/components/common/AppSelect.vue';
 import { formatOrgLabel, formatRequesterIdentity } from '~/utils/identity';
+import { PHASES } from '~/utils/ticketSpec';
 
 const props = withDefaults(defineProps<{
   tickets: Ticket[];
@@ -320,7 +321,7 @@ const stats = computed(() => {
     total: all.length,
     unassigned: all.filter(t => !t.assignedTo && t.status !== 'SELESAI').length,
     slaBreached: all.filter(t => t.isSLABreached && t.status !== 'SELESAI').length,
-    incoming: all.filter(t => t.status === 'DRAFT').length,
+    incoming: all.filter(t => t.status_phase === 'Baru').length,
   };
 });
 
@@ -358,10 +359,9 @@ const showActivity = ref(false);
 
 const statusOptions = [
   { value: 'ALL', label: 'Semua Status' },
-  { value: 'DRAFT', label: 'Draft' },
-  { value: 'PROCESS', label: 'Proses' },
-  { value: 'SELESAI', label: 'Selesai' },
-  { value: 'DELEGASI', label: 'Delegasi' },
+  ...PHASES.map(p => ({ value: p, label: p })),
+  { value: 'Ditutup', label: 'Ditutup' },
+  { value: 'Dialihkan', label: 'Dialihkan' },
 ];
 
 const priorityOptions = [
@@ -372,12 +372,14 @@ const priorityOptions = [
   { value: 'CRITICAL', label: 'Critical' },
 ];
 
+// Pemindahan lewat alur status DB; fase lain (Diakui, Ditriase, Menunggu Pemohon) diatur dari panel triase.
 const cardStatusOptions = [
-  { value: 'DRAFT', label: 'Draft' },
-  { value: 'PROCESS', label: 'Process' },
+  { value: 'DRAFT', label: 'Baru' },
+  { value: 'PROCESS', label: 'Dikerjakan' },
   { value: 'SELESAI', label: 'Selesai' },
   { value: 'DELEGASI', label: 'Delegasi' },
 ];
+const PHASE_TO_STATUS: Record<string, TicketStatus> = { Baru: 'DRAFT', Dikerjakan: 'PROCESS', Selesai: 'SELESAI' };
 
 const viewModes: Array<{ id: 'kanban' | 'table'; label: string; icon: any }> = [
   { id: 'kanban', label: 'Kanban', icon: Columns },
@@ -385,10 +387,12 @@ const viewModes: Array<{ id: 'kanban' | 'table'; label: string; icon: any }> = [
 ];
 
 const kanbanColumns = [
-  { id: 'DRAFT', title: 'Baru / Draft', colorClass: 'bg-muted-foreground' },
-  { id: 'PROCESS', title: 'On-Progress', colorClass: 'bg-primary' },
-  { id: 'SELESAI', title: 'Selesai Internal', colorClass: 'bg-success' },
-  { id: 'DELEGASI', title: 'Didelegasikan', colorClass: 'bg-warning' },
+  { id: 'Baru', title: 'Baru', colorClass: 'bg-muted-foreground' },
+  { id: 'Diakui', title: 'Diakui', colorClass: 'bg-info' },
+  { id: 'Ditriase', title: 'Ditriase', colorClass: 'bg-info' },
+  { id: 'Dikerjakan', title: 'Dikerjakan', colorClass: 'bg-primary' },
+  { id: 'Menunggu Pemohon', title: 'Menunggu Pemohon', colorClass: 'bg-warning' },
+  { id: 'Selesai', title: 'Selesai / Ditutup / Dialihkan', colorClass: 'bg-success' },
 ];
 
 const filteredTickets = computed(() => {
@@ -400,7 +404,7 @@ const filteredTickets = computed(() => {
       || (t.requested_by_company || '').toLowerCase().includes(q)
       || (t.requested_by_division || '').toLowerCase().includes(q)
       || (t.requestedByDept || '').toLowerCase().includes(q);
-    const matchStatus = statusFilter.value === 'ALL' || t.status === statusFilter.value;
+    const matchStatus = statusFilter.value === 'ALL' || t.status_phase === statusFilter.value || t.status_label === statusFilter.value;
     const matchPriority = priorityFilter.value === 'ALL' || t.priority === priorityFilter.value;
     return matchSearch && matchStatus && matchPriority;
   });
@@ -422,15 +426,16 @@ const handleDragEnd = () => {
   draggedOverCol.value = null;
 };
 
-const handleDrop = (e: DragEvent, newStatus: TicketStatus) => {
+const handleDrop = (e: DragEvent, phase: string) => {
   e.preventDefault();
   const ticketId = e.dataTransfer?.getData('text/plain') || draggedTicketId.value;
-  if (ticketId) {
+  const newStatus = PHASE_TO_STATUS[phase];
+  if (ticketId && newStatus) {
     props.onMoveStatus(ticketId, newStatus);
   }
   draggedTicketId.value = null;
   draggedOverCol.value = null;
 };
 
-const getTicketsByStatus = (status: string) => filteredTickets.value.filter(t => t.status === status);
+const getTicketsByStatus = (phase: string) => filteredTickets.value.filter(t => t.status_phase === phase);
 </script>
