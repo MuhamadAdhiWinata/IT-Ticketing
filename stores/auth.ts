@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import type { AppUser } from '~/types';
 import { apiFetch } from '~/services/api';
+import { isITRole, canTriageRole, isDutyRole, isIntakeRole } from '~/utils/roles';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -12,10 +13,13 @@ export const useAuthStore = defineStore('auth', {
 
   getters: {
     isSystemAdmin: (state) => state.user?.role === 'SYSTEM_ADMIN',
-    isITWorker: (state) => state.user?.role === 'IT_WORKER',
+    isITWorker: (state) => isITRole(state.user?.role),
     isUserNonIT: (state) => state.user?.role === 'USER_NON_IT',
     canManageUsers: (state) => state.user?.role === 'SYSTEM_ADMIN',
-    canAssignTickets: (state) => state.user?.role === 'SYSTEM_ADMIN' || state.user?.role === 'IT_WORKER',
+    canAssignTickets: (state) => isITRole(state.user?.role),
+    canTriage: (state) => canTriageRole(state.user?.role),
+    isDuty: (state) => isDutyRole(state.user?.role),
+    isIntake: (state) => isIntakeRole(state.user?.role),
   },
 
   actions: {

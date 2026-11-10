@@ -101,8 +101,10 @@ export async function triageTicket(actor: Actor, input: z.input<typeof TriageSch
     const prevP = priorityToP(t.priority);
     const matrixP = priorityFromMatrix(impact, urgency);
     let reasonNeeded = !!(t.ticketType && v.ticket_type && v.ticket_type !== t.ticketType);
+    // Matriks hanya menghitung ulang bila input dampak/urgensi/jenis berubah; override manual PM tidak ditimpa.
+    const inputsChanged = (v.impact && v.impact !== t.impact) || (v.urgency && v.urgency !== t.urgency) || (v.ticket_type && v.ticket_type !== t.ticketType);
     if (type === 'INSIDEN') {
-      const newP = v.priority ?? matrixP ?? prevP;
+      const newP = v.priority ?? (inputsChanged ? matrixP : null) ?? prevP;
       if (newP && P_TO_PRIORITY[newP] !== t.priority) {
         patch.priority = P_TO_PRIORITY[newP];
         if (t.ticketType && prevP && newP !== prevP) reasonNeeded = true;
@@ -139,7 +141,7 @@ export async function triageTicket(actor: Actor, input: z.input<typeof TriageSch
     }
 
     if (Object.keys(patch).length > 0) await tx.update(tickets).set(patch).where(eq(tickets.id, t.id));
-    if (v.assignee_id && !v.transfer_target) await assignTicket(actor, { ticketId: t.id, userId: v.assignee_id }, tx);
+    if (v.assignee_id && v.assignee_id !== t.assignedTo && !v.transfer_target) await assignTicket(actor, { ticketId: t.id, userId: v.assignee_id }, tx);
 
     const changed = Object.keys(patch).join(', ') || 'pelaksana';
     await audit(tx, t.id, actor, v.transfer_target ? 'TIKET_DIALIHKAN' : 'TIKET_DITRIASE', changed, v.change_reason);

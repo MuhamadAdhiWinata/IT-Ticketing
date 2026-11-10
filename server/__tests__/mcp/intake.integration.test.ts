@@ -51,6 +51,13 @@ describe('Triase PM', () => {
     expect((await row(id)).priority).toBe('CRITICAL');
     await expect(triageTicket(PM, { ticketId: id, ticket_type: 'PERTANYAAN' })).rejects.toMatchObject({ statusCode: 400 });
   });
+  it('simpan ulang tanpa perubahan tidak menimpa prioritas manual', async () => {
+    const id = await seedTicket({ status: 'DRAFT' });
+    await triageTicket(PM, { ticketId: id, ticket_type: 'INSIDEN', impact: 'SEDANG', urgency: 'SEDANG' });
+    await triageTicket(PM, { ticketId: id, priority: 'P2', change_reason: 'ujian' });
+    await triageTicket(PM, { ticketId: id, ticket_type: 'INSIDEN', impact: 'SEDANG', urgency: 'SEDANG' });
+    expect((await row(id)).priority).toBe('HIGH');
+  });
   it('prioritas hanya untuk Insiden', async () => {
     const id = await seedTicket({ status: 'DRAFT' });
     await expect(triageTicket(PM, { ticketId: id, ticket_type: 'PERTANYAAN', priority: 'P2' })).rejects.toMatchObject({ statusCode: 400 });

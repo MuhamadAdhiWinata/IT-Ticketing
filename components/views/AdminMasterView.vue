@@ -566,7 +566,7 @@
                     :class="[
                       'px-2 py-0.5 rounded text-[10px] font-bold uppercase',
                       u.role === 'SYSTEM_ADMIN' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' :
-                      u.role === 'IT_WORKER' ? 'bg-primary/5 text-primary dark:bg-blue-950 dark:text-blue-300' :
+                      u.role !== 'USER_NON_IT' ? 'bg-primary/5 text-primary dark:bg-blue-950 dark:text-blue-300' :
                       'bg-muted text-foreground'
                     ]"
                   >
@@ -757,6 +757,13 @@
                 label="Role"
               />
             </div>
+            <div class="grid grid-cols-2 gap-3 items-end">
+              <AppSelect v-model="userForm.unit" :options="unitFormOptions" label="Unit" />
+              <label class="flex items-center gap-2 text-xs font-bold text-foreground pb-2">
+                <input v-model="userForm.isPic" type="checkbox" class="rounded border-border" />
+                PIC unit
+              </label>
+            </div>
             <div class="pt-2 flex justify-end gap-2">
               <button type="button" @click="closeUserModal" class="px-3 py-1.5 bg-muted rounded-xl font-bold">Batal</button>
               <button type="submit" :disabled="isSavingUser" class="px-4 py-1.5 bg-primary text-primary-foreground rounded-xl font-bold disabled:opacity-60">
@@ -845,6 +852,7 @@ import type { CategoryItem, ProjectKendalaItem, SubmoduleItem, CompanyItem, Divi
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass, getProjectKendalaLabel } from '~/utils/ticketHelpers';
 import { nextId } from '~/utils/id';
 import { useToast } from '~/composables/useToast';
+import { UNITS } from '~/utils/ticketSpec';
 import AppSelect from '~/components/common/AppSelect.vue';
 
 const store = useAppStore();
@@ -882,7 +890,10 @@ const roleFormOptions = [
   { value: 'USER_NON_IT', label: 'USER_NON_IT' },
   { value: 'IT_WORKER', label: 'IT_WORKER' },
   { value: 'SYSTEM_ADMIN', label: 'SYSTEM_ADMIN' },
+  { value: 'PM', label: 'PM' },
+  { value: 'DUTY_ENGINEER', label: 'DUTY_ENGINEER' },
 ];
+const unitFormOptions = [{ value: '', label: '-- Tanpa Unit --' }, ...UNITS.map(u => ({ value: u, label: u }))];
 
 // ── Opsi dropdown Perusahaan & Divisi ──
 const companyFormOptions = computed(() => store.companies.map(c => ({
@@ -920,7 +931,7 @@ const smForm = ref({ id: '', project_kendala_id: '', name: '' });
 const isUserModalOpen = ref(false);
 const editingUserId = ref<string | null>(null);
 const isSavingUser = ref(false);
-const userForm = ref<{ id: string; name: string; email: string; department: string; companyId: string; divisionId: string; role: UserRole }>({
+const userForm = ref<{ id: string; name: string; email: string; department: string; companyId: string; divisionId: string; role: UserRole; unit: string; isPic: boolean }>({
   id: '',
   name: '',
   email: '',
@@ -928,6 +939,8 @@ const userForm = ref<{ id: string; name: string; email: string; department: stri
   companyId: '',
   divisionId: '',
   role: 'USER_NON_IT',
+  unit: '',
+  isPic: false,
 });
 
 // Divisi tersaring mengikuti perusahaan yang dipilih pada form user.
@@ -1145,6 +1158,8 @@ const openAddUserModal = () => {
     companyId: '',
     divisionId: '',
     role: 'USER_NON_IT',
+    unit: '',
+    isPic: false,
   };
   isUserModalOpen.value = true;
 };
@@ -1159,6 +1174,8 @@ const editUser = (u: AppUser) => {
     companyId: u.companyId ?? '',
     divisionId: u.divisionId ?? '',
     role: u.role,
+    unit: u.unit ?? '',
+    isPic: !!u.isPic,
   };
   isUserModalOpen.value = true;
 };
@@ -1173,6 +1190,8 @@ const saveUserForm = async () => {
     ...userForm.value,
     companyId: userForm.value.companyId || null,
     divisionId: userForm.value.divisionId || null,
+    unit: userForm.value.unit || null,
+    isPic: userForm.value.isPic,
   };
   isSavingUser.value = true;
   try {

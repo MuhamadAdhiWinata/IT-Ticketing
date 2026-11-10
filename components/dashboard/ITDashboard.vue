@@ -283,6 +283,7 @@
 </template>
 
 <script setup lang="ts">
+import { isITRole } from '~/utils/roles';
 import { ref, computed } from 'vue';
 import {
   Columns,
@@ -324,7 +325,7 @@ const stats = computed(() => {
 });
 
 const technicianWorkload = computed(() => {
-  const itWorkers = props.allUsers?.filter(u => u.role === 'IT_WORKER') || [];
+  const itWorkers = props.allUsers?.filter(u => isITRole(u.role) && u.role !== 'SYSTEM_ADMIN') || [];
   return itWorkers.map(w => {
     const active = props.tickets.filter(t => t.assignedTo === w.id && t.status === 'PROCESS').length;
     return { ...w, activeCount: active };

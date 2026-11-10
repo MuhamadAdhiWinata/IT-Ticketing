@@ -381,6 +381,7 @@
 </template>
 
 <script setup lang="ts">
+import { isITRole } from '~/utils/roles';
 import { ref, computed, watch } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { useToast } from '~/composables/useToast';
@@ -432,8 +433,8 @@ const activePreset = ref<'today' | '7days' | '30days' | 'month' | 'custom'>('7da
 const startDate = ref(getDaysAgoIso(6));
 const endDate = ref(getTodayIso());
 const selectedWorkerId = ref(
-  store.currentUser?.role === 'IT_WORKER'
-    ? store.currentUser.id
+  store.currentUser?.role !== 'SYSTEM_ADMIN'
+    ? store.currentUser!.id
     : 'ALL'
 );
 
@@ -447,7 +448,7 @@ const newWlDesc = ref('');
 const newWlStage = ref('ASSIGN');
 
 const itWorkers = computed(() => {
-  return store.allUsers.filter(u => u.role === 'IT_WORKER');
+  return store.allUsers.filter(u => isITRole(u.role) && u.role !== 'SYSTEM_ADMIN');
 });
 
 const applyPreset = (presetId: string) => {

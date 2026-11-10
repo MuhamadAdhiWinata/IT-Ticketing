@@ -49,16 +49,18 @@ const DIVISIONS = [
 ];
 
 const USERS = [
-  { id: 'USR-001', name: 'Rina Wulandari', email: 'rina.wulandari@company.co.id', role: 'USER_NON_IT', department: 'Finance & Accounting', companyId: 'COMP-001', divisionId: 'DIV-001' },
-  { id: 'USR-002', name: 'Dewi Kartika', email: 'dewi.kartika@company.co.id', role: 'USER_NON_IT', department: 'Human Resources', companyId: 'COMP-001', divisionId: 'DIV-002' },
-  { id: 'USR-003', name: 'Hendra Wijaya', email: 'hendra.wijaya@company.co.id', role: 'USER_NON_IT', department: 'Marketing & Sales', companyId: 'COMP-001', divisionId: 'DIV-003' },
-  { id: 'USR-004', name: 'Putri Amelia', email: 'putri.amelia@company.co.id', role: 'USER_NON_IT', department: 'Operasional', companyId: 'COMP-002', divisionId: 'DIV-004' },
+  { id: 'USR-001', name: 'Rina Wulandari', email: 'rina.wulandari@company.co.id', role: 'USER_NON_IT', department: 'Finance & Accounting', companyId: 'COMP-001', divisionId: 'DIV-001', unit: 'LNY', isPic: 1 },
+  { id: 'USR-002', name: 'Dewi Kartika', email: 'dewi.kartika@company.co.id', role: 'USER_NON_IT', department: 'Human Resources', companyId: 'COMP-001', divisionId: 'DIV-002', unit: 'IIE', isPic: 0 },
+  { id: 'USR-003', name: 'Hendra Wijaya', email: 'hendra.wijaya@company.co.id', role: 'USER_NON_IT', department: 'Marketing & Sales', companyId: 'COMP-001', divisionId: 'DIV-003', unit: 'REN', isPic: 0 },
+  { id: 'USR-004', name: 'Putri Amelia', email: 'putri.amelia@company.co.id', role: 'USER_NON_IT', department: 'Operasional', companyId: 'COMP-002', divisionId: 'DIV-004', unit: 'Holding', isPic: 1 },
   { id: 'IT-001', name: 'Budi Santoso', email: 'budi.santoso@it.company.co.id', role: 'IT_WORKER', department: 'IT Support & Hardware', companyId: 'COMP-001', divisionId: 'DIV-005' },
   { id: 'IT-002', name: 'Andi Pratama', email: 'andi.pratama@it.company.co.id', role: 'IT_WORKER', department: 'Software Engineering', companyId: 'COMP-001', divisionId: 'DIV-006' },
   { id: 'IT-003', name: 'Dedi Kurniawan', email: 'dedi.kurniawan@it.company.co.id', role: 'IT_WORKER', department: 'Network & Infrastructure', companyId: 'COMP-001', divisionId: 'DIV-007' },
   { id: 'IT-004', name: 'Rizal Siregar', email: 'rizal.siregar@it.company.co.id', role: 'IT_WORKER', department: 'DevOps & Database', companyId: 'COMP-001', divisionId: 'DIV-008' },
   { id: 'IT-005', name: 'Fajar Nugroho', email: 'fajar.nugroho@it.company.co.id', role: 'IT_WORKER', department: 'Database Administration', companyId: 'COMP-001', divisionId: 'DIV-008' },
   { id: 'ADMIN-001', name: 'Administrator IT', email: 'sysadmin@company.co.id', role: 'SYSTEM_ADMIN', department: 'Enterprise IT Governance', companyId: 'COMP-001', divisionId: 'DIV-009' },
+  { id: 'PM-001', name: 'Maria Anggraini', email: 'maria.anggraini@it.company.co.id', role: 'PM', department: 'Enterprise IT Governance', companyId: 'COMP-001', divisionId: 'DIV-009', unit: 'Holding', isPic: 0 },
+  { id: 'DE-001', name: 'Yoga Prakoso', email: 'yoga.prakoso@it.company.co.id', role: 'DUTY_ENGINEER', department: 'Software Engineering', companyId: 'COMP-001', divisionId: 'DIV-006', unit: 'Holding', isPic: 0 },
 ];
 const user = (id: string) => USERS.find(u => u.id === id)!;
 
@@ -79,6 +81,13 @@ function ticket(t: {
   const { no, requester, assignee, issued, started, completed, createdBy, ...rest } = t;
   const creator = createdBy ?? requester;
   return {
+    unit: user(requester).unit ?? 'Holding',
+    expectedBehavior: 'Berjalan normal tanpa kendala.',
+    sinceAt: t.createdAt,
+    affectedScope: 'SATU_PENGGUNA',
+    workStatus: 'DAPAT_MENUNGGU',
+    evidenceSteps: '1. Buka menu terkait. 2. Kendala muncul.',
+    channel: 'FORM',
     ...rest,
     submodule: t.submodule ?? null,
     createdBy: creator,
@@ -107,7 +116,7 @@ const TICKETS: TicketIn[] = [
     description: 'Akun terkunci setelah salah memasukkan password tiga kali.',
     category: 'IT Programmer', projectKendala: 'Maintenance ERP Desktop', submodule: 'Modul Payroll', location: 'Gedung A, Lantai 3',
     priority: 'CRITICAL', status: 'SELESAI', requester: 'USR-001', assignee: 'IT-002',
-    solutionType: 'PERMANEN', resolutionSummary: 'Akun di-unlock dan kebijakan lockout diperbarui.',
+    solutionType: 'PERBAIKAN_KODE', resolutionSummary: 'Akun di-unlock dan kebijakan lockout diperbarui.',
     createdAt: ts('2026-09-02', '13:50:00'), issued: ts('2026-09-02', '14:02:00'), started: ts('2026-09-02', '14:05:00'), completed: ts('2026-09-02', '14:45:00'),
   }),
   ticket({
@@ -159,7 +168,7 @@ const TICKETS: TicketIn[] = [
     description: 'Lampu LED di plafon ruang rapat mati total.',
     category: 'Support IT', projectKendala: 'CCTV & Keamanan Akses Fisik IT', location: 'Gedung Utama, Lantai 3 - Ruang Rapat',
     priority: 'MEDIUM', status: 'SELESAI', requester: 'USR-002', assignee: 'IT-005',
-    solutionType: 'PERMANEN', resolutionSummary: 'Konfigurasi dikoreksi dan diverifikasi pengguna.',
+    solutionType: 'PERBAIKAN_KODE', resolutionSummary: 'Konfigurasi dikoreksi dan diverifikasi pengguna.',
     createdAt: ts('2026-09-09', '10:45:00'), issued: ts('2026-09-09', '10:50:00'), started: ts('2026-09-09', '11:20:00'), completed: ts('2026-09-09', '13:00:00'),
   }),
   ticket({
@@ -199,7 +208,7 @@ const TICKETS: TicketIn[] = [
     description: 'Akun kembali terkunci dengan gejala sama seperti tiket sebelumnya.',
     category: 'IT Programmer', projectKendala: 'Maintenance ERP Desktop', submodule: 'Modul Payroll', location: 'Gedung A, Lantai 3',
     priority: 'HIGH', status: 'SELESAI', requester: 'USR-001', assignee: 'IT-002', referencedTicketId: 'TCK-202609-002',
-    solutionType: 'PERMANEN', resolutionSummary: 'Masalah berulang diselesaikan dengan perbaikan akar penyebab.', reopenCount: 1,
+    solutionType: 'PERBAIKAN_KODE', resolutionSummary: 'Masalah berulang diselesaikan dengan perbaikan akar penyebab.', reopenCount: 1,
     createdAt: ts('2026-10-14', '09:00:00'), issued: ts('2026-10-14', '09:05:00'), started: ts('2026-10-14', '09:15:00'), completed: ts('2026-10-14', '10:30:00'),
   }),
   ticket({

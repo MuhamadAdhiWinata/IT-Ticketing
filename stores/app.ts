@@ -240,32 +240,21 @@ export const useAppStore = defineStore('app', {
       this.selectedTicket = ticket;
     },
 
-    async addTicket(ticketPayload: Partial<Ticket>, shouldIssue: boolean, behalfUserId?: string | null, attachmentCount?: number): Promise<Ticket | null> {
+    async addTicket(ticketPayload: Record<string, any>, shouldIssue: boolean, behalfUserId?: string | null, attachmentCount?: number): Promise<Ticket | null> {
       if (!this.currentUser) return null;
 
       try {
         const res = await apiFetch<{ success: boolean; data: Ticket }>('/api/tickets', {
           method: 'POST',
-          body: {
-            title: ticketPayload.title,
-            category: ticketPayload.category,
-            project_kendala: ticketPayload.project_kendala,
-            submodule: ticketPayload.submodule,
-            location: ticketPayload.location,
-            priority: ticketPayload.priority,
-            description: ticketPayload.description,
-            shouldIssue,
-            behalfUserId,
-            attachmentCount: attachmentCount ?? 0,
-          },
+          body: { ...ticketPayload, shouldIssue, behalfUserId, attachmentCount: attachmentCount ?? 0 },
         });
 
         const newTicket = res.data;
         this.tickets = [newTicket, ...this.tickets];
         return newTicket;
-      } catch (e) {
-        console.error('Failed to create ticket:', e);
-        return null;
+      } catch (e: any) {
+        // Pesan validasi server (400) ditampilkan apa adanya oleh pemanggil.
+        throw new Error(e?.data?.statusMessage || e?.statusMessage || 'Gagal membuat tiket');
       }
     },
 

@@ -1,4 +1,4 @@
-export type UserRole = 'USER_NON_IT' | 'IT_WORKER' | 'SYSTEM_ADMIN';
+export type UserRole = 'USER_NON_IT' | 'IT_WORKER' | 'SYSTEM_ADMIN' | 'PM' | 'DUTY_ENGINEER';
 
 export type TicketStatus = 'DRAFT' | 'PROCESS' | 'DELEGASI' | 'SELESAI';
 
@@ -21,6 +21,8 @@ export interface AppUser {
   companyName?: string | null;
   divisionName?: string | null;
   avatarUrl?: string;
+  unit?: string | null;
+  isPic?: boolean;
 }
 
 export interface CompanyItem {
@@ -156,6 +158,31 @@ export interface Ticket {
   tech_debt_url?: string | null;
   acknowledged_at?: string | null;
   accepted_at?: string | null;
+
+  unit?: string | null;
+  expected_behavior?: string | null;
+  since_at?: string | null;
+  affected_scope?: string | null;
+  work_status?: string | null;
+  workaround?: string | null;
+  is_event?: boolean;
+  evidence_steps?: string | null;
+  channel?: string;
+  ticket_type?: string | null;
+  impact?: string | null;
+  urgency?: string | null;
+  p_level?: 'P1' | 'P2' | 'P3' | 'P4' | null;
+  change_reason?: string | null;
+  catalog_item?: string | null;
+  data_approval_note?: string | null;
+  transfer_target?: string | null;
+  duty_confirmed_by?: string | null;
+  duty_confirmed_at?: string | null;
+  waiting_started_at?: string | null;
+  waiting_ended_at?: string | null;
+  blocked_by?: string | null;
+  closed_at?: string | null;
+  status_label?: string;
 
   attachments: Attachment[];
   worklogs: Worklog[];

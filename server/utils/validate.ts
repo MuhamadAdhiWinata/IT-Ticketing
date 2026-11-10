@@ -116,6 +116,6 @@ export function validate<T>(schema: z.ZodSchema<T>, data: unknown): { success: t
   if (result.success) {
     return { success: true, data: result.data };
   }
-  const errorMsg = result.error.message;
+  const errorMsg = result.error.issues.map(i => (i.path.length ? `${i.path.join('.')}: ` : '') + i.message).join('; ');
   return { success: false, error: errorMsg };
 }

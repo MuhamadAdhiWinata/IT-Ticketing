@@ -42,6 +42,8 @@ Sistem informasi tiket dan monitoring pekerjaan IT: pembuatan tiket, pelacakan p
 | `USER_NON_IT` | Karyawan pelapor: buat tiket, lacak progres, ikut diskusi |
 | `IT_WORKER` | Teknisi IT: kerjakan tiket, catat worklog, catatan internal |
 | `SYSTEM_ADMIN` | Admin: akses penuh dan membuat tiket atas nama user lain |
+| `PM` | Triase tiket (jenis, dampak, urgensi, prioritas, katalog, pelaksana, pengalihan), menutup tiket, membuat tiket atas nama dengan Kanal Asal |
+| `DUTY_ENGINEER` | Tim IT; mengonfirmasi Insiden P1/P2 sebelum diproses; membuat tiket atas nama dengan Kanal Asal |
 
 ## Project Structure
 
@@ -188,7 +190,7 @@ ADMIN_PASSWORD="isi-password-kuat" DATABASE_URL="mysql2://..." pnpm seed
 |-------|--------|------------|
 | companies | 2 | |
 | divisions | 9 | Terhubung ke company |
-| users | 10 | 4 USER_NON_IT, 5 IT_WORKER, 1 SYSTEM_ADMIN, semua punya company dan divisi |
+| users | 12 | 4 USER_NON_IT (unit LNY/IIE/REN/Holding), 5 IT_WORKER, 1 SYSTEM_ADMIN, 1 PM, 1 DUTY_ENGINEER, semua punya company dan divisi |
 | user_preferences | 10 | 3 user memakai dark mode |
 | company_settings | 1 | Baris `default` (nama "Neutron", warna primer merah). **Wajib**, dibaca oleh `GET /api/settings/company` |
 | categories | 2 | Support IT, IT Programmer |
@@ -221,6 +223,8 @@ Hasil yang diharapkan setelah setup baru: 5 migrasi dan satu baris `default` di 
 |-------|----------|------|
 | sysadmin@company.co.id | password123 | SYSTEM_ADMIN |
 | budi.santoso@it.company.co.id | password123 | IT_WORKER |
+| maria.anggraini@it.company.co.id | password123 | PM |
+| yoga.prakoso@it.company.co.id | password123 | DUTY_ENGINEER |
 | rina.wulandari@company.co.id | password123 | USER_NON_IT |
 
 Semua user demo memakai password `password123`. Jangan dipakai di production: `pnpm seed` membuat admin dengan password sendiri.

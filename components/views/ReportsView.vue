@@ -378,6 +378,7 @@
 </template>
 
 <script setup lang="ts">
+import { isITRole } from '~/utils/roles';
 import { ref, computed } from 'vue';
 import { useAppStore } from '~/stores/app';
 import {
@@ -419,7 +420,7 @@ const timePresetOptions = [
 ];
 
 const itWorkers = computed(() => {
-  return store.allUsers.filter(u => u.role === 'IT_WORKER');
+  return store.allUsers.filter(u => isITRole(u.role) && u.role !== 'SYSTEM_ADMIN');
 });
 
 const workerOptions = computed(() => [
