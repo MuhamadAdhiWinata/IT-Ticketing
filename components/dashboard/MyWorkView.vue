@@ -80,7 +80,7 @@
             <span class="block truncate text-foreground/80 font-semibold">{{ t.requestedByName }}</span>
             <span class="block truncate text-[10px]">{{ orgLabel(t) || '-' }}</span>
           </div>
-          <UiStatusBadge :status="t.status" size="xs" />
+          <UiStatusBadge :status="t.status" :label="t.status_label" size="xs" />
         </div>
       </div>
     </div>

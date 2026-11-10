@@ -3,6 +3,7 @@ import { db } from '~/server/database/client';
 import { tickets } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 import { getCurrentUserId, getCurrentUser } from '~/server/utils/user-context';
+import { deriveStatusLabel } from '~/utils/ticketSpec';
 import { loadOrgMaps, resolveCompanyOf, resolveDivisionOf } from '~/server/utils/org';
 
 export default defineEventHandler(async (event) => {
@@ -68,6 +69,7 @@ export default defineEventHandler(async (event) => {
       id: t.id,
       title: t.title,
       status: t.status,
+      status_label: deriveStatusLabel(t),
       priority: t.priority,
       category: t.category,
       requestedByName: requester?.name || '',

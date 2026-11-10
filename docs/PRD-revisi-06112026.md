@@ -18,7 +18,7 @@ Legenda keputusan: **KERJAKAN** = spesifikasi pasti, **HOLD** = menunggu keteran
 
 Spesifikasi 35 field sudah diberikan (10 November 2026) dan seluruh item 007-010 dikerjakan. Lihat bagian 4 untuk pemetaan field.
 
-Keputusan desain: prioritas tetap 4 level di DB (`LOW/MEDIUM/HIGH/CRITICAL`). P1-P4 dipetakan P1=CRITICAL, P2=HIGH, P3=MEDIUM, P4=LOW agar `categories.sla_*` tidak berubah. Status alur DB tetap `DRAFT/PROCESS/DELEGASI/SELESAI`; label spesifikasi (Baru, Diakui, Ditriase, Dikerjakan, Menunggu Pemohon, Selesai, Ditutup, Dialihkan) diturunkan di `status_label`.
+Keputusan desain: prioritas tetap 4 level di DB (`LOW/MEDIUM/HIGH/CRITICAL`). P1-P4 dipetakan P1=CRITICAL, P2=HIGH, P3=MEDIUM, P4=LOW agar `categories.sla_*` tidak berubah. Status alur DB tetap `DRAFT/PROCESS/DELEGASI/SELESAI`; fase tampilan diturunkan di `status_phase`: Baru, Diakui, Ditriase, Dikerjakan, Menunggu Pemohon, Selesai. "Selesai" satu fase akhir dengan tiga hasil (`status_outcome`): Selesai, Ditutup, Dialihkan. `status_label` = hasil akhir bila sudah di fase akhir, selain itu fase. Jenis, dampak, urgensi, dan prioritas diisi PM pada fase Ditriase.
 
 ## 2. Status per issue (kondisi awal vs sekarang)
 

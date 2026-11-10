@@ -87,7 +87,7 @@
               </div>
             </td>
             <td class="p-3"><UiStatusBadge :priority="t.priority" size="xs" /></td>
-            <td class="p-3"><UiStatusBadge :status="t.status" size="xs" /></td>
+            <td class="p-3"><UiStatusBadge :status="t.status" :label="t.status_label" size="xs" /></td>
             <td class="p-3 text-muted-foreground whitespace-nowrap">{{ formatDate(t.created_at) }}</td>
             <td class="p-3 text-right">
               <button

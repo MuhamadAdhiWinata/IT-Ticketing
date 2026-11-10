@@ -1,7 +1,7 @@
 // Serializer: Drizzle result → Frontend snake_case
 // Includes name resolution via JOINs to users table
 // (Identitas user/company/division di-resolve lewat server/utils/org.ts)
-import { deriveStatusLabel, priorityToP } from '~/utils/ticketSpec';
+import { deriveStatusLabel, derivePhase, deriveOutcome, priorityToP } from '~/utils/ticketSpec';
 
 export function serializeCategory(c: any) {
   return { id: c.id, name: c.name };
@@ -154,6 +154,8 @@ export function serializeTicket(t: any) {
     blocked_by: t.blockedBy ?? null,
     closed_at: t.closedAt ?? null,
     status_label: deriveStatusLabel(t),
+    status_phase: derivePhase(t),
+    status_outcome: deriveOutcome(t),
 
     attachments: (t.attachments || []).map(serializeAttachment),
     worklogs: (t.worklogs || []).map(serializeWorklog),

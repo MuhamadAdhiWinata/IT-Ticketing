@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { priorityFromMatrix, priorityToP, needsDutyConfirm, deriveStatusLabel } from '../../utils/ticketSpec';
+import { priorityFromMatrix, priorityToP, needsDutyConfirm, deriveStatusLabel, derivePhase, deriveOutcome } from '../../utils/ticketSpec';
 
 describe('ticketSpec', () => {
   it('matrix maps impact x urgency to P1-P4', () => {
@@ -28,5 +28,14 @@ describe('ticketSpec', () => {
     expect(deriveStatusLabel({ status: 'SELESAI' })).toBe('Selesai');
     expect(deriveStatusLabel({ status: 'SELESAI', closedAt: 'x' })).toBe('Ditutup');
     expect(deriveStatusLabel({ status: 'SELESAI', transferTarget: 'DUPLIKAT' })).toBe('Dialihkan');
+  });
+  it('fase akhir tunggal dengan tiga hasil', () => {
+    expect(derivePhase({ status: 'SELESAI' })).toBe('Selesai');
+    expect(derivePhase({ status: 'SELESAI', closedAt: 'x' })).toBe('Selesai');
+    expect(derivePhase({ status: 'SELESAI', transferTarget: 'DUPLIKAT' })).toBe('Selesai');
+    expect(deriveOutcome({ status: 'SELESAI' })).toBe('Selesai');
+    expect(deriveOutcome({ status: 'SELESAI', closedAt: 'x' })).toBe('Ditutup');
+    expect(deriveOutcome({ status: 'SELESAI', transferTarget: 'DUPLIKAT' })).toBe('Dialihkan');
+    expect(deriveOutcome({ status: 'PROCESS' })).toBeNull();
   });
 });

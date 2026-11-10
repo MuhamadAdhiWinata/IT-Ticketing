@@ -183,6 +183,8 @@ export interface Ticket {
   blocked_by?: string | null;
   closed_at?: string | null;
   status_label?: string;
+  status_phase?: string;
+  status_outcome?: 'Selesai' | 'Ditutup' | 'Dialihkan' | null;
 
   attachments: Attachment[];
   worklogs: Worklog[];
@@ -223,6 +225,7 @@ export interface IncomingTicket {
   id: string;
   title: string;
   status: TicketStatus;
+  status_label?: string;
   priority: TicketPriority;
   category: string;
   requestedByName: string;

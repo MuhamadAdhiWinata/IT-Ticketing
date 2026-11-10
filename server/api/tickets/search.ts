@@ -1,3 +1,4 @@
+import { deriveStatusLabel } from '~/utils/ticketSpec';
 import { or, and, like, eq, sql } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { tickets, users } from '~/server/database/schema';
@@ -78,6 +79,7 @@ async function enrichTickets(ticketList: any[]) {
       id: t.id,
       title: t.title,
       status: t.status,
+      status_label: deriveStatusLabel(t),
       priority: t.priority,
       requestedByName: '',
       requestedByDept: t.requestedByDept || '',
@@ -96,6 +98,7 @@ async function enrichTickets(ticketList: any[]) {
       id: t.id,
       title: t.title,
       status: t.status,
+      status_label: deriveStatusLabel(t),
       priority: t.priority,
       requestedByName: requester?.name || '',
       requestedByDept: t.requestedByDept || '',

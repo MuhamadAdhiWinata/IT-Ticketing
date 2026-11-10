@@ -260,7 +260,7 @@
                 <div class="text-[10px] text-muted-foreground">{{ t.location || '-' }}</div>
               </td>
               <td class="px-4 py-3">
-                <UiStatusBadge :status="t.status" size="xs" />
+                <UiStatusBadge :status="t.status" :label="t.status_label" size="xs" />
                 <div class="text-[10px] text-muted-foreground mt-0.5">
                   <template v-if="t.members && t.members.length > 0">
                     <span v-for="(m, i) in t.members.slice(0, 2)" :key="m.id">{{ m.user_name }}<span v-if="i < Math.min(t.members.length, 2) - 1">, </span></span>

@@ -88,7 +88,13 @@ export const priorityFromMatrix = (impact?: string | null, urgency?: string | nu
 export const needsDutyConfirm = (ticketType?: string | null, priority?: string | null) =>
   ticketType === 'INSIDEN' && (priority === 'CRITICAL' || priority === 'HIGH');
 
-// Status tampilan (Baru, Diakui, ...) diturunkan dari status alur + kolom triase; DB tetap DRAFT/PROCESS/DELEGASI/SELESAI.
+// Fase tampilan diturunkan dari status alur + kolom triase; DB tetap DRAFT/PROCESS/DELEGASI/SELESAI.
+// Urutan: Baru > Diakui > Ditriase > Dikerjakan > Menunggu Pemohon > Selesai.
+// "Selesai" satu fase akhir dengan tiga hasil: Selesai, Ditutup, Dialihkan.
+export const PHASES = ['Baru', 'Diakui', 'Ditriase', 'Dikerjakan', 'Menunggu Pemohon', 'Selesai'] as const;
+export type Phase = (typeof PHASES)[number];
+export type Outcome = 'Selesai' | 'Ditutup' | 'Dialihkan';
+
 export interface StatusSource {
   status: string;
   acknowledgedAt?: string | null;
@@ -98,11 +104,17 @@ export interface StatusSource {
   transferTarget?: string | null;
   closedAt?: string | null;
 }
-export function deriveStatusLabel(t: StatusSource): string {
-  if (t.status === 'SELESAI') return t.transferTarget ? 'Dialihkan' : t.closedAt ? 'Ditutup' : 'Selesai';
+export function deriveOutcome(t: StatusSource): Outcome | null {
+  if (t.status !== 'SELESAI') return null;
+  return t.transferTarget ? 'Dialihkan' : t.closedAt ? 'Ditutup' : 'Selesai';
+}
+export function derivePhase(t: StatusSource): Phase {
+  if (t.status === 'SELESAI') return 'Selesai';
   if (t.status === 'PROCESS' || t.status === 'DELEGASI') {
     return t.waitingStartedAt && !t.waitingEndedAt ? 'Menunggu Pemohon' : 'Dikerjakan';
   }
   if (t.ticketType) return 'Ditriase';
   return t.acknowledgedAt ? 'Diakui' : 'Baru';
 }
+// Label ringkas untuk badge: fase, atau hasil akhir bila tiket sudah di fase akhir.
+export const deriveStatusLabel = (t: StatusSource): string => deriveOutcome(t) ?? derivePhase(t);

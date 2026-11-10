@@ -10,11 +10,13 @@ import type { TicketStatus, TicketPriority } from '~/types';
 
 const props = defineProps<{
   status?: TicketStatus;
+  label?: string;
   priority?: TicketPriority;
   dot?: boolean;
 }>();
 
 const label = computed(() => {
+  if (props.label) return props.label;
   if (props.status) {
     const labels: Record<TicketStatus, string> = {
       DRAFT: 'Draft',
@@ -36,7 +38,13 @@ const label = computed(() => {
   return '';
 });
 
+const LABEL_VARIANTS: Record<string, 'default' | 'primary' | 'warning' | 'success' | 'danger'> = {
+  Baru: 'default', Diakui: 'default', Ditriase: 'primary', Dikerjakan: 'primary',
+  'Menunggu Pemohon': 'warning', Selesai: 'success', Ditutup: 'success', Dialihkan: 'warning',
+};
+
 const badgeVariant = computed(() => {
+  if (props.label) return LABEL_VARIANTS[props.label] ?? 'default';
   if (props.status) {
     const variants: Record<TicketStatus, 'default' | 'primary' | 'warning' | 'success' | 'danger'> = {
       DRAFT: 'default',

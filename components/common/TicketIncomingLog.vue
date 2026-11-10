@@ -74,7 +74,7 @@
             <div class="flex items-center gap-1.5 flex-wrap">
               <span class="font-mono text-[11px] font-bold text-primary">{{ item.id }}</span>
               <UiStatusBadge :priority="item.priority" size="xs" />
-              <UiStatusBadge :status="item.status" size="xs" />
+              <UiStatusBadge :status="item.status" :label="item.status_label" size="xs" />
             </div>
             <p class="text-xs font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
               {{ item.title }}

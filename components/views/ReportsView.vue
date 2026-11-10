@@ -243,7 +243,7 @@
                       'bg-muted text-muted-foreground'
                     ]"
                   >
-                    {{ t.status }}
+                    {{ t.status_label || t.status }}
                   </span>
                 </td>
                 <td class="p-3 text-[11px] text-muted-foreground font-mono">

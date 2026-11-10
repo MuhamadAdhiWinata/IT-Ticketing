@@ -112,7 +112,7 @@
                           <span class="truncate">{{ requesterIdentity(s) }}</span>
                         </span>
                         <span>•</span>
-                        <UiStatusBadge :status="s.status" size="xs" />
+                        <UiStatusBadge :status="s.status" :label="s.status_label" size="xs" />
                       </div>
                     </button>
                   </template>
@@ -149,7 +149,7 @@
             <span class="text-xs font-mono font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-md border border-primary/15">
               {{ activeTicket.id }}
             </span>
-            <UiStatusBadge :status="activeTicket.status" />
+            <UiStatusBadge :status="activeTicket.status" :label="activeTicket.status_label" />
           </div>
           <h2 class="text-base sm:text-lg font-bold text-foreground break-words">{{ activeTicket.title }}</h2>
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
