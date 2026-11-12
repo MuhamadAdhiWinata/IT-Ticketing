@@ -15,7 +15,7 @@
       </div>
       <div v-if="ticket.evidence_steps" class="text-xs">
         <span class="text-muted-foreground">Langkah / bukti:</span>
-        <p class="text-foreground whitespace-pre-line leading-relaxed">{{ ticket.evidence_steps }}</p>
+        <div class="rich-text text-foreground" v-html="toSafeHtml(ticket.evidence_steps)"></div>
       </div>
     </div>
 
@@ -109,6 +109,7 @@ import {
   labelOf, priorityFromMatrix, needsDutyConfirm,
 } from '~/utils/ticketSpec';
 import AppSelect from '~/components/common/AppSelect.vue';
+import { toSafeHtml } from '~/utils/richText';
 
 const props = defineProps<{ ticket: Ticket }>();
 const store = useAppStore();

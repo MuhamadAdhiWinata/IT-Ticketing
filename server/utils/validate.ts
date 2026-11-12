@@ -23,7 +23,7 @@ export const CreateTicketSchema = z.object({
   work_status: z.enum(values(WORK_STATUSES), { message: 'Status pekerjaan wajib dipilih' }),
   workaround: z.string().trim().max(2000).nullable().optional(),
   is_event: z.boolean().optional(),
-  evidence_steps: z.string().trim().max(5000).nullable().optional(),
+  evidence_steps: z.string().trim().max(20000).nullable().optional(),
   channel: z.enum(values(CHANNELS)).optional(),
   shouldIssue: z.boolean().optional(),
   behalfUserId: z.string().nullable().optional(),
@@ -34,7 +34,9 @@ export const CreateTicketSchema = z.object({
   const issue = (message: string, path: string) => ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: [path] });
   if (data.category === 'Support IT' && (!data.location || data.location.trim() === '')) issue('Lokasi wajib diisi', 'location');
   if (data.work_status === 'TERGANGGU' && !data.workaround?.trim()) issue('Cara lain yang dipakai wajib diisi', 'workaround');
-  if (!data.evidence_steps?.trim() && !data.attachmentCount) issue('Bukti wajib: unggah berkas atau tulis langkah', 'evidence_steps');
+  // Bukti berupa HTML rich text: "<p></p>" dianggap kosong.
+  const evidenceText = (data.evidence_steps ?? '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+  if (!evidenceText && !/<img\s/i.test(data.evidence_steps ?? '') && !data.attachmentCount) issue('Bukti wajib: unggah berkas atau tulis langkah', 'evidence_steps');
 });
 
 export const UpdateTicketSchema = z.object({

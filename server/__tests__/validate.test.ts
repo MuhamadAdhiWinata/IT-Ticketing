@@ -67,6 +67,12 @@ describe('Validation', () => {
       expect(err({ evidence_steps: '' })).toContain('Bukti wajib');
       expect(err({ evidence_steps: '', attachmentCount: 1 })).toBeNull();
     });
+    it('treats empty rich text as no evidence', () => {
+      expect(err({ evidence_steps: '<p></p>' })).toContain('Bukti wajib');
+      expect(err({ evidence_steps: '<p>&nbsp;</p>' })).toContain('Bukti wajib');
+      expect(err({ evidence_steps: '<ol><li>buka menu</li></ol>' })).toBeNull();
+      expect(err({ evidence_steps: '<p><img src="/a.png"></p>' })).toBeNull();
+    });
   });
 
   describe('StatusUpdateSchema', () => {

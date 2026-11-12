@@ -206,12 +206,7 @@
           Bukti <span class="text-red-500">*</span>
           <span class="text-muted-foreground font-normal">(unggah berkas atau tulis langkah, minimal salah satu)</span>
         </label>
-        <textarea
-          v-model="evidenceSteps"
-          rows="3"
-          placeholder="Langkah untuk mengulang kendala..."
-          class="w-full px-4 py-3 rounded-lg border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium resize-none"
-        ></textarea>
+        <RichTextEditor v-model="evidenceSteps" placeholder="Langkah untuk mengulang kendala..." />
         <div class="border-2 border-dashed border-border rounded-lg p-5 text-center bg-muted/30 relative">
           <input 
             type="file" 
@@ -325,6 +320,8 @@ import type { Ticket, PendingAttachment } from '~/types';
 import { UNITS, AFFECTED_SCOPES, WORK_STATUSES, CHANNELS } from '~/utils/ticketSpec';
 import { formatOrgLabel, formatRequesterIdentity } from '~/utils/identity';
 import AppSelect from '~/components/common/AppSelect.vue';
+import RichTextEditor from '~/components/common/RichTextEditor.vue';
+import { isRichTextEmpty } from '~/utils/richText';
 import WorkerPickerModal from '~/components/common/WorkerPickerModal.vue';
 
 const store = useAppStore();
@@ -439,7 +436,7 @@ const handleSubmit = async (shouldAssign: boolean) => {
   if (!affectedScope.value) return void missing('Mohon pilih "Jumlah Terdampak".');
   if (!workStatus.value) return void missing('Mohon pilih status pekerjaan.');
   if (workStatus.value === 'TERGANGGU' && !workaround.value.trim()) return void missing('Mohon isi "Cara Lain yang Dipakai".');
-  if (!evidenceSteps.value.trim() && pendingFiles.value.length === 0) {
+  if (isRichTextEmpty(evidenceSteps.value) && pendingFiles.value.length === 0) {
     showError('Bukti Wajib', 'Unggah berkas atau tulis langkah sebagai bukti (minimal salah satu).');
     nextTick(() => uploadSection.value?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
     return;
@@ -474,7 +471,7 @@ const createTicket = async (shouldIssue: boolean = false) => {
       work_status: workStatus.value,
       workaround: workStatus.value === 'TERGANGGU' ? workaround.value.trim() : null,
       is_event: isEvent.value,
-      evidence_steps: evidenceSteps.value.trim() || null,
+      evidence_steps: isRichTextEmpty(evidenceSteps.value) ? null : evidenceSteps.value,
       channel: isIntake.value ? channel.value : undefined,
     };
     const newTicket = await store.addTicket(ticketPayload, shouldIssue, behalfUserId.value || null, pendingFiles.value.length);
