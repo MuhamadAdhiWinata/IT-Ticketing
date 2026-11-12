@@ -97,17 +97,6 @@
         </div>
       </div>
 
-      <ol class="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold" aria-label="Fase tiket">
-        <li
-          v-for="(p, i) in PHASES"
-          :key="p"
-          :class="[
-            'px-2.5 py-1 rounded-md border',
-            p === ticket.status_phase ? 'bg-primary text-primary-foreground border-primary' : i < phaseIndex ? 'bg-muted text-foreground border-border' : 'text-muted-foreground border-dashed border-border',
-          ]"
-        >{{ p === 'Selesai' && ticket.status_phase === 'Selesai' ? ticket.status_label : p }}</li>
-      </ol>
-
       <TicketTriagePanel v-if="store.currentUser" :ticket="ticket" />
 
       <div v-if="ticket.solution_type" class="bg-muted/50 p-4 rounded-lg border border-border space-y-1.5">
@@ -120,8 +109,8 @@
       <!-- Progress Tracking Stepper -->
       <div class="bg-muted/50 p-3 sm:p-5 rounded-lg border border-border space-y-4">
         <div class="flex items-center justify-between">
-          <h3 class="text-xs font-bold text-foreground uppercase tracking-wider">Progress Pengerjaan & Lampiran Per Tahap</h3>
-          <span class="text-[10px] text-muted-foreground">Klik tahap untuk detail</span>
+          <h3 class="text-xs font-bold text-foreground uppercase tracking-wider">Fase Tiket</h3>
+          <span class="text-[10px] text-muted-foreground">Klik fase untuk detail</span>
         </div>
 
         <!-- Stepper Pipeline with Inter-step Connectors -->
@@ -142,7 +131,7 @@
                 ]"
               >
                 <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-bold text-muted-foreground">Tahap {{ i + 1 }}</span>
+                  <span class="text-[10px] font-bold text-muted-foreground">Fase {{ i + 1 }}</span>
                   <span :class="[
                     'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shadow-xs',
                     step.completed
@@ -183,18 +172,17 @@
           <div class="flex items-center justify-between border-b border-border pb-2">
             <div>
               <h4 class="text-xs font-bold text-foreground uppercase tracking-wide">
-                Detail Tahap: {{ stepperStages[selectedStepIndex]?.label }}
+                Detail Fase: {{ stepperStages[selectedStepIndex]?.label }}
               </h4>
               <p class="text-[10px] text-muted-foreground mt-0.5">{{ stepperStages[selectedStepIndex]?.actorInfo }}</p>
             </div>
-            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 dark:bg-blue-950 text-primary dark:text-blue-300">
-              Stage: {{ stepperStages[selectedStepIndex]?.stageKey }}
-            </span>
           </div>
+
+          <TicketTriagePanel v-if="store.currentUser && selectedStep" :ticket="ticket" :phase="selectedStep.phase" />
 
           <!-- Attachments in this step -->
           <div class="space-y-2">
-            <span class="text-[10px] font-bold text-muted-foreground uppercase">Lampiran / Bukti pada Tahap Ini:</span>
+            <span class="text-[10px] font-bold text-muted-foreground uppercase">Lampiran / Bukti pada Fase Ini:</span>
             <div v-if="(stepperStages[selectedStepIndex]?.attachments?.length ?? 0) > 0" class="space-y-2">
               <template v-for="att in stepperStages[selectedStepIndex]?.attachments ?? []" :key="att.id">
                 <!-- Image Preview Card -->
@@ -276,7 +264,7 @@
               </template>
             </div>
             <div v-else class="text-center py-4 text-xs text-muted-foreground bg-muted/30 rounded-lg border border-dashed border-border">
-              Tidak ada lampiran pada tahap ini.
+              Tidak ada lampiran pada fase ini.
             </div>
           </div>
 
@@ -297,7 +285,7 @@
 
           <!-- History Catatan / Worklog pada Tahap Ini -->
           <div v-if="filteredWorklogs.length > 0" class="space-y-2 pt-2 border-t border-border">
-            <span class="text-[10px] font-bold text-muted-foreground uppercase">Catatan & Histori pada Tahap Ini:</span>
+            <span class="text-[10px] font-bold text-muted-foreground uppercase">Catatan & Histori pada Fase Ini:</span>
             <div class="space-y-3">
               <div
                 v-for="wl in filteredWorklogs"
@@ -322,122 +310,49 @@
             </div>
           </div>
 
-           <!-- Action Buttons -->
-          <div v-if="store.currentUser?.role !== 'USER_NON_IT'" class="pt-3 border-t border-border space-y-3">
-            <!-- ASSIGN step context -->
-            <template v-if="activeStep === 'ASSIGN'">
-              <div class="space-y-1.5">
-                <label class="block text-[11px] font-bold text-foreground">
-                  Catatan Penugasan:
-                </label>
-                <RichTextEditor
-                  v-model="stageNotes"
-                  placeholder="Tuliskan catatan (opsional)..."
-                  :upload="uploadInlineImage"
-                />
-              </div>
-              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                  <!-- Kirim (always available) -->
-                  <button
-                    @click="handleSaveNote()"
-                    class="w-full px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <Clock class="w-4 h-4" />
-                    <span>Kirim</span>
-                  </button>
-                  <!-- Ambil Tiket (add member, non-members only, not when SELESAI) -->
-                  <button
-                    v-if="!isCurrentUserMember && ticket.status !== 'SELESAI'"
-                    @click="handleAddMember()"
-                    class="w-full px-4 py-2.5 bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <UserPlus class="w-4 h-4" />
-                    <span>Ambil Tiket</span>
-                  </button>
-                  <!-- Mulai Proses (DRAFT → PROCESS, only when DRAFT + member) -->
-                  <button
-                    v-if="isCurrentUserMember && ticket.status === 'DRAFT'"
-                    @click="handleStartWork()"
-                    class="w-full px-4 py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <Play class="w-4 h-4" />
-                    <span>Mulai Proses</span>
-                  </button>
-              </div>
-            </template>
-
-            <!-- PROCESS step context -->
-            <template v-else-if="activeStep === 'IN_PROGRESS'">
-              <template v-if="ticket.status === 'PROCESS'">
-                <div class="space-y-1.5">
-                  <label class="block text-[11px] font-bold text-foreground">
-                    Catatan Pengerjaan:
-                  </label>
-                  <RichTextEditor
-                    v-model="stageNotes"
-                    placeholder="Tuliskan catatan (opsional)..."
-                    :upload="uploadInlineImage"
-                  />
-                </div>
-                <div class="space-y-2 p-3 rounded-lg border border-border bg-muted/30">
-                  <p class="text-[11px] font-bold text-foreground">Solusi Penyelesaian (diisi saat menyelesaikan tiket):</p>
-                  <select v-model="solution.type" aria-label="Jenis solusi" class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground">
-                    <option v-for="o in SOLUTION_TYPES" :key="o.value" :value="o.value">{{ o.label }}</option>
-                  </select>
-                  <textarea v-model="solution.summary" rows="3" aria-label="Ringkasan solusi" placeholder="Jelaskan solusi yang diterapkan..." class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground" />
-                  <template v-if="solution.type === 'SEMENTARA'">
-                    <input v-model="solution.tech_debt_url" type="url" aria-label="Tautan utang teknis" placeholder="Tautan utang teknis (wajib)" class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground" />
-                  </template>
-                </div>
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                    <!-- Kirim -->
-                    <button
-                      @click="handleSaveNote()"
-                      class="w-full px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
-                    >
-                      <Clock class="w-4 h-4" />
-                      <span>Kirim</span>
-                    </button>
-                    <!-- Selesaikan (PROCESS → SELESAI) -->
-                    <button
-                      @click="handleSubmitCurrentStage()"
-                      class="w-full px-4 py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
-                    >
-                      <CheckCircle2 class="w-4 h-4" />
-                      <span>Selesaikan</span>
-                    </button>
-                </div>
-              </template>
-              <!-- DRAFT status on PROCESS step: info only -->
-              <template v-else-if="ticket.status === 'DRAFT'">
-                <div class="text-center py-3 text-xs text-muted-foreground bg-muted/30 rounded-lg border border-dashed border-border">
-                  Proses belum dimulai. Klik "Mulai Proses" pada tahap Assign untuk memulai.
-                </div>
-              </template>
-            </template>
-
-            <!-- SELESAI step / COMPLETION step -->
-            <template v-else-if="activeStep === 'COMPLETION'">
-              <template v-if="ticket.status === 'SELESAI'">
-                <div class="space-y-1.5">
-                  <label class="block text-[11px] font-bold text-foreground">
-                    Catatan:
-                  </label>
-                  <RichTextEditor
-                    v-model="stageNotes"
-                    placeholder="Tuliskan catatan (opsional)..."
-                    :upload="uploadInlineImage"
-                  />
-                </div>
-                <button
-                  @click="handleSaveNote()"
-                  class="w-full px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
-                >
-                  <Clock class="w-4 h-4" />
-                  <span>Kirim</span>
-                </button>
-              </template>
-            </template>
+          <!-- Aksi catatan / selesaikan: hanya di fase aktif -->
+          <div v-if="store.currentUser?.role !== 'USER_NON_IT' && selectedStep?.current" class="pt-3 border-t border-border space-y-3">
+            <div class="space-y-1.5">
+              <label class="block text-[11px] font-bold text-foreground">Catatan:</label>
+              <RichTextEditor
+                v-model="stageNotes"
+                placeholder="Tuliskan catatan (opsional)..."
+                :upload="uploadInlineImage"
+              />
+            </div>
+            <div v-if="canSolve" class="space-y-2 p-3 rounded-lg border border-border bg-muted/30">
+              <p class="text-[11px] font-bold text-foreground">Solusi Penyelesaian (diisi saat menyelesaikan tiket):</p>
+              <select v-model="solution.type" aria-label="Jenis solusi" class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground">
+                <option v-for="o in SOLUTION_TYPES" :key="o.value" :value="o.value">{{ o.label }}</option>
+              </select>
+              <textarea v-model="solution.summary" rows="3" aria-label="Ringkasan solusi" placeholder="Jelaskan solusi yang diterapkan..." class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground" />
+              <input v-if="solution.type === 'SEMENTARA'" v-model="solution.tech_debt_url" type="url" aria-label="Tautan utang teknis" placeholder="Tautan utang teknis (wajib)" class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground" />
+            </div>
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <button
+                @click="handleSaveNote()"
+                class="w-full px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
+              >
+                <Clock class="w-4 h-4" />
+                <span>Kirim</span>
+              </button>
+              <button
+                v-if="!isCurrentUserMember && ticket.status !== 'SELESAI'"
+                @click="handleAddMember()"
+                class="w-full px-4 py-2.5 bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
+              >
+                <UserPlus class="w-4 h-4" />
+                <span>Ambil Tiket</span>
+              </button>
+              <button
+                v-if="canSolve"
+                @click="handleSubmitCurrentStage()"
+                class="w-full px-4 py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle2 class="w-4 h-4" />
+                <span>Selesaikan</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -580,11 +495,11 @@
 
 <script setup lang="ts">
 import { isITRole, canTriageRole } from '~/utils/roles';
-import { PHASES } from '~/utils/ticketSpec';
+import { PHASES, type Phase } from '~/utils/ticketSpec';
 import { ref, computed, watch, nextTick } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { apiFetch } from '~/services/api';
-import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon, User, X, Download, Image as ImageIcon, FileText, File, UserPlus, Play, Send, Lock } from 'lucide-vue-next';
+import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon, User, X, Download, Image as ImageIcon, FileText, File, UserPlus, Send, Lock } from 'lucide-vue-next';
 import type { TicketStatus, TicketComment, TicketInternalNote } from '~/types';
 import { triggerPrintPDF } from '~/utils/export';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
@@ -602,7 +517,6 @@ const { showError } = useModal();
 const { toast } = useToast();
 const isOpen = computed(() => store.activeView === 'ticket-detail');
 const ticket = computed(() => store.selectedTicket);
-const phaseIndex = computed(() => PHASES.indexOf((ticket.value?.status_phase ?? 'Baru') as (typeof PHASES)[number]));
 
 const requesterIdentityLabel = computed(() => {
   const t = ticket.value;
@@ -618,26 +532,15 @@ const isCompleted = computed(() => ticket.value?.status === 'SELESAI');
 
 const selectedStepIndex = ref(0);
 const activeStepEl = ref<HTMLElement | null>(null);
-const hasInitializedStep = ref(false);
 const stageNotes = ref('');
 const solution = ref({ type: 'PANDUAN', summary: '', tech_debt_url: '' });
 const itWorkers = computed(() => store.allUsers.filter(u => isITRole(u.role)));
 const previewImage = ref<{ url: string; name: string } | null>(null);
 
-const activeStep = computed(() => stepperStages.value[selectedStepIndex.value]?.stageKey || 'ASSIGN');
-
-const getDefaultStepIndex = (status: string): number => {
-  if (status === 'PROCESS') return 2;
-  if (status === 'SELESAI' || status === 'DELEGASI') return 3;
-  return 1;
-};
-
-const scrollToStep = (index: number) => {
-  nextTick(() => {
-    const cards = document.querySelectorAll('.custom-scrollbar > div > div > div');
-    cards[index + 1]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  });
-};
+// Kunci tahap log/berkas di API mengikuti status DB (sama dengan activityStagesFor di server).
+const stageKey = computed(() => ({ PROCESS: 'IN_PROGRESS', SELESAI: 'COMPLETION' } as Record<string, string>)[ticket.value?.status ?? ''] ?? 'ASSIGN');
+const selectedStep = computed(() => stepperStages.value[selectedStepIndex.value]);
+const canSolve = computed(() => !!selectedStep.value?.current && ticket.value?.status === 'PROCESS');
 
 const openPreview = (att: { file_path?: string | null; file_name: string }) => {
   if (att.file_path) {
@@ -650,30 +553,20 @@ const handleImageError = (e: Event) => {
   img.style.display = 'none';
 };
 
-const handleSubmitCurrentStage = async (targetStatus?: TicketStatus) => {
-  if (!ticket.value) return;
-  const currentStage = stepperStages.value[selectedStepIndex.value];
-  if (!currentStage) return;
+const handleSubmitCurrentStage = async () => {
+  if (!ticket.value || !canSolve.value) return;
 
-  let sol: Record<string, string> | undefined;
-  if (ticket.value.status === 'PROCESS' && currentStage.stageKey === 'IN_PROGRESS' && targetStatus !== 'DELEGASI') {
-    const f = solution.value;
-    if (!f.summary.trim()) return showError('Solusi Belum Diisi', 'Isi ringkasan solusi penyelesaian.');
-    if (f.type === 'SEMENTARA' && !f.tech_debt_url.trim()) {
-      return showError('Tautan Wajib', 'Solusi sementara wajib menyertakan tautan utang teknis.');
-    }
-    sol = { type: f.type, summary: f.summary.trim() };
-    if (f.type === 'SEMENTARA') sol.tech_debt_url = f.tech_debt_url.trim();
+  const f = solution.value;
+  if (!f.summary.trim()) return showError('Solusi Belum Diisi', 'Isi ringkasan solusi penyelesaian.');
+  if (f.type === 'SEMENTARA' && !f.tech_debt_url.trim()) {
+    return showError('Tautan Wajib', 'Solusi sementara wajib menyertakan tautan utang teknis.');
   }
+  const sol: Record<string, string> = { type: f.type, summary: f.summary.trim() };
+  if (f.type === 'SEMENTARA') sol.tech_debt_url = f.tech_debt_url.trim();
 
   try {
-    await store.completeStage(ticket.value.id, currentStage.stageKey, isRichTextEmpty(stageNotes.value) ? undefined : stageNotes.value, undefined, targetStatus, undefined, sol);
+    await store.completeStage(ticket.value.id, 'IN_PROGRESS', isRichTextEmpty(stageNotes.value) ? undefined : stageNotes.value, undefined, undefined, undefined, sol);
     solution.value = { type: 'PANDUAN', summary: '', tech_debt_url: '' };
-    const newStatus = store.selectedTicket?.status;
-    if (newStatus) {
-      selectedStepIndex.value = getDefaultStepIndex(newStatus);
-      scrollToStep(selectedStepIndex.value);
-    }
   } catch (e: any) {
     showError('Gagal Memproses', e?.data?.statusMessage || e?.message || 'Terjadi kesalahan.');
   }
@@ -681,25 +574,14 @@ const handleSubmitCurrentStage = async (targetStatus?: TicketStatus) => {
 };
 
 const handleSaveNote = async () => {
-  if (!ticket.value) return;
-  if (isRichTextEmpty(stageNotes.value)) return;
-
-  const currentStage = stepperStages.value[selectedStepIndex.value];
-  if (!currentStage) return;
-
-  await store.saveWorklogNote(ticket.value.id, currentStage.stageKey, stageNotes.value);
+  if (!ticket.value || isRichTextEmpty(stageNotes.value)) return;
+  await store.saveWorklogNote(ticket.value.id, stageKey.value, stageNotes.value);
   stageNotes.value = '';
 };
 
 const isCurrentUserMember = computed(() => {
   if (!ticket.value || !store.currentUser) return false;
   return ticket.value.members?.some(m => m.user_id === store.currentUser?.id) ?? false;
-});
-
-const isTicketActive = computed(() => {
-  if (!ticket.value) return false;
-  const status = ticket.value.status as string;
-  return status === 'DRAFT' || status === 'PROCESS';
 });
 
 const handleAddMember = async () => {
@@ -726,116 +608,60 @@ const handleAssign = async (userId: string) => {
   }
 };
 
-const handleStartWork = async () => {
-  if (!ticket.value) return;
-  try {
-    await store.completeStage(ticket.value.id, 'START_WORK', isRichTextEmpty(stageNotes.value) ? undefined : stageNotes.value, undefined);
-    if (store.selectedTicket?.status === 'PROCESS') {
-      selectedStepIndex.value = 2;
-      scrollToStep(2);
-    }
-  } catch (e: any) {
-    showError('Gagal Memulai Pekerjaan', e?.data?.statusMessage || e?.message || 'Terjadi kesalahan.');
-  }
-  stageNotes.value = '';
+// ponytail: log/berkas dipetakan ke fase lewat kunci tahap API; log ASSIGN tampil di ketiga fase pra-kerja (tanpa stempel fase per log).
+const STAGE_PHASES: Record<string, Phase[]> = {
+  REQUEST: ['Baru'],
+  ASSIGN: ['Baru', 'Diakui', 'Ditriase'],
+  IN_PROGRESS: ['Dikerjakan', 'Menunggu Pemohon'],
+  DELEGATION: ['Dikerjakan', 'Menunggu Pemohon'],
+  COMPLETION: ['Selesai'],
+};
+const inPhase = (stage: string | null | undefined, phase: Phase) => !!stage && !!STAGE_PHASES[stage]?.includes(phase);
+
+const PHASE_DESC: Record<Phase, string> = {
+  Baru: 'Tiket dibuat pemohon',
+  Diakui: 'Diakui tim IT',
+  Ditriase: 'PM mengisi triase',
+  Dikerjakan: 'Pengerjaan & worklog IT',
+  'Menunggu Pemohon': 'Menunggu jawaban pemohon',
+  Selesai: 'Hasil akhir tiket',
 };
 
 const stepperStages = computed(() => {
-  if (!ticket.value) return [];
   const t = ticket.value;
-  const status = t.status as string;
+  if (!t) return [];
+  const cur = PHASES.indexOf((t.status_phase ?? 'Baru') as Phase);
   const atts = t.attachments || [];
-  const hasDelegation = !!t.delegation || status === 'DELEGASI';
-  const hasMembers = (t.members?.length ?? 0) > 0;
-
-  const isDraft = status === 'DRAFT';
-  const isProcess = status === 'PROCESS';
-  const isSelesai = status === 'SELESAI';
-  const isDelegasi = status === 'DELEGASI';
-
-  const stages = [
-    {
-      label: 'Created (Draft)',
-      desc: 'Tiket dibuat oleh user',
-      stageKey: 'REQUEST',
-      completed: true,
-      current: false,
-      actorInfo: (t.created_by_admin_name && t.created_by_admin_id !== t.requestedBy)
-        ? `Dibuat oleh Admin: ${t.created_by_admin_name} atas nama ${formatRequesterIdentity({
-            name: t.created_by_name,
-            company: t.created_by_company,
-            division: t.created_by_division,
-            department: t.created_by_dept,
-          }, 'User')}`
-        : `Dibuat oleh: ${formatRequesterIdentity({
-            name: t.created_by_name,
-            company: t.created_by_company,
-            division: t.created_by_division,
-            department: t.created_by_dept,
-          }, 'User')}`,
-      attachments: atts.filter(a => a.stage === 'REQUEST'),
-    },
-    {
-      label: 'Assigned',
-      desc: 'Penugasan worker',
-      stageKey: 'ASSIGN',
-      completed: isProcess || isSelesai || isDelegasi,
-      current: selectedStepIndex.value === 1,
-      actorInfo: `Worker: ${hasMembers ? t.members!.map((m: any) => m.user_name).join(', ') : 'Belum ditugaskan'}`,
-      attachments: atts.filter(a => (a.stage as string) === 'ASSIGN'),
-    },
-    {
-      label: 'Process (In Progress)',
-      desc: 'Pengerjaan & Worklog IT',
-      stageKey: 'IN_PROGRESS',
-      completed: isSelesai || isDelegasi,
-      current: selectedStepIndex.value === 2,
-      actorInfo: `Total Worklog: ${t.worklogs?.length || 0} aktivitas tercatat`,
-      attachments: atts.filter(a => a.stage === 'IN_PROGRESS'),
-    },
-    {
-      label: 'Selesai Internal',
-      desc: 'Penyelesaian tugas IT Internal',
-      stageKey: 'COMPLETION',
-      completed: isSelesai || isDelegasi,
-      current: selectedStepIndex.value === 3,
-      actorInfo: t.completed_at ? `Selesai pada: ${new Date(t.completed_at).toLocaleString()}` : 'Belum selesai',
-      attachments: atts.filter(a => a.stage === 'COMPLETION'),
-    },
-  ];
-
-  if (hasDelegation) {
-    stages.push({
-      label: 'Delegasi (Eksternal / Vendor)',
-      desc: 'Eskalasi lanjutan ke pihak luar',
-      stageKey: 'DELEGATION',
-      completed: isDelegasi && !!t.delegation,
-      current: selectedStepIndex.value === 4,
-      actorInfo: t.delegation ? `Delegasi ke: ${t.delegation.vendor_name || t.delegation.technician_name || 'Vendor'}` : 'Ada delegasi tercatat',
-      attachments: atts.filter(a => a.stage === 'DELEGATION'),
-    });
-  }
-
-  return stages;
+  const requester = formatRequesterIdentity({ name: t.created_by_name, company: t.created_by_company, division: t.created_by_division, department: t.created_by_dept }, 'User');
+  const actor: Record<Phase, string> = {
+    Baru: t.created_by_admin_name && t.created_by_admin_id !== t.requestedBy ? `Dibuat oleh Admin: ${t.created_by_admin_name} atas nama ${requester}` : `Dibuat oleh: ${requester}`,
+    Diakui: t.acknowledged_at ? `Diakui pada: ${new Date(t.acknowledged_at).toLocaleString()}` : 'Belum diakui',
+    Ditriase: t.triaged_at ? `Triase dimulai: ${new Date(t.triaged_at).toLocaleString()}` : 'Triase belum dimulai',
+    Dikerjakan: `Pelaksana: ${t.assignedToName || 'Belum ditugaskan'}. ${t.worklogs?.length || 0} aktivitas tercatat`,
+    'Menunggu Pemohon': t.waiting_started_at ? `Menunggu sejak: ${new Date(t.waiting_started_at).toLocaleString()}` : 'Tidak menunggu pemohon',
+    Selesai: t.completed_at ? `Selesai pada: ${new Date(t.completed_at).toLocaleString()}` : 'Belum selesai',
+  };
+  return PHASES.map((phase, i) => ({
+    phase,
+    label: phase === 'Selesai' && i === cur ? (t.status_label || phase) : phase,
+    desc: PHASE_DESC[phase],
+    completed: i < cur,
+    current: i === cur,
+    actorInfo: actor[phase],
+    attachments: atts.filter(a => inPhase(a.stage as string, phase)),
+  }));
 });
 
-// Auto-select step based on ticket status on first load, then let user control
-watch(stepperStages, (stages) => {
-  if (!hasInitializedStep.value && stages.length > 1 && ticket.value) {
-    hasInitializedStep.value = true;
-    selectedStepIndex.value = getDefaultStepIndex(ticket.value.status as string);
-    nextTick(() => {
-      if (activeStepEl.value) {
-        activeStepEl.value.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      }
-    });
-  }
+// Pilih fase aktif saat tiket dibuka atau fasenya berubah (setelah Akui, Mulai Triase, dst).
+watch(() => [ticket.value?.id, ticket.value?.status_phase], () => {
+  const i = PHASES.indexOf((ticket.value?.status_phase ?? 'Baru') as Phase);
+  selectedStepIndex.value = i < 0 ? 0 : i;
+  nextTick(() => activeStepEl.value?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }));
 }, { immediate: true });
 
 const filteredWorklogs = computed(() => {
-  if (!ticket.value?.worklogs) return [];
-  const currentStageKey = stepperStages.value[selectedStepIndex.value]?.stageKey;
-  return ticket.value.worklogs.filter(wl => wl.stageKey === currentStageKey);
+  const phase = selectedStep.value?.phase;
+  return phase ? (ticket.value?.worklogs ?? []).filter(wl => inPhase(wl.stageKey, phase)) : [];
 });
 
 // ── Diskusi (Komentar) & Internal Note ──

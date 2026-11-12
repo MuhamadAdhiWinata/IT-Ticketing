@@ -89,7 +89,7 @@ export const needsDutyConfirm = (ticketType?: string | null, priority?: string |
   ticketType === 'INSIDEN' && (priority === 'CRITICAL' || priority === 'HIGH');
 
 // Fase tampilan diturunkan dari status alur + kolom triase; DB tetap DRAFT/PROCESS/DELEGASI/SELESAI.
-// Urutan: Baru > Diakui > Ditriase > Dikerjakan > Menunggu Pemohon > Selesai.
+// Urutan: Baru > Diakui (klik Akui) > Ditriase (klik Mulai Triase) > Dikerjakan > Menunggu Pemohon > Selesai.
 // "Selesai" satu fase akhir dengan tiga hasil: Selesai, Ditutup, Dialihkan.
 export const PHASES = ['Baru', 'Diakui', 'Ditriase', 'Dikerjakan', 'Menunggu Pemohon', 'Selesai'] as const;
 export type Phase = (typeof PHASES)[number];
@@ -98,7 +98,7 @@ export type Outcome = 'Selesai' | 'Ditutup' | 'Dialihkan';
 export interface StatusSource {
   status: string;
   acknowledgedAt?: string | null;
-  ticketType?: string | null;
+  triagedAt?: string | null;
   waitingStartedAt?: string | null;
   waitingEndedAt?: string | null;
   transferTarget?: string | null;
@@ -113,7 +113,7 @@ export function derivePhase(t: StatusSource): Phase {
   if (t.status === 'PROCESS' || t.status === 'DELEGASI') {
     return t.waitingStartedAt && !t.waitingEndedAt ? 'Menunggu Pemohon' : 'Dikerjakan';
   }
-  if (t.ticketType) return 'Ditriase';
+  if (t.triagedAt) return 'Ditriase';
   return t.acknowledgedAt ? 'Diakui' : 'Baru';
 }
 // Label ringkas untuk badge: fase, atau hasil akhir bila tiket sudah di fase akhir.

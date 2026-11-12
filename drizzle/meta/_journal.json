@@ -43,6 +43,13 @@
       "when": 1794287150895,
       "tag": "0005_ticket_intake_triage",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1794453755131,
+      "tag": "0006_ticket_triaged_at",
+      "breakpoints": true
     }
   ]
 }

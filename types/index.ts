@@ -157,6 +157,7 @@ export interface Ticket {
   odoo_task_url?: string | null;
   tech_debt_url?: string | null;
   acknowledged_at?: string | null;
+  triaged_at?: string | null;
   accepted_at?: string | null;
 
   unit?: string | null;

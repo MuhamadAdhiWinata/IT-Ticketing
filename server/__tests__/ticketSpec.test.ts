@@ -21,7 +21,7 @@ describe('ticketSpec', () => {
   it('derives status label', () => {
     expect(deriveStatusLabel({ status: 'DRAFT' })).toBe('Baru');
     expect(deriveStatusLabel({ status: 'DRAFT', acknowledgedAt: 'x' })).toBe('Diakui');
-    expect(deriveStatusLabel({ status: 'DRAFT', acknowledgedAt: 'x', ticketType: 'INSIDEN' })).toBe('Ditriase');
+    expect(deriveStatusLabel({ status: 'DRAFT', acknowledgedAt: 'x', triagedAt: 'y' })).toBe('Ditriase');
     expect(deriveStatusLabel({ status: 'PROCESS' })).toBe('Dikerjakan');
     expect(deriveStatusLabel({ status: 'PROCESS', waitingStartedAt: 'x' })).toBe('Menunggu Pemohon');
     expect(deriveStatusLabel({ status: 'PROCESS', waitingStartedAt: 'x', waitingEndedAt: 'y' })).toBe('Dikerjakan');

@@ -382,7 +382,7 @@ const TICKETS: TicketIn[] = [
     ...(PATCH[t.id] ?? {}),
   })),
   ...EXTRA_TICKETS,
-];
+].map((t): TicketIn => ({ ...t, triagedAt: t.ticketType ? addMin(t.acknowledgedAt ?? t.createdAt, 10) : null }));
 
 // Riwayat audit diturunkan dari data tiket agar selalu cocok dengan status dan timestamp-nya.
 function auditRows() {
@@ -404,6 +404,7 @@ function auditRows() {
   for (const t of TICKETS) {
     const id = t.id;
     if (t.acknowledgedAt) add(id, 'TIKET_DIAKUI', 'IT-001', t.acknowledgedAt);
+    if (t.triagedAt) add(id, 'TRIASE_DIMULAI', 'PM-001', t.triagedAt);
     if (t.ticketType) add(id, t.transferTarget ? 'TIKET_DIALIHKAN' : 'TIKET_DITRIASE', 'PM-001', addMin(t.acknowledgedAt ?? t.createdAt, 10), t.transferTarget ?? 'ticketType', t.changeReason ?? undefined);
     if (t.dutyConfirmedAt) add(id, 'KONFIRMASI_DUTY_ENGINEER', 'DE-001', t.dutyConfirmedAt, `Dikonfirmasi ${t.dutyConfirmedBy}`);
     if (t.acceptedAt && t.assignedTo) add(id, 'TIKET_DITERIMA', t.assignedTo, t.acceptedAt);

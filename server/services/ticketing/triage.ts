@@ -55,6 +55,21 @@ export async function acknowledgeTicket(actor: Actor, input: { ticketId: string 
   });
 }
 
+// Tombol "Mulai Triase": PM memindahkan tiket Diakui ke fase Ditriase. Idempoten.
+export async function startTriage(actor: Actor, input: { ticketId: string }, exec?: DbExec) {
+  if (!canTriageRole(actor.role)) fail(403, 'Forbidden: hanya PM atau SYSTEM_ADMIN');
+  return inTx(exec, async (tx) => {
+    const t = await lockTicket(tx, input.ticketId);
+    if (t.status === 'SELESAI') fail(409, 'Tiket SELESAI: triase terkunci');
+    if (!t.acknowledgedAt) fail(409, 'Tiket belum diakui; klik Akui dahulu');
+    if (!t.triagedAt) {
+      await tx.update(tickets).set({ triagedAt: nowTs() }).where(eq(tickets.id, t.id));
+      await audit(tx, t.id, actor, 'TRIASE_DIMULAI');
+    }
+    return { ticket: await ticketSummary(tx, t.id) };
+  });
+}
+
 // Tombol "Terima": hanya Pelaksana tiket.
 export async function acceptTicket(actor: Actor, input: { ticketId: string }, exec?: DbExec) {
   requireIT(actor);
@@ -93,7 +108,8 @@ export async function triageTicket(actor: Actor, input: z.input<typeof TriageSch
     const type = v.ticket_type ?? t.ticketType;
     const impact = v.impact ?? t.impact;
     const urgency = v.urgency ?? t.urgency;
-    const patch: Partial<typeof tickets.$inferInsert> = {};
+    // ponytail: menyimpan triase lewat API/MCP tanpa klik "Mulai Triase" otomatis masuk fase Ditriase; urutan tombol dijaga UI.
+    const patch: Partial<typeof tickets.$inferInsert> = t.triagedAt ? {} : { triagedAt: nowTs() };
     if (v.ticket_type) patch.ticketType = v.ticket_type;
     if (v.impact) patch.impact = v.impact;
     if (v.urgency) patch.urgency = v.urgency;

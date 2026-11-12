@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { tickets } from '~/server/database/schema';
-import { acknowledgeTicket, acceptTicket, confirmDuty, triageTicket, updateExecution, closeTicket } from '~/server/services/ticketing/triage';
+import { acknowledgeTicket, startTriage, acceptTicket, confirmDuty, triageTicket, updateExecution, closeTicket } from '~/server/services/ticketing/triage';
 import { transitionStatus } from '~/server/services/ticketing/workflow';
 import { DUTY, IT_A, IT_B, PM, REQ, closeAll, seedTicket, seedUsers } from './helpers';
 
@@ -29,6 +29,25 @@ describe('Akui / Terima', () => {
     await expect(acceptTicket(IT_B, { ticketId: id })).rejects.toMatchObject({ statusCode: 403 });
     await acceptTicket(IT_A, { ticketId: id });
     expect((await row(id)).acceptedAt).toBeTruthy();
+  });
+});
+
+describe('Mulai Triase', () => {
+  it('hanya PM/admin, wajib sudah diakui, idempoten', async () => {
+    const id = await seedTicket({ status: 'DRAFT' });
+    await expect(startTriage(PM, { ticketId: id })).rejects.toMatchObject({ statusCode: 409 });
+    await acknowledgeTicket(IT_A, { ticketId: id });
+    await expect(startTriage(IT_A, { ticketId: id })).rejects.toMatchObject({ statusCode: 403 });
+    await startTriage(PM, { ticketId: id });
+    const first = (await row(id)).triagedAt;
+    expect(first).toBeTruthy();
+    await startTriage(PM, { ticketId: id });
+    expect((await row(id)).triagedAt).toBe(first);
+  });
+  it('menyimpan triase otomatis mengisi triagedAt', async () => {
+    const id = await seedTicket({ status: 'DRAFT' });
+    await triageTicket(PM, { ticketId: id, ticket_type: 'PERTANYAAN' });
+    expect((await row(id)).triagedAt).toBeTruthy();
   });
 });
 

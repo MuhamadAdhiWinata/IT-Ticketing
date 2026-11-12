@@ -231,6 +231,7 @@ export const tickets = mysqlTable('tickets', {
   ticketNumber: varchar('ticket_number', { length: 50 }),
   issuedAt: timestamp('issued_at', { mode: 'string' }),
   acknowledgedAt: timestamp('acknowledged_at', { mode: 'string' }),
+  triagedAt: timestamp('triaged_at', { mode: 'string' }), // tombol "Mulai Triase": masuk fase Ditriase
   acceptedAt: timestamp('accepted_at', { mode: 'string' }),
   processStartedAt: timestamp('process_started_at', { mode: 'string' }),
   completedAt: timestamp('completed_at', { mode: 'string' }),

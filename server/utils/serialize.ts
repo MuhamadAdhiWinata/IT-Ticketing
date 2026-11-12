@@ -165,6 +165,7 @@ export function serializeTicket(t: any) {
     ticket_number: t.ticketNumber ?? null,
     issued_at: t.issuedAt ?? null,
     acknowledged_at: t.acknowledgedAt ?? null,
+    triaged_at: t.triagedAt ?? null,
     accepted_at: t.acceptedAt ?? null,
     process_started_at: t.processStartedAt ?? null,
     completed_at: t.completedAt ?? null,
