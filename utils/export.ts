@@ -61,7 +61,7 @@ export function exportTicketsToExcel(tickets: Ticket[]) {
     t.submodule || '-',
     t.location,
     t.priority,
-    t.status,
+    t.status_label || t.status,
     t.created_by_name,
     t.created_by_dept,
     t.requested_by_company || '-',

@@ -117,4 +117,8 @@ export function derivePhase(t: StatusSource): Phase {
   return t.acknowledgedAt ? 'Diakui' : 'Baru';
 }
 // Label ringkas untuk badge: fase, atau hasil akhir bila tiket sudah di fase akhir.
+// Pilihan filter status di semua daftar tiket: fase, plus hasil akhir Ditutup / Dialihkan.
+export const STATUS_FILTERS = [...PHASES, 'Ditutup', 'Dialihkan'] as const;
+export const matchesStatusFilter = (t: { status_phase?: string; status_label?: string }, f: string) =>
+  f === 'ALL' || t.status_phase === f || t.status_label === f;
 export const deriveStatusLabel = (t: StatusSource): string => deriveOutcome(t) ?? derivePhase(t);

@@ -6,7 +6,7 @@ import { listRbac, loadRbac, seedRbac } from '~/server/services/rbac';
 import { acknowledgeTicket, startTriage } from '~/server/services/ticketing/triage';
 import { CLAIM, menuAllowed, roleHas } from '~/utils/permissions';
 import { isITRole } from '~/utils/roles';
-import { IT_A, PM, closeAll, seedTicket, seedUsers } from './helpers';
+import { ADMIN, IT_A, PM, closeAll, seedTicket, seedUsers } from './helpers';
 
 beforeAll(async () => { await seedUsers(); await seedRbac(); await loadRbac(); });
 afterAll(async () => {
@@ -28,7 +28,7 @@ describe('RBAC dinamis', () => {
 
   it('mengubah klaim di DB langsung mengubah hak akses server', async () => {
     const id = await seedTicket({ status: 'DRAFT' });
-    await acknowledgeTicket(IT_A, { ticketId: id });
+    await acknowledgeTicket(PM, { ticketId: id });
     await db.delete(rolePermissions).where(eq(rolePermissions.roleId, 'PM'));
     await loadRbac();
     await expect(startTriage(PM, { ticketId: id })).rejects.toMatchObject({ statusCode: 403 });
@@ -44,5 +44,19 @@ describe('RBAC dinamis', () => {
     await db.insert(rolePermissions).values({ roleId: 'T_ROLE', permissionKey: CLAIM.IT });
     await loadRbac();
     expect(isITRole('T_ROLE')).toBe(true);
+  });
+});
+
+describe('PM dan Administrator terpisah', () => {
+  it('SYSTEM_ADMIN tidak lolos klaim operasional tiket, tapi lolos klaim sistem', () => {
+    expect(roleHas('SYSTEM_ADMIN', CLAIM.TRIAGE)).toBe(false);
+    expect(roleHas('SYSTEM_ADMIN', CLAIM.DUTY)).toBe(false);
+    expect(roleHas('SYSTEM_ADMIN', CLAIM.MANAGE_MASTER)).toBe(true);
+    expect(roleHas('PM', CLAIM.TRIAGE)).toBe(true);
+  });
+  it('admin tidak bisa akui, triase, atau mulai dikerjakan', async () => {
+    const id = await seedTicket({ status: 'DRAFT' });
+    await expect(acknowledgeTicket(ADMIN, { ticketId: id })).rejects.toMatchObject({ statusCode: 403 });
+    await expect(startTriage(ADMIN, { ticketId: id })).rejects.toMatchObject({ statusCode: 403 });
   });
 });

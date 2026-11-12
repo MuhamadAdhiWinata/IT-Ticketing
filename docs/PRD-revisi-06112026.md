@@ -106,7 +106,15 @@ Lihat [spesifikasi-field-tiket.csv](./spesifikasi-field-tiket.csv): tiap field d
 Peran, klaim, dan menu sidebar disimpan di DB (`roles`, `permissions`, `role_permissions`, `menus`; migrasi 0007) dan hanya SYSTEM_ADMIN yang dapat mengubahnya lewat menu **Hak Akses**. `users.role` menyimpan `roles.id`.
 
 - Klaim aksi: `it.access` (tim IT), `ticket.triage`, `ticket.duty`, `ticket.intake`, `ticket.delete`, `worklog.view_all`, `master.manage`, `settings.manage`. Klaim menu: `menu.<id>`.
-- SYSTEM_ADMIN superuser di kode (selalu lolos semua klaim, tidak dapat diubah, menu Hak Akses tidak dapat dinonaktifkan) agar admin tidak mengunci dirinya sendiri.
+- SYSTEM_ADMIN superuser untuk klaim sistem (tidak dapat diubah, menu Hak Akses tidak dapat dinonaktifkan) agar admin tidak mengunci dirinya sendiri. Klaim operasional tiket (`ticket.triage`, `ticket.duty`) TIDAK otomatis dimiliki admin: peran PM dan Administrator terpisah.
 - Server: `requireClaim(event, CLAIM.x)`; service memakai `isITRole`/`canTriageRole`/dst yang membaca matriks di memori (disegarkan dari DB tiap 5 detik dan seketika setelah admin menyimpan). Klien: `GET /api/rbac/me` (klaim + menu), admin: `/api/rbac`, `/api/rbac/roles[/:id]`, `/api/rbac/menus[/:id]`.
 - Seeder `seedRbac()` idempoten (jalan saat start server, `seed`, `seed:demo`); tidak menimpa perubahan admin. Menu baru murni (halaman baru) tetap butuh kode; admin mengatur label, ikon, seksi, urutan, dan aktif.
 - Peran bawaan: USER_NON_IT, IT_WORKER, PM, DUTY_ENGINEER, SYSTEM_ADMIN (tidak dapat dihapus). Peran kustom dapat ditambah dan dihapus bila tidak dipakai pengguna.
+
+
+## Aturan ambil tiket dan penugasan
+
+- Fase Baru, Diakui, Ditriase adalah pekerjaan PM (klaim `ticket.triage`): Akui, Mulai Triase, isi triase, Mulai Dikerjakan. Admin tidak dapat melakukannya.
+- Pelaksana tidak lagi dipilih di form triase. Ambil Tiket (worker, untuk dirinya, bila belum ada Pelaksana) dan Tugaskan Pelaksana (PM) hanya di fase Dikerjakan; di fase lain server menolak dengan 409. Berlaku juga untuk endpoint `/assignee`, `/members`, dan tool MCP `assign_ticket`, `add_ticket_members`.
+- Membuat tiket tidak lagi menawarkan "Simpan & Assign". Kartu kanban tidak bisa dipindah/diseret; fase berubah lewat aksi di detail tiket.
+- Semua daftar tiket (Tiket Saya, Pekerjaan Saya, Dashboard, Laporan, CSV) menampilkan fase/hasil akhir (`status_label`), bukan DRAFT/PROCESS/DELEGASI/SELESAI.

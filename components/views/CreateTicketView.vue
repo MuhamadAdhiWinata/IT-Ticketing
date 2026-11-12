@@ -237,29 +237,13 @@
       <div class="pt-4 border-t border-border flex items-center justify-end gap-3">
         <button
           type="button"
-          @click="handleSubmit(true)"
-          class="px-5 py-3 rounded-lg border border-primary/15 bg-surface text-primary text-xs font-bold hover:bg-blue-50 transition-colors flex items-center gap-1.5"
-        >
-          <Check class="w-4 h-4" />
-          <span>Simpan & Assign</span>
-        </button>
-        <button
-          type="button"
-          @click="handleSubmit(false)"
+          @click="handleSubmit()"
           class="px-6 py-3 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold transition-colors shadow-md"
         >
           Simpan
         </button>
       </div>
     </div>
-
-    <!-- Worker Picker Modal -->
-    <WorkerPickerModal
-      :show="showWorkerPicker"
-      :users="store.allUsers"
-      @close="showWorkerPicker = false"
-      @confirm="handleWorkerConfirm"
-    />
 
     <!-- Modal Dialog Sukses Buat Tiket (Android / Mobile Responsive - Teleport to Body) -->
     <Teleport to="body">
@@ -322,7 +306,6 @@ import { formatOrgLabel, formatRequesterIdentity } from '~/utils/identity';
 import AppSelect from '~/components/common/AppSelect.vue';
 import RichTextEditor from '~/components/common/RichTextEditor.vue';
 import { isRichTextEmpty } from '~/utils/richText';
-import WorkerPickerModal from '~/components/common/WorkerPickerModal.vue';
 
 import { isIntakeRole } from '~/utils/roles';
 
@@ -335,8 +318,6 @@ const serviceView = ref<'SUPPORT_IT' | 'IT_PROGRAMMER'>('SUPPORT_IT');
 const ticketPrefix = computed(() => serviceView.value === 'SUPPORT_IT' ? 'TIKSP' : 'TIKPG');
 const ticketNumber = ref(Math.floor(100000 + Math.random() * 900000));
 const behalfUserId = ref<string | null>(null);
-const showWorkerPicker = ref(false);
-const selectedWorkers = ref<string[]>([]);
 const isSaving = ref(false);
 
 const behalfUserOptions = computed(() => [
@@ -425,7 +406,7 @@ const removePendingFile = (index: number) => {
   pendingFiles.value.splice(index, 1);
 };
 
-const handleSubmit = async (shouldAssign: boolean) => {
+const handleSubmit = async () => {
   const missing = (msg: string) => { showError('Formulir Tidak Lengkap', msg); return true; };
   if (!pelaporIdentity.value?.unit && !unit.value) return void missing('Mohon pilih Unit.');
   if (!projectKendala.value.trim()) {
@@ -443,17 +424,7 @@ const handleSubmit = async (shouldAssign: boolean) => {
     nextTick(() => uploadSection.value?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
     return;
   }
-  if (shouldAssign) {
-    showWorkerPicker.value = true;
-    return;
-  }
   await createTicket(false);
-};
-
-const handleWorkerConfirm = async (userIds: string[]) => {
-  showWorkerPicker.value = false;
-  selectedWorkers.value = userIds;
-  await createTicket(true);
 };
 
 const createTicket = async (shouldIssue: boolean = false) => {
@@ -478,12 +449,6 @@ const createTicket = async (shouldIssue: boolean = false) => {
     };
     const newTicket = await store.addTicket(ticketPayload, shouldIssue, behalfUserId.value || null, pendingFiles.value.length);
     if (newTicket) {
-      if (selectedWorkers.value.length > 0) {
-        await apiFetch(`/api/tickets/${newTicket.id}/members`, {
-          method: 'POST',
-          body: { userIds: selectedWorkers.value },
-        });
-      }
       if (pendingFiles.value.length > 0) {
         const fd = new FormData();
         fd.append('ticketId', newTicket.id);
@@ -537,6 +502,5 @@ const resetForm = () => {
   channel.value = 'FORM';
   pendingFiles.value = [];
   behalfUserId.value = null;
-  selectedWorkers.value = [];
 };
 </script>

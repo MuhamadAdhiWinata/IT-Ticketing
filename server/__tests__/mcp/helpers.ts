@@ -23,7 +23,7 @@ export async function seedUsers() {
 
 let seq = 0;
 export async function seedTicket(opts: {
-  status?: string; ticketType?: string; requester?: Actor; assignedTo?: string | null; priority?: string; activities?: string[]; members?: string[];
+  status?: string; ticketType?: string; requester?: Actor; assignedTo?: string | null; priority?: string; activities?: string[]; members?: string[]; acknowledged?: boolean; triaged?: boolean;
 } = {}) {
   const id = `TCK-T-${Date.now()}-${++seq}`;
   const requester = opts.requester ?? REQ;
@@ -32,7 +32,8 @@ export async function seedTicket(opts: {
     id, title: `Test ${id}`, description: 'desc', category: 'Support IT', location: 'Lantai 1',
     priority: opts.priority ?? 'MEDIUM', ticketType: opts.ticketType ?? null, status: opts.status ?? 'PROCESS',
     createdBy: requester.id, createdByDept: 'Test', requestedBy: requester.id, requestedByDept: 'Test',
-    assignedTo: opts.assignedTo ?? null, createdAt: ts, ticketNumber: `TIKSP-${seq}`,
+    assignedTo: opts.assignedTo ?? null, createdAt: ts,
+    acknowledgedAt: opts.acknowledged || opts.triaged ? ts : null, triagedAt: opts.triaged ? ts : null, ticketNumber: `TIKSP-${seq}`,
   });
   let i = 0;
   for (const description of opts.activities ?? []) {

@@ -137,16 +137,16 @@
       </div>
 
       <div class="bg-surface rounded-lg border border-border p-4 shadow-xs">
-        <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase">Selesai Ditangani</span>
+        <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase">Fase Selesai</span>
         <div class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 font-mono mt-1">
-          {{ countFilteredStatus('SELESAI') }}
+          {{ countFilteredPhase('Selesai') }}
         </div>
       </div>
 
       <div class="bg-surface rounded-lg border border-border p-4 shadow-xs">
-        <span class="text-[10px] font-bold text-primary uppercase">Dalam Proses</span>
+        <span class="text-[10px] font-bold text-primary uppercase">Dikerjakan</span>
         <div class="text-2xl font-bold text-primary font-mono mt-1">
-          {{ countFilteredStatus('PROCESS') }}
+          {{ countFilteredPhase('Dikerjakan') }}
         </div>
       </div>
 
@@ -237,9 +237,9 @@
                   <span
                     :class="[
                       'px-2 py-0.5 rounded text-[10px] font-bold uppercase',
-                      t.status === 'SELESAI' ? 'bg-success/10 text-success' :
-                      t.status === 'PROCESS' ? 'bg-primary/10 text-primary' :
-                      t.status === 'DELEGASI' ? 'bg-warning/10 text-warning' :
+                      t.status_phase === 'Selesai' ? (t.status_label === 'Dialihkan' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success') :
+                      t.status_phase === 'Dikerjakan' || t.status_phase === 'Ditriase' ? 'bg-primary/10 text-primary' :
+                      t.status_phase === 'Menunggu Pemohon' ? 'bg-warning/10 text-warning' :
                       'bg-muted text-muted-foreground'
                     ]"
                   >
@@ -396,6 +396,7 @@ import { formatOrgLabel } from '~/utils/identity';
 import AppSelect from '~/components/common/AppSelect.vue';
 import { toSafeHtml } from '~/utils/richText';
 import type { Ticket } from '~/types';
+import { STATUS_FILTERS, matchesStatusFilter } from '~/utils/ticketSpec';
 
 const props = defineProps<{ tickets: Ticket[] }>();
 const store = useAppStore();
@@ -430,7 +431,7 @@ const workerOptions = computed(() => [
 
 const statusOptions = [
   { value: 'ALL', label: 'Semua Status' },
-  ...['Baru', 'Diakui', 'Ditriase', 'Dikerjakan', 'Menunggu Pemohon', 'Selesai', 'Ditutup', 'Dialihkan'].map(v => ({ value: v, label: v })),
+  ...STATUS_FILTERS.map(v => ({ value: v, label: v })),
 ];
 
 const categoryOptions = computed(() => [
@@ -469,7 +470,7 @@ const getTicketContributors = (t: Ticket): string => {
 const filteredTickets = computed(() => {
   return props.tickets.filter(t => {
     // Status Filter
-    if (filterStatus.value !== 'ALL' && t.status_phase !== filterStatus.value && t.status_label !== filterStatus.value) return false;
+    if (!matchesStatusFilter(t, filterStatus.value)) return false;
 
     // Category Filter
     if (filterCategory.value !== 'ALL' && t.category !== filterCategory.value) return false;
@@ -528,9 +529,7 @@ const filteredWorklogs = computed(() => {
   return list;
 });
 
-const countFilteredStatus = (status: string) => {
-  return filteredTickets.value.filter(t => t.status === status).length;
-};
+const countFilteredPhase = (phase: string) => filteredTickets.value.filter(t => t.status_phase === phase).length;
 
 const totalFilteredHours = computed(() => {
   const totalMin = filteredWorklogs.value.reduce((sum, item) => sum + (item.wl.duration_minutes || 0), 0);
@@ -548,8 +547,8 @@ const workerRecapData = computed(() => {
       return isAssigned || isSupporting || hasWorklog;
     });
 
-    const completedCount = contributedTickets.filter(t => t.status === 'SELESAI').length;
-    const inProgressCount = contributedTickets.filter(t => t.status === 'PROCESS').length;
+    const completedCount = contributedTickets.filter(t => t.status_phase === 'Selesai').length;
+    const inProgressCount = contributedTickets.filter(t => t.status_phase === 'Dikerjakan' || t.status_phase === 'Menunggu Pemohon').length;
 
     let userMinutes = 0;
     let worklogCount = 0;

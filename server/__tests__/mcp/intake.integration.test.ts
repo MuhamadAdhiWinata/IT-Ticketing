@@ -14,10 +14,11 @@ const row = async (id: string) => (await db.select().from(tickets).where(eq(tick
 describe('Akui / Terima', () => {
   it('Akui mengisi acknowledgedAt sekali (idempoten)', async () => {
     const id = await seedTicket({ status: 'DRAFT' });
-    await acknowledgeTicket(IT_A, { ticketId: id });
+    await expect(acknowledgeTicket(IT_A, { ticketId: id })).rejects.toMatchObject({ statusCode: 403 });
+    await acknowledgeTicket(PM, { ticketId: id });
     const first = (await row(id)).acknowledgedAt;
     expect(first).toBeTruthy();
-    await acknowledgeTicket(IT_B, { ticketId: id });
+    await acknowledgeTicket(PM, { ticketId: id });
     expect((await row(id)).acknowledgedAt).toBe(first);
   });
   it('Akui ditolak untuk pemohon', async () => {
@@ -36,7 +37,7 @@ describe('Mulai Triase', () => {
   it('hanya PM/admin, wajib sudah diakui, idempoten', async () => {
     const id = await seedTicket({ status: 'DRAFT' });
     await expect(startTriage(PM, { ticketId: id })).rejects.toMatchObject({ statusCode: 409 });
-    await acknowledgeTicket(IT_A, { ticketId: id });
+    await acknowledgeTicket(PM, { ticketId: id });
     await expect(startTriage(IT_A, { ticketId: id })).rejects.toMatchObject({ statusCode: 403 });
     await startTriage(PM, { ticketId: id });
     const first = (await row(id)).triagedAt;
@@ -87,11 +88,6 @@ describe('Triase PM', () => {
     await triageTicket(PM, { ticketId: id, ticket_type: 'PL_DATA', catalog_item: 'PL-02', data_approval_note: 'disetujui PIC 6/11' });
     expect((await row(id)).catalogItem).toBe('PL-02');
   });
-  it('Pelaksana ditetapkan PM', async () => {
-    const id = await seedTicket({ status: 'DRAFT' });
-    await triageTicket(PM, { ticketId: id, assignee_id: IT_B.id });
-    expect((await row(id)).assignedTo).toBe(IT_B.id);
-  });
   it('pengalihan Duplikat wajib tiket valid dan menutup tiket', async () => {
     const orig = await seedTicket({ status: 'PROCESS' });
     const dup = await seedTicket({ status: 'DRAFT' });
@@ -106,17 +102,17 @@ describe('Triase PM', () => {
 describe('Duty Engineer', () => {
   it('Insiden P1/P2 tidak bisa diproses tanpa konfirmasi', async () => {
     const id = await seedTicket({ status: 'DRAFT', ticketType: 'INSIDEN', priority: 'HIGH', assignedTo: IT_A.id });
-    await expect(transitionStatus(IT_A, { ticketId: id, to: 'PROCESS' })).rejects.toMatchObject({ statusCode: 400 });
+    await expect(transitionStatus(PM, { ticketId: id, to: 'PROCESS' })).rejects.toMatchObject({ statusCode: 400 });
     await expect(confirmDuty(IT_A, { ticketId: id })).rejects.toMatchObject({ statusCode: 403 });
     await confirmDuty(DUTY, { ticketId: id });
     const t = await row(id);
     expect([t.dutyConfirmedBy, !!t.dutyConfirmedAt]).toEqual(['Duty', true]);
-    await transitionStatus(IT_A, { ticketId: id, to: 'PROCESS' });
+    await transitionStatus(PM, { ticketId: id, to: 'PROCESS' });
     expect((await row(id)).status).toBe('PROCESS');
   });
   it('Insiden P3 tidak butuh konfirmasi', async () => {
     const id = await seedTicket({ status: 'DRAFT', ticketType: 'INSIDEN', priority: 'MEDIUM', assignedTo: IT_A.id });
-    await transitionStatus(IT_A, { ticketId: id, to: 'PROCESS' });
+    await transitionStatus(PM, { ticketId: id, to: 'PROCESS' });
     expect((await row(id)).status).toBe('PROCESS');
   });
 });

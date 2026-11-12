@@ -22,8 +22,11 @@
     <template v-else>
       <!-- Baru -->
       <div v-if="phase === 'Baru'" class="space-y-2">
-        <p class="text-xs text-muted-foreground">Tiket baru dibuat {{ fmt(ticket.created_at) }}. Tim IT mengakui tiket untuk memulai penanganan.</p>
-        <button v-if="isIT && !ticket.acknowledged_at && !done" type="button" :disabled="busy" @click="post('acknowledge')" class="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold disabled:opacity-60">Akui Tiket</button>
+        <p class="text-xs text-muted-foreground">
+          Tiket baru dibuat {{ fmt(ticket.created_at) }}.
+          <template v-if="!auth.canTriage">Menunggu PM mengakui tiket.</template>
+        </p>
+        <button v-if="auth.canTriage && !ticket.acknowledged_at && !done" type="button" :disabled="busy" @click="post('acknowledge')" class="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold disabled:opacity-60">Akui Tiket</button>
       </div>
 
       <!-- Diakui -->
@@ -48,7 +51,6 @@
             <AppSelect v-model="tf.impact" :options="IMPACTS" label="Dampak" placeholder="-- Pilih --" size="sm" />
             <AppSelect v-model="tf.urgency" :options="URGENCIES" label="Urgensi" placeholder="-- Pilih --" size="sm" />
             <AppSelect v-if="tf.ticket_type === 'INSIDEN'" v-model="tf.priority" :options="P_OPTIONS" :label="`Prioritas (saran matriks: ${suggestedP || '-'})`" placeholder="-- Otomatis --" size="sm" />
-            <AppSelect v-model="tf.assignee_id" :options="workerOptions" label="Pelaksana" placeholder="-- Pilih --" size="sm" searchable />
           </div>
           <div>
             <label class="block text-xs font-semibold text-foreground mb-1">Alasan Perubahan Jenis / Prioritas</label>
@@ -75,9 +77,8 @@
           <button v-if="auth.isDuty" type="button" :disabled="busy" @click="post('duty-confirm')" class="px-3 py-2 rounded-lg border border-border bg-surface text-foreground text-xs font-bold disabled:opacity-60">
             {{ ticket.duty_confirmed_at ? 'Konfirmasi Ulang Duty Engineer' : 'Konfirmasi Duty Engineer' }}
           </button>
-          <button v-if="isAssignee && !ticket.accepted_at" type="button" :disabled="busy" @click="post('accept')" class="px-3 py-2 rounded-lg bg-emerald-700 text-white text-xs font-bold disabled:opacity-60">Terima</button>
-          <button v-if="ticket.status === 'DRAFT'" type="button" :disabled="busy || !canStart" @click="startWork" class="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold disabled:opacity-50">Mulai Dikerjakan</button>
-          <span v-if="ticket.status === 'DRAFT' && !canStart" class="text-[11px] text-muted-foreground">{{ startHint }}</span>
+          <button v-if="auth.canTriage && ticket.status === 'DRAFT'" type="button" :disabled="busy || !canStart" @click="startWork" class="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold disabled:opacity-50">Mulai Dikerjakan</button>
+          <span v-if="auth.canTriage && ticket.status === 'DRAFT' && !canStart" class="text-[11px] text-muted-foreground">{{ startHint }}</span>
         </div>
       </template>
 
@@ -86,7 +87,19 @@
         <p v-if="ticket.delegation" class="text-xs text-muted-foreground">
           Didelegasikan ke <strong class="text-foreground">{{ ticket.delegation.vendor_name || ticket.delegation.technician_name || 'pihak luar' }}</strong>.
         </p>
-        <div v-if="isIT && !done" class="flex flex-wrap gap-2">
+        <div v-if="isIT && !done" class="flex flex-wrap items-center gap-2">
+          <p v-if="!ticket.assignedTo" class="text-xs text-muted-foreground">Belum ada Pelaksana. Worker dapat mengambil tiket, atau PM menugaskan.</p>
+          <button v-if="!ticket.assignedTo && !auth.canTriage" type="button" :disabled="busy" @click="takeTicket" class="px-3 py-2 rounded-lg bg-amber-700 text-white text-xs font-bold disabled:opacity-60">Ambil Tiket</button>
+          <AppSelect
+            v-if="auth.canTriage"
+            :modelValue="ticket.assignedTo || ''"
+            @update:modelValue="(v: string) => assign(v)"
+            :options="workerOptions"
+            label="Tugaskan Pelaksana"
+            placeholder="-- Pilih --"
+            size="sm"
+            searchable
+          />
           <button v-if="isAssignee && !ticket.accepted_at" type="button" :disabled="busy" @click="post('accept')" class="px-3 py-2 rounded-lg bg-emerald-700 text-white text-xs font-bold disabled:opacity-60">Terima</button>
         </div>
         <form v-if="isIT && !done" class="p-4 rounded-lg border border-border bg-surface space-y-3" @submit.prevent="submitExecution">
@@ -213,7 +226,7 @@ const summaryRows = computed(() => {
 
 const blankTf = () => ({
   ticket_type: props.ticket.ticket_type || '', impact: props.ticket.impact || '', urgency: props.ticket.urgency || '',
-  priority: '', catalog_item: props.ticket.catalog_item || '', assignee_id: props.ticket.assignedTo || '',
+  priority: '', catalog_item: props.ticket.catalog_item || '',
   change_reason: '', data_approval_note: props.ticket.data_approval_note || '', transfer_target: '', duplicate_of: '',
 });
 const tf = reactive(blankTf());
@@ -238,6 +251,8 @@ async function run(path: string, body?: Record<string, unknown>, okMsg = 'Tersim
   }
 }
 const post = (path: string) => run(path);
+const assign = (userId: string) => { if (userId && userId !== props.ticket.assignedTo) run('assignee', { userId }, 'Pelaksana diperbarui.'); };
+const takeTicket = () => run('assignee', { userId: store.currentUser!.id }, 'Tiket diambil.');
 
 function submitTriage() {
   const body: Record<string, unknown> = {};

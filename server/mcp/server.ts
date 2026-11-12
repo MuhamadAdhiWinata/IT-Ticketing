@@ -91,7 +91,7 @@ export function buildMcpServer(actor: Actor) {
     a => idempotent('add_ticket_activity', a, tx => addActivity(actor, a, tx)), { write: true });
 
   def('log_work_time', 'write',
-    'Catat log jam kerja (seperti Log Harian) pada tiket. Tiket DRAFT hanya menerima stageKey ASSIGN. Ditolak bila jam tumpang tindih dengan log lain milik caller.',
+    'Catat log jam kerja (seperti Log Harian) pada tiket. Tiket yang belum Dikerjakan (fase Baru sampai Ditriase) hanya menerima stageKey ASSIGN. Ditolak bila jam tumpang tindih dengan log lain milik caller.',
     {
       ticketId,
       description: z.string().min(1).max(20000),
@@ -114,7 +114,7 @@ export function buildMcpServer(actor: Actor) {
 
   // ── Workflow ──
   def('transition_ticket_status', 'workflow',
-    'Ubah status lewat workflow yang sama dengan UI: DRAFT>PROCESS (Mulai Proses), PROCESS>SELESAI (Selesaikan), PROCESS>DELEGASI (wajib delegation), PROCESS>DRAFT, DELEGASI>PROCESS, SELESAI>PROCESS (buka ulang). Minta konfirmasi worker dulu. Gagal bila transisi tidak valid, dengan daftar transisi yang diizinkan.',
+    'Ubah status lewat workflow yang sama dengan UI: DRAFT>PROCESS (Mulai Dikerjakan, hanya PM), PROCESS>SELESAI (Selesaikan), PROCESS>DELEGASI (wajib delegation), PROCESS>DRAFT, DELEGASI>PROCESS, SELESAI>PROCESS (buka ulang). Minta konfirmasi worker dulu. Gagal bila transisi tidak valid, dengan daftar transisi yang diizinkan.',
     {
       ticketId,
       to: z.enum(STATUSES),
@@ -137,11 +137,11 @@ export function buildMcpServer(actor: Actor) {
     a => idempotent('reopen_ticket', a, tx => reopenTicket(actor, a, tx)), { write: true, destructive: true });
 
   def('assign_ticket', 'workflow',
-    'Tetapkan assignee tiket (satu per tiket). userId dikosongkan = ambil untuk diri sendiri. Menugaskan orang lain hanya untuk SYSTEM_ADMIN. Terkunci setelah SELESAI. Minta konfirmasi worker dulu.',
+    'Tetapkan assignee tiket (satu per tiket), hanya saat fase Dikerjakan. userId dikosongkan = ambil untuk diri sendiri. Menugaskan orang lain hanya untuk PM. Minta konfirmasi worker dulu.',
     { ticketId, userId: z.string().optional(), idempotencyKey: idem },
     a => idempotent('assign_ticket', a, tx => assignTicket(actor, a, tx)), { write: true, destructive: true });
 
-  def('add_ticket_members', 'workflow', 'Tambah pekerja pendukung (member) ke tiket selama belum SELESAI. Yang sudah member dilewati.',
+  def('add_ticket_members', 'workflow', 'Tambah pekerja pendukung (member) ke tiket, hanya saat fase Dikerjakan. Menambah orang lain hanya PM. Yang sudah member dilewati.',
     { ticketId, userIds: z.array(z.string().min(1)).min(1).max(20), idempotencyKey: idem },
     a => idempotent('add_ticket_members', a, tx => addMembers(actor, a, tx)), { write: true });
 

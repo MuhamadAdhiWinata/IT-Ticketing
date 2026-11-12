@@ -7,7 +7,7 @@
       </div>
       <h1 class="text-xl font-bold text-foreground">Hak Akses</h1>
       <p class="text-xs text-muted-foreground">
-        Atur peran, klaim (izin), dan menu sidebar. Perubahan berlaku untuk semua pengguna maksimal beberapa detik setelah disimpan. SYSTEM_ADMIN selalu memiliki semua klaim.
+        Atur peran, klaim (izin), dan menu sidebar. Perubahan berlaku untuk semua pengguna maksimal beberapa detik setelah disimpan. SYSTEM_ADMIN memiliki semua klaim sistem, tetapi bukan klaim operasional tiket (ticket.triage, ticket.duty): itu milik PM dan Duty Engineer.
       </p>
     </div>
 

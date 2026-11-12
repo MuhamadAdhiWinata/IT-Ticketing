@@ -32,7 +32,6 @@
           :currentUser="store.currentUser"
           :onSelectTicket="(ticket) => store.openTicketDetail(ticket.id)"
           :onTakeTicket="(ticket) => store.updateTicketAssignee(ticket.id, store.currentUser!.id)"
-          :onMoveStatus="store.updateTicketStatus"
         />
 
         <MyWorkView

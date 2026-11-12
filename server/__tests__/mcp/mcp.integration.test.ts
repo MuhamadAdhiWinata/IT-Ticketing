@@ -5,7 +5,7 @@ import { auditLogs, comments, mcpIdempotency, mcpTokens, tickets, worklogs, file
 import { getTicketById } from '~/server/utils/tickets';
 import { authenticateMcp, createMcpToken, revokeMcpToken } from '~/server/services/ticketing/mcp-auth';
 import { TOOL_KINDS } from '~/server/mcp/server';
-import { ADMIN, IT_A, IT_B, OTHER_REQ, REQ, as, closeAll, seedTicket, seedUsers } from './helpers';
+import { ADMIN, IT_A, IT_B, OTHER_REQ, PM, REQ, as, closeAll, seedTicket, seedUsers } from './helpers';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -90,7 +90,7 @@ describe('6. comments', () => {
 describe('7-9. status transitions & completion rules', () => {
   it('walks DRAFT > PROCESS > SELESAI > PROCESS with audit, timestamps and worklog for notes', async () => {
     const id = await seedTicket({ status: 'DRAFT' });
-    const w = await as(IT_A);
+    const w = await as(PM);
 
     const start = await w.call('transition_ticket_status', { ticketId: id, to: 'PROCESS', notes: 'mulai' });
     expect(start.isError).toBe(false);
@@ -166,25 +166,33 @@ describe('10. permissions', () => {
     expect(await countWorklogs(id)).toBe(0);
   });
 
-  it('assignment: worker self-assigns only; admin may assign others; locked after SELESAI; target must be IT', async () => {
-    const id = await seedTicket({ status: 'PROCESS' });
+  it('assignment: hanya fase Dikerjakan; worker ambil untuk diri sendiri; PM menugaskan; admin tidak', async () => {
+    const early = await seedTicket({ status: 'DRAFT', triaged: true });
     const a = await as(IT_A);
+    expect((await a.call('assign_ticket', { ticketId: early })).data.status).toBe(409);
+    expect((await (await as(PM)).call('assign_ticket', { ticketId: early, userId: IT_B.id })).data.status).toBe(409);
+
+    const id = await seedTicket({ status: 'PROCESS' });
     expect((await a.call('assign_ticket', { ticketId: id, userId: IT_B.id })).data.status).toBe(403);
     expect((await a.call('assign_ticket', { ticketId: id })).data.ticket.assigned_to).toBe(IT_A.id);
+    expect((await (await as(IT_B)).call('assign_ticket', { ticketId: id })).data.status).toBe(409);
 
-    const admin = await as(ADMIN);
-    expect((await admin.call('assign_ticket', { ticketId: id, userId: IT_B.id })).data.ticket.assigned_to).toBe(IT_B.id);
-    expect((await admin.call('assign_ticket', { ticketId: id, userId: REQ.id })).isError).toBe(true);
+    const pm = await as(PM);
+    expect((await pm.call('assign_ticket', { ticketId: id, userId: IT_B.id })).data.ticket.assigned_to).toBe(IT_B.id);
+    expect((await pm.call('assign_ticket', { ticketId: id, userId: REQ.id })).isError).toBe(true);
+    expect((await (await as(ADMIN)).call('assign_ticket', { ticketId: id, userId: IT_A.id })).data.status).toBe(403);
 
     const done = await seedTicket({ status: 'SELESAI', assignedTo: IT_A.id });
-    const locked = await a.call('assign_ticket', { ticketId: done });
-    expect(locked.data.status).toBe(409);
+    expect((await a.call('assign_ticket', { ticketId: done })).data.status).toBe(409);
   });
 
   it('members: add skips duplicates, blocked when SELESAI, non-IT target rejected', async () => {
     const id = await seedTicket({ status: 'PROCESS' });
     const a = await as(IT_A);
-    const r1 = await a.call('add_ticket_members', { ticketId: id, userIds: [IT_A.id, IT_B.id] });
+    expect((await a.call('add_ticket_members', { ticketId: id, userIds: [IT_B.id] })).data.status).toBe(403);
+    const early = await seedTicket({ status: 'DRAFT', triaged: true });
+    expect((await a.call('add_ticket_members', { ticketId: early, userIds: [IT_A.id] })).data.status).toBe(409);
+    const r1 = await (await as(PM)).call('add_ticket_members', { ticketId: id, userIds: [IT_A.id, IT_B.id] });
     expect(r1.data.added).toHaveLength(2);
     const r2 = await a.call('add_ticket_members', { ticketId: id, userIds: [IT_A.id] });
     expect(r2.data.added).toHaveLength(0);
@@ -285,7 +293,7 @@ describe('12. idempotent retry', () => {
 
   it('concurrent transition with same key runs once', async () => {
     const id = await seedTicket({ status: 'DRAFT' });
-    const a = await as(IT_A);
+    const a = await as(PM);
     const args = { ticketId: id, to: 'PROCESS', idempotencyKey: `idem-tr-${id}` };
     const rs = await Promise.all([a.call('transition_ticket_status', args), a.call('transition_ticket_status', args)]);
     expect(rs.filter(r => !r.isError).length).toBeGreaterThanOrEqual(1);
@@ -318,7 +326,7 @@ describe('13. failure leaves no partial state', () => {
 
   it('failed write with idempotency key does not burn the key', async () => {
     const id = await seedTicket({ status: 'DRAFT' });
-    const a = await as(IT_A);
+    const a = await as(PM);
     const key = `idem-fail-${id}`;
     const bad = await a.call('transition_ticket_status', { ticketId: id, to: 'SELESAI', idempotencyKey: key });
     expect(bad.isError).toBe(true);
@@ -347,7 +355,7 @@ describe('13. failure leaves no partial state', () => {
 describe('14. UI sees the same data', () => {
   it('getTicketById (used by web UI) reflects MCP writes in worklogs, audit and status', async () => {
     const id = await seedTicket({ status: 'DRAFT' });
-    const a = await as(IT_A);
+    const a = await as(PM);
     await a.call('transition_ticket_status', { ticketId: id, to: 'PROCESS' });
     await a.call('add_ticket_activity', { ticketId: id, description: 'kerja 1' });
     await a.call('add_ticket_activity', { ticketId: id, description: 'kerja 2' });
@@ -356,7 +364,7 @@ describe('14. UI sees the same data', () => {
     const ui: any = await getTicketById(id);
     expect(ui!.status).toBe('SELESAI');
     expect(ui!.worklogs.map((w: any) => w.description)).toEqual(expect.arrayContaining(['kerja 1', 'kerja 2', 'tuntas']));
-    expect(ui!.worklogs.find((w: any) => w.description === 'kerja 1')!.worker_name).toBe(IT_A.name);
+    expect(ui!.worklogs.find((w: any) => w.description === 'kerja 1')!.worker_name).toBe(PM.name);
     expect(ui!.audit_logs.map((l: any) => l.action)).toContain('TAHAP_IN_PROGRESS_SELESAI');
 
     const viaTool = await a.call('get_ticket', { ticketId: id });

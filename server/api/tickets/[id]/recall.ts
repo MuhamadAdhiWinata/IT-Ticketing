@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (existing.status !== 'PROCESS') {
-    throw createError({ statusCode: 409, statusMessage: 'Hanya tiket dengan status PROCESS (sudah dikirim) yang dapat ditarik kembali ke DRAFT' });
+    throw createError({ statusCode: 409, statusMessage: 'Hanya tiket fase Dikerjakan yang dapat ditarik kembali ke fase Baru' });
   }
 
   const ts = now();
@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
       ticketId: id,
       type: 'NEW_TICKET',
       title: 'Tiket Ditarik Kembali',
-      message: `Tiket ${existing.ticketNumber || id} ditarik kembali ke DRAFT oleh ${user.name}`,
+      message: `Tiket ${existing.ticketNumber || id} ditarik kembali ke fase Baru oleh ${user.name}`,
     });
 
     await tx.insert(auditLogs).values({
@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
       action: 'TIKET_DITARIK',
       performedAt: ts,
       performedBy: user.id,
-      detail: 'Tiket ditarik kembali ke DRAFT oleh pemohon',
+      detail: 'Tiket ditarik kembali ke fase Baru oleh pemohon',
     }).execute();
   });
 

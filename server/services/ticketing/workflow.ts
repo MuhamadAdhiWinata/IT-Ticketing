@@ -8,7 +8,8 @@ import {
   fail, hm, inTx, lockTicket, newId, nowTs, parse, requireIT, ticketSummary, withFileCleanup,
 } from './common';
 import { insertAttachments } from './attachments';
-import { SOLUTION_TYPES, needsDutyConfirm, values } from '~/utils/ticketSpec';
+import { SOLUTION_TYPES, derivePhase, deriveStatusLabel, needsDutyConfirm, values } from '~/utils/ticketSpec';
+import { canTriageRole } from '~/utils/roles';
 
 export const STATUSES = ['DRAFT', 'PROCESS', 'DELEGASI', 'SELESAI'] as const;
 
@@ -86,6 +87,7 @@ export async function transitionStatus(
     const ts = nowTs();
     const patch: Partial<typeof tickets.$inferInsert> = { status: v.to };
     if (stageKey === 'START_WORK') {
+      if (!canTriageRole(actor.role)) fail(403, 'Forbidden: Mulai Dikerjakan (fase Baru sampai Ditriase) hanya untuk PM');
       if (t.priority === 'CRITICAL' && files.length === 0) {
         const [row] = await tx.select({ cnt: count() }).from(filesTbl).where(eq(filesTbl.ticketId, t.id));
         if (!row?.cnt) fail(400, 'Tiket CRITICAL membutuhkan minimal 1 lampiran dokumen pendukung sebelum diproses');
@@ -164,7 +166,7 @@ export async function transitionStatus(
         ticketId: v.ticketId,
         type: 'ASSIGNED',
         title: 'Status Tiket Berubah',
-        message: `Status tiket ${t.ticketNumber || t.id} berubah dari ${t.status} menjadi ${v.to}`,
+        message: `Tiket ${t.ticketNumber || t.id} berubah dari fase ${derivePhase(t)} menjadi ${deriveStatusLabel({ ...t, status: v.to })}`,
       }, tx);
     }
 

@@ -61,7 +61,7 @@
             </span>
           </div>
           <div class="flex flex-col gap-1">
-            <span class="text-xs text-muted-foreground">Workers:</span>
+            <span class="text-xs text-muted-foreground">Pelaksana:</span>
             <div class="flex flex-wrap items-center gap-1.5">
               <template v-if="ticket.members && ticket.members.length > 0">
                 <span
@@ -75,20 +75,8 @@
                   <span class="text-xs font-semibold text-primary">{{ m.user_name }}</span>
                 </span>
               </template>
-              <span v-else class="text-xs text-muted-foreground italic">Belum ditugaskan</span>
+              <span v-else class="text-xs text-muted-foreground italic">Belum ada Pelaksana</span>
             </div>
-          </div>
-          <div v-if="canTriageRole(store.currentUser?.role) && ticket.status !== 'SELESAI'" class="flex flex-col gap-1">
-            <label for="pelaksana" class="text-xs text-muted-foreground">Pelaksana:</label>
-            <select
-              id="pelaksana"
-              :value="ticket.assignedTo || ''"
-              @change="handleAssign(($event.target as HTMLSelectElement).value)"
-              class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground"
-            >
-              <option value="" disabled>Pilih pelaksana...</option>
-              <option v-for="w in itWorkers" :key="w.id" :value="w.id">{{ w.name }}</option>
-            </select>
           </div>
           <div v-if="(ticket.reopen_count ?? 0) > 0" class="flex items-center justify-between">
             <span class="text-xs text-muted-foreground">Dibuka ulang:</span>
@@ -339,14 +327,6 @@
                 <span>Kirim</span>
               </button>
               <button
-                v-if="!isCurrentUserMember && ticket.status !== 'SELESAI'"
-                @click="handleAddMember()"
-                class="w-full px-4 py-2.5 bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
-              >
-                <UserPlus class="w-4 h-4" />
-                <span>Ambil Tiket</span>
-              </button>
-              <button
                 v-if="canSolve"
                 @click="handleSubmitCurrentStage()"
                 class="w-full px-4 py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
@@ -496,12 +476,12 @@
 </template>
 
 <script setup lang="ts">
-import { isITRole, canTriageRole } from '~/utils/roles';
+import { isITRole } from '~/utils/roles';
 import { PHASES, type Phase } from '~/utils/ticketSpec';
 import { ref, computed, watch, nextTick } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { apiFetch } from '~/services/api';
-import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon, User, X, Download, Image as ImageIcon, FileText, File, UserPlus, Send, Lock } from 'lucide-vue-next';
+import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon, User, X, Download, Image as ImageIcon, FileText, File, Send, Lock } from 'lucide-vue-next';
 import type { TicketStatus, TicketComment, TicketInternalNote } from '~/types';
 import { triggerPrintPDF } from '~/utils/export';
 import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
@@ -536,7 +516,6 @@ const selectedStepIndex = ref(0);
 const activeStepEl = ref<HTMLElement | null>(null);
 const stageNotes = ref('');
 const solution = ref({ type: 'PANDUAN', summary: '', tech_debt_url: '' });
-const itWorkers = computed(() => store.allUsers.filter(u => isITRole(u.role)));
 const previewImage = ref<{ url: string; name: string } | null>(null);
 
 // Kunci tahap log/berkas di API mengikuti status DB (sama dengan activityStagesFor di server).
@@ -579,35 +558,6 @@ const handleSaveNote = async () => {
   if (!ticket.value || isRichTextEmpty(stageNotes.value)) return;
   await store.saveWorklogNote(ticket.value.id, stageKey.value, stageNotes.value);
   stageNotes.value = '';
-};
-
-const isCurrentUserMember = computed(() => {
-  if (!ticket.value || !store.currentUser) return false;
-  return ticket.value.members?.some(m => m.user_id === store.currentUser?.id) ?? false;
-});
-
-const handleAddMember = async () => {
-  if (!ticket.value || !store.currentUser) return;
-  try {
-    await apiFetch(`/api/tickets/${ticket.value.id}/members`, {
-      method: 'POST',
-      body: { userIds: [store.currentUser.id] },
-    });
-    await store.refreshTicket(ticket.value.id);
-  } catch (e: any) {
-    console.error('Failed to add member:', e);
-  }
-};
-
-const handleAssign = async (userId: string) => {
-  if (!ticket.value || !userId) return;
-  try {
-    await apiFetch(`/api/tickets/${ticket.value.id}/assignee`, { method: 'POST', body: { userId } });
-    await store.refreshTicket(ticket.value.id);
-    toast('Pelaksana diperbarui', 'success');
-  } catch (e: any) {
-    showError('Gagal Menugaskan', e?.data?.statusMessage || e?.message || 'Terjadi kesalahan.');
-  }
 };
 
 // ponytail: log/berkas dipetakan ke fase lewat kunci tahap API; log ASSIGN tampil di ketiga fase pra-kerja (tanpa stempel fase per log).

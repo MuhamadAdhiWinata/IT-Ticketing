@@ -100,7 +100,7 @@ export async function logWorkTime(
   return inTx(exec, async (tx) => {
     const ticket = await lockTicket(tx, v.ticketId);
     // Tiket DRAFT hanya menerima log tahap ASSIGN (sama dengan "Kirim" di tahap Assign pada detail tiket).
-    if (ticket.status === 'DRAFT' && v.stageKey !== 'ASSIGN') fail(409, 'Tiket masih DRAFT; mulai proses dahulu, atau catat pada tahap ASSIGN');
+    if (ticket.status === 'DRAFT' && v.stageKey !== 'ASSIGN') fail(409, 'Tiket belum dikerjakan (fase Baru sampai Ditriase); catat pada tahap ASSIGN atau tunggu PM memulai pengerjaan');
 
     let workerId = actor.id;
     let workerName = actor.name;

@@ -1,6 +1,7 @@
 import { db } from '~/server/database/client';
 import { requireAuth } from '~/server/utils/authorize';
 import { setHeader } from 'h3';
+import { deriveStatusLabel } from '~/utils/ticketSpec';
 
 export default defineEventHandler(async (event) => {
   const user = await requireAuth(event);
@@ -26,7 +27,7 @@ export default defineEventHandler(async (event) => {
     t.id,
     t.ticketNumber || '',
     (t.title || '').replace(/"/g, '""'),
-    t.status,
+    deriveStatusLabel(t),
     t.priority,
     t.category,
     t.requester?.name || '',

@@ -22,6 +22,10 @@ export const CLAIM = {
 // Menu "access" (kelola hak akses) khusus SYSTEM_ADMIN: tidak punya klaim, tidak bisa diberikan ke peran lain.
 export const ACCESS_MENU = 'access';
 
+// Klaim operasional tiket: milik PM / Duty Engineer. SYSTEM_ADMIN hanya mengurus sistem (hak akses, master, pengaturan)
+// sehingga TIDAK otomatis lolos klaim ini; beri lewat peran lain bila perlu.
+export const OPERATIONAL_CLAIMS: string[] = [CLAIM.TRIAGE, CLAIM.DUTY];
+
 export const MENUS: MenuDef[] = [
   { id: 'tracking', label: 'Tracking', icon: 'Search', section: 'Menu Utama', sortOrder: 10 },
   { id: 'my-tickets', label: 'Tiket Saya', icon: 'ClipboardList', section: 'Menu Utama', sortOrder: 20 },
@@ -38,7 +42,7 @@ export const MENUS: MenuDef[] = [
 export const PERMISSIONS: PermissionDef[] = [
   ...MENUS.filter(m => m.id !== ACCESS_MENU).map(m => ({ key: `menu.${m.id}`, label: `Menu ${m.label}`, group: 'Menu' })),
   { key: CLAIM.IT, label: 'Akses tim IT (kerjakan tiket, catatan internal, jadi Pelaksana, token MCP)', group: 'Tiket' },
-  { key: CLAIM.TRIAGE, label: 'Triase tiket (PM) dan tutup tiket', group: 'Tiket' },
+  { key: CLAIM.TRIAGE, label: 'PM: akui, triase, mulai dikerjakan, tugaskan pelaksana, tutup tiket', group: 'Tiket' },
   { key: CLAIM.DUTY, label: 'Konfirmasi Duty Engineer untuk Insiden P1/P2', group: 'Tiket' },
   { key: CLAIM.INTAKE, label: 'Buat tiket atas nama pengguna dan pilih Kanal Asal', group: 'Tiket' },
   { key: CLAIM.DELETE_TICKET, label: 'Hapus tiket', group: 'Tiket' },
@@ -55,7 +59,7 @@ export const DEFAULT_ROLES: RoleDef[] = [
   { id: 'IT_WORKER', name: 'IT Worker', description: 'Pelaksana tim IT', claims: IT },
   { id: 'PM', name: 'PM', description: 'Triase dan penugasan tiket', claims: [...IT, CLAIM.TRIAGE, CLAIM.INTAKE] },
   { id: 'DUTY_ENGINEER', name: 'Duty Engineer', description: 'Konfirmasi insiden P1/P2', claims: [...IT, CLAIM.DUTY, CLAIM.INTAKE] },
-  { id: ADMIN_ROLE, name: 'System Admin', description: 'Superuser: seluruh klaim, tidak dapat diubah', claims: PERMISSIONS.map(p => p.key) },
+  { id: ADMIN_ROLE, name: 'System Admin', description: 'Administrator sistem: semua klaim kecuali operasional tiket (PM/Duty), tidak dapat diubah', claims: PERMISSIONS.map(p => p.key).filter(k => !OPERATIONAL_CLAIMS.includes(k)) },
 ];
 
 let matrix: RbacMatrix = Object.fromEntries(DEFAULT_ROLES.map(r => [r.id, r.claims]));
@@ -63,15 +67,15 @@ let matrix: RbacMatrix = Object.fromEntries(DEFAULT_ROLES.map(r => [r.id, r.clai
 export const setRbacMatrix = (m: RbacMatrix) => { matrix = m; };
 export const getRbacMatrix = (): RbacMatrix => matrix;
 
-// SYSTEM_ADMIN selalu lolos: terkunci di kode agar admin tidak bisa mengunci dirinya sendiri.
+// SYSTEM_ADMIN lolos semua klaim non-operasional: terkunci di kode agar admin tidak bisa mengunci dirinya sendiri.
 export const roleHas = (role: string | null | undefined, key: string): boolean =>
-  !!role && (role === ADMIN_ROLE || !!matrix[role]?.includes(key));
+  !!role && ((role === ADMIN_ROLE && !OPERATIONAL_CLAIMS.includes(key)) || !!matrix[role]?.includes(key));
 
 export const claimsOf = (role: string | null | undefined): string[] =>
-  role === ADMIN_ROLE ? PERMISSIONS.map(p => p.key) : (role ? matrix[role] ?? [] : []);
+  role === ADMIN_ROLE ? PERMISSIONS.map(p => p.key).filter(k => !OPERATIONAL_CLAIMS.includes(k)) : (role ? matrix[role] ?? [] : []);
 
 export const rolesWith = (key: string): string[] =>
-  [...new Set([ADMIN_ROLE, ...Object.keys(matrix).filter(r => roleHas(r, key))])];
+  [...new Set([ADMIN_ROLE, ...Object.keys(matrix)])].filter(r => roleHas(r, key));
 
 export const menuAllowed = (role: string | null | undefined, menuId: string): boolean =>
   menuId === ACCESS_MENU ? role === ADMIN_ROLE : roleHas(role, `menu.${menuId}`);

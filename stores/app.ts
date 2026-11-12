@@ -293,21 +293,6 @@ export const useAppStore = defineStore('app', {
       }
     },
 
-    async updateTicketStatus(ticketId: string, status: Ticket['status']) {
-      try {
-        await apiFetch(`/api/tickets/${ticketId}/status`, {
-          method: 'PATCH',
-          body: { status },
-        });
-        this.tickets = this.tickets.map(t => t.id === ticketId ? { ...t, status } : t);
-        if (this.selectedTicket?.id === ticketId) {
-          this.selectedTicket = { ...this.selectedTicket, status };
-        }
-      } catch (e) {
-        console.error('Failed to update status:', e);
-      }
-    },
-
     async updateTicketAssignee(ticketId: string, userId: string) {
       const user = this.allUsers.find(u => u.id === userId);
       try {

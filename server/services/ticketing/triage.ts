@@ -9,7 +9,6 @@ import {
   priorityFromMatrix, priorityToP, values,
 } from '~/utils/ticketSpec';
 import { type Actor, type DbExec, fail, inTx, lockTicket, newId, nowTs, parse, requireIT, ticketSummary } from './common';
-import { assignTicket } from './assignment';
 
 const reasonText = z.string().trim().max(2000);
 const urlField = z.string().trim().max(500).refine(u => /^https?:\/\/\S+$/i.test(u), 'harus URL http(s)');
@@ -23,7 +22,6 @@ const TriageSchema = z.object({
   change_reason: reasonText.optional(),
   catalog_item: z.enum(values(CATALOG_ITEMS)).nullable().optional(),
   data_approval_note: reasonText.optional(),
-  assignee_id: z.string().min(1).optional(),
   transfer_target: z.enum(values(TRANSFER_TARGETS)).optional(),
   duplicate_of: z.string().trim().min(1).optional(),
 });
@@ -38,9 +36,9 @@ const ExecutionSchema = z.object({
 const audit = (tx: DbExec, ticketId: string, actor: Actor, action: string, detail?: string, notes?: string) =>
   tx.insert(auditLogs).values({ id: newId('AUD'), ticketId, action, performedAt: nowTs(), performedBy: actor.id, detail: detail ?? null, notes: notes ?? null });
 
-// Tombol "Akui": IT mengakui tiket baru. Idempoten; waktu pertama yang disimpan.
+// Tombol "Akui": PM mengakui tiket baru. Idempoten; waktu pertama yang disimpan.
 export async function acknowledgeTicket(actor: Actor, input: { ticketId: string }, exec?: DbExec) {
-  requireIT(actor);
+  if (!canTriageRole(actor.role)) fail(403, 'Forbidden: hanya PM');
   return inTx(exec, async (tx) => {
     const t = await lockTicket(tx, input.ticketId);
     if (t.status === 'SELESAI') fail(409, 'Tiket SELESAI tidak dapat diakui');
@@ -57,7 +55,7 @@ export async function acknowledgeTicket(actor: Actor, input: { ticketId: string 
 
 // Tombol "Mulai Triase": PM memindahkan tiket Diakui ke fase Ditriase. Idempoten.
 export async function startTriage(actor: Actor, input: { ticketId: string }, exec?: DbExec) {
-  if (!canTriageRole(actor.role)) fail(403, 'Forbidden: hanya PM atau SYSTEM_ADMIN');
+  if (!canTriageRole(actor.role)) fail(403, 'Forbidden: hanya PM');
   return inTx(exec, async (tx) => {
     const t = await lockTicket(tx, input.ticketId);
     if (t.status === 'SELESAI') fail(409, 'Tiket SELESAI: triase terkunci');
@@ -97,9 +95,9 @@ export async function confirmDuty(actor: Actor, input: { ticketId: string }, exe
   });
 }
 
-// Triase oleh PM: jenis, dampak, urgensi, prioritas, katalog, pelaksana, pengalihan.
+// Triase oleh PM: jenis, dampak, urgensi, prioritas, katalog, pengalihan. Pelaksana ditugaskan nanti, di fase Dikerjakan.
 export async function triageTicket(actor: Actor, input: z.input<typeof TriageSchema>, exec?: DbExec) {
-  if (!canTriageRole(actor.role)) fail(403, 'Forbidden: hanya PM atau SYSTEM_ADMIN');
+  if (!canTriageRole(actor.role)) fail(403, 'Forbidden: hanya PM');
   const v = parse(TriageSchema, input);
   return inTx(exec, async (tx) => {
     const t = await lockTicket(tx, v.ticketId);
@@ -157,9 +155,8 @@ export async function triageTicket(actor: Actor, input: z.input<typeof TriageSch
     }
 
     if (Object.keys(patch).length > 0) await tx.update(tickets).set(patch).where(eq(tickets.id, t.id));
-    if (v.assignee_id && v.assignee_id !== t.assignedTo && !v.transfer_target) await assignTicket(actor, { ticketId: t.id, userId: v.assignee_id }, tx);
 
-    const changed = Object.keys(patch).join(', ') || 'pelaksana';
+    const changed = Object.keys(patch).join(', ') || 'tanpa perubahan';
     await audit(tx, t.id, actor, v.transfer_target ? 'TIKET_DIALIHKAN' : 'TIKET_DITRIASE', changed, v.change_reason);
     return { ticket: await ticketSummary(tx, t.id) };
   });
@@ -192,7 +189,7 @@ export async function updateExecution(actor: Actor, input: z.input<typeof Execut
 
 // Tutup tiket SELESAI (status Ditutup). Hanya PM.
 export async function closeTicket(actor: Actor, input: { ticketId: string }, exec?: DbExec) {
-  if (!canTriageRole(actor.role)) fail(403, 'Forbidden: hanya PM atau SYSTEM_ADMIN');
+  if (!canTriageRole(actor.role)) fail(403, 'Forbidden: hanya PM');
   return inTx(exec, async (tx) => {
     const t = await lockTicket(tx, input.ticketId);
     if (t.status !== 'SELESAI') fail(409, 'Hanya tiket SELESAI yang dapat ditutup');
