@@ -49,6 +49,7 @@ export async function addActivity(
       ticketId: v.ticketId,
       stageKey,
       workerId: actor.id,
+      onDuty: actor.dutyActive ? 1 : 0,
       date: localDate(),
       startAt: hm(),
       finishAt: hm(),

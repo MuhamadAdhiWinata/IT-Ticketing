@@ -71,6 +71,7 @@ export interface Worklog {
   finish_at: string;
   duration_minutes: number;
   description: string;
+  on_duty?: boolean;
   created_at: string;
   files?: FileRecord[];
 }
@@ -97,6 +98,7 @@ export interface AuditLog {
   performed_by_name: string;
   detail?: string;
   notes?: string;
+  on_duty?: boolean;
 }
 
 export interface TicketComment {

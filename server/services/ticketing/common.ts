@@ -13,13 +13,15 @@ export interface Actor {
   id: string;
   name: string;
   role: string;
+  // Pemilik jadwal duty aktif: klaim DUTY_ENGINEER digabung, dan log yang ditulisnya ditandai on_duty.
+  dutyActive?: boolean;
 }
 
 export { isITRole, itRoles };
-export const isIT = (a: Actor) => isITRole(a.role);
+export const isIT = (a: Actor) => isITRole(a.role, a.dutyActive);
 
-export function toActor(user: { id: string; name: string; role: string }): Actor {
-  return { id: user.id, name: user.name, role: user.role };
+export function toActor(user: { id: string; name: string; role: string; dutyActive?: boolean }): Actor {
+  return { id: user.id, name: user.name, role: user.role, dutyActive: !!user.dutyActive };
 }
 
 export function fail(status: number, message: string, data?: Record<string, unknown>): never {

@@ -21,7 +21,7 @@ export async function requireRole(event: H3Event, ...roles: string[]) {
 // Pemeriksaan berbasis klaim (diatur SYSTEM_ADMIN). SYSTEM_ADMIN selalu lolos.
 export async function requireClaim(event: H3Event, claim: string) {
   const user = await requireAuth(event);
-  if (!roleHas(user.role, claim)) {
+  if (!roleHas(user.role, claim, user.dutyActive)) {
     throw createError({ statusCode: 403, statusMessage: `Forbidden: butuh klaim ${claim}` });
   }
   return user;

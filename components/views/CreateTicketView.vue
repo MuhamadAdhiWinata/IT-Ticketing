@@ -307,11 +307,11 @@ import AppSelect from '~/components/common/AppSelect.vue';
 import RichTextEditor from '~/components/common/RichTextEditor.vue';
 import { isRichTextEmpty } from '~/utils/richText';
 
-import { isIntakeRole } from '~/utils/roles';
+import { useAuthStore } from '~/stores/auth';
 
 const store = useAppStore();
 const { showError, showSuccess } = useModal();
-const isIntake = computed(() => isIntakeRole(store.currentUser?.role));
+const isIntake = computed(() => useAuthStore().isIntake);
 const isOpen = computed(() => store.activeView === 'create-ticket');
 
 const serviceView = ref<'SUPPORT_IT' | 'IT_PROGRAMMER'>('SUPPORT_IT');

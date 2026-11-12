@@ -35,6 +35,7 @@ export function serializeWorklog(w: any) {
     finish_at: w.finishAt,
     duration_minutes: w.durationMinutes,
     description: w.description,
+    on_duty: !!w.onDuty,
     created_at: w.createdAt,
   };
 }
@@ -49,6 +50,7 @@ export function serializeAuditLog(a: any) {
     performed_by_name: a.performedByName || a.actor?.name || '',
     detail: a.detail ?? null,
     notes: a.notes ?? null,
+    on_duty: !!a.onDuty,
   };
 }
 

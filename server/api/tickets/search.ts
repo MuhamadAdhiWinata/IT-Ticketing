@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   const userRole = user?.role;
 
   if (!q) {
-    const whereClause = !isITRole(userRole)
+    const whereClause = !isITRole(userRole, user?.dutyActive)
       ? eq(tickets.requestedBy, userId)
       : undefined;
 
@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
   }
 
   let baseWhere = or(...conditions);
-  if (!isITRole(userRole)) {
+  if (!isITRole(userRole, user?.dutyActive)) {
     baseWhere = or(
       and(baseWhere, eq(tickets.requestedBy, userId)),
       eq(tickets.requestedBy, userId),

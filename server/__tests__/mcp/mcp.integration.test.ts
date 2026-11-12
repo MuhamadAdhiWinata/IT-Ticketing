@@ -400,7 +400,7 @@ describe('token self-service scoping', () => {
     const { listMcpTokens } = await import('~/server/services/ticketing/mcp-auth');
     expect((await listMcpTokens(IT_A.id)).every(t => t.userId === IT_A.id)).toBe(true);
     expect(await revokeMcpToken(theirs.id, IT_A.id)).toBe(0);
-    expect(await authenticateMcp(`Bearer ${theirs.token}`)).toEqual(IT_B);
+    expect(await authenticateMcp(`Bearer ${theirs.token}`)).toEqual({ ...IT_B, dutyActive: false });
     expect(await revokeMcpToken(mine.id, IT_A.id)).toBe(1);
     expect(await authenticateMcp(`Bearer ${mine.token}`)).toBeNull();
   });
@@ -411,7 +411,7 @@ describe('token reveal', () => {
     const { revealMcpToken } = await import('~/server/services/ticketing/mcp-auth');
     const { id, token } = await createMcpToken(IT_A.id, 'reveal');
     expect(await revealMcpToken(id, IT_A.id)).toBe(token);
-    expect(await authenticateMcp(`Bearer ${await revealMcpToken(id, IT_A.id)}`)).toEqual(IT_A);
+    expect(await authenticateMcp(`Bearer ${await revealMcpToken(id, IT_A.id)}`)).toEqual({ ...IT_A, dutyActive: false });
 
     await expect(revealMcpToken(id, IT_B.id)).rejects.toMatchObject({ statusCode: 404 });
 
@@ -431,7 +431,7 @@ describe('token reveal', () => {
 describe('token auth', () => {
   it('resolves actor from DB by token hash; revoked and unknown tokens rejected; role is live', async () => {
     const { id, token } = await createMcpToken(IT_A.id, 'test');
-    expect(await authenticateMcp(`Bearer ${token}`)).toEqual(IT_A);
+    expect(await authenticateMcp(`Bearer ${token}`)).toEqual({ ...IT_A, dutyActive: false });
     expect(await authenticateMcp('Bearer itk_nope')).toBeNull();
     expect(await authenticateMcp(undefined)).toBeNull();
     const stored = (await db.select().from(mcpTokens).where(eq(mcpTokens.id, id)))[0]!;

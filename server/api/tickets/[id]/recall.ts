@@ -58,6 +58,7 @@ export default defineEventHandler(async (event) => {
       action: 'TIKET_DITARIK',
       performedAt: ts,
       performedBy: user.id,
+      onDuty: user.dutyActive ? 1 : 0,
       detail: 'Tiket ditarik kembali ke fase Baru oleh pemohon',
     }).execute();
   });

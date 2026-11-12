@@ -34,6 +34,7 @@ export async function assignTicket(actor: Actor, input: { ticketId: string; user
       action: 'TIKET_DITUGASKAN',
       performedAt: nowTs(),
       performedBy: actor.id,
+      onDuty: actor.dutyActive ? 1 : 0,
       detail: `Ditugaskan ke ${target.name}`,
     });
     if (userId !== actor.id) {

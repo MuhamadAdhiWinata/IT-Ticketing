@@ -87,7 +87,7 @@ export async function transitionStatus(
     const ts = nowTs();
     const patch: Partial<typeof tickets.$inferInsert> = { status: v.to };
     if (stageKey === 'START_WORK') {
-      if (!canTriageRole(actor.role)) fail(403, 'Forbidden: Mulai Dikerjakan (fase Baru sampai Ditriase) hanya untuk PM');
+      if (!canTriageRole(actor.role, actor.dutyActive)) fail(403, 'Forbidden: Mulai Dikerjakan (fase Baru sampai Ditriase) hanya untuk PM');
       if (t.priority === 'CRITICAL' && files.length === 0) {
         const [row] = await tx.select({ cnt: count() }).from(filesTbl).where(eq(filesTbl.ticketId, t.id));
         if (!row?.cnt) fail(400, 'Tiket CRITICAL membutuhkan minimal 1 lampiran dokumen pendukung sebelum diproses');
@@ -135,6 +135,7 @@ export async function transitionStatus(
       action: stageKey ? `TAHAP_${stageKey}_SELESAI` : 'STATUS_DIUBAH',
       performedAt: ts,
       performedBy: actor.id,
+      onDuty: actor.dutyActive ? 1 : 0,
       detail: `${t.status} -> ${v.to}`,
       notes: v.notes || '',
     });
@@ -147,6 +148,7 @@ export async function transitionStatus(
           ticketId: v.ticketId,
           stageKey,
           workerId: actor.id,
+          onDuty: actor.dutyActive ? 1 : 0,
           date: ts.slice(0, 10),
           startAt: hm(),
           finishAt: hm(),

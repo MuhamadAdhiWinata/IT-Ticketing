@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 19);
 
   // RBAC: non-IT (tanpa klaim it.access) hanya melihat tiket sendiri
-  const userFilter = !isITRole(user?.role)
+  const userFilter = !isITRole(user?.role, user?.dutyActive)
     ? eq(tickets.requestedBy, userId)
     : undefined;
 

@@ -57,6 +57,13 @@
       "when": 1794456615670,
       "tag": "0007_rbac_dynamic",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1794459895359,
+      "tag": "0008_duty_schedules",
+      "breakpoints": true
     }
   ]
 }

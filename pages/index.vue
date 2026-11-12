@@ -57,6 +57,8 @@
 
         <AccessControlView v-else-if="store.activeTab === 'access' && authStore.isSystemAdmin" />
 
+        <DutyScheduleView v-else-if="store.activeTab === 'duty-schedule'" />
+
         <McpTokensView v-else-if="store.activeTab === 'mcp-token' && isITRole(store.currentUser?.role)" />
       </template>
     </template>
@@ -68,6 +70,8 @@ import { onMounted, onUnmounted } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { isITRole } from '~/utils/roles';
 import { useAuthStore } from '~/stores/auth';
+import { useDutyStore } from '~/stores/duty';
+import DutyScheduleView from '~/components/views/DutyScheduleView.vue';
 import TrackingView from '~/components/views/TrackingView.vue';
 import MyTicketsView from '~/components/views/MyTicketsView.vue';
 import ITDashboard from '~/components/dashboard/ITDashboard.vue';
@@ -95,6 +99,7 @@ onMounted(async () => {
   }
 
   await store.initApp();
+  useDutyStore().listen();
 
   // Deep-link: if URL has ticketId, fetch ticket detail from API
   if (store.activeView === 'ticket-detail' && store.selectedTicketId && !store.selectedTicket) {

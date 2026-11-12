@@ -118,3 +118,14 @@ Peran, klaim, dan menu sidebar disimpan di DB (`roles`, `permissions`, `role_per
 - Pelaksana tidak lagi dipilih di form triase. Ambil Tiket (worker, untuk dirinya, bila belum ada Pelaksana) dan Tugaskan Pelaksana (PM) hanya di fase Dikerjakan; di fase lain server menolak dengan 409. Berlaku juga untuk endpoint `/assignee`, `/members`, dan tool MCP `assign_ticket`, `add_ticket_members`.
 - Membuat tiket tidak lagi menawarkan "Simpan & Assign". Kartu kanban tidak bisa dipindah/diseret; fase berubah lewat aksi di detail tiket.
 - Semua daftar tiket (Tiket Saya, Pekerjaan Saya, Dashboard, Laporan, CSV) menampilkan fase/hasil akhir (`status_label`), bukan DRAFT/PROCESS/DELEGASI/SELESAI.
+
+## Auto-Rotate Duty Engineer Shift
+
+Pemilik jadwal shift aktif otomatis mendapat klaim peran `DUTY_ENGINEER` di atas klaim perannya sendiri, dicabut sendiri saat shift berakhir. `users.role` tidak berubah, tanpa cron, tanpa klaim duty di JWT (migrasi 0008).
+
+- Tabel `duty_schedules` (`user_id`, `start_at`/`end_at` UTC `datetime`, `status`, `notes`, `created_by`; indeks `(user_id, start_at, end_at)`). Status `ACTIVE`/`COMPLETED` dihitung dari waktu; hanya `CANCELLED` yang disimpan eksplisit.
+- Tiap request terautentikasi: `server/middleware/auth.ts` memanggil `getDutyState(userId)` (jadwal bukan `CANCELLED` dan `start_at <= UTC_NOW < end_at`), hasilnya di-cache per user maksimal 60 detik atau sampai `end_at`/awal jadwal berikutnya, dan dibersihkan tiap jadwal berubah. Hasil: `user.dutyActive`. `requireClaim`, `Actor.dutyActive` (juga untuk MCP), dan `roleHas/claimsOf/menuAllowed(…, dutyActive)` menggabungkan klaim `DUTY_ENGINEER`.
+- API (klaim `duty.manage`, default PM; daftar butuh `it.access`): `GET/POST /api/duty-schedules`, `PUT/DELETE /api/duty-schedules/:id` (DELETE = batalkan), `POST /api/duty-schedules/swap` `{schedule_id, new_user_id, notes}` (jadwal lama berakhir sekarang, pengganti bertugas sekarang sampai `end_at` asli). Overlap per user ditolak 409. Waktu di API: ISO 8601 UTC.
+- `GET /api/rbac/me` menambah `active_permissions`, `is_duty_active`, `current_duty_end_at`, `next_duty_start_at` (jadwal mulai dalam 24 jam).
+- Audit: kolom `on_duty` di `audit_logs` dan `worklogs` bernilai 1 bila penulisnya sedang ON DUTY; UI menampilkan label "On Duty" di riwayat dan aktivitas.
+- UI: menu **Jadwal Duty** (input `datetime-local` dikonversi ke ISO UTC sebelum dikirim), `stores/duty.ts` memasang satu `setTimeout` ke batas shift terdekat (hanya bila selisih < 24 jam) dan ambil ulang `/api/rbac/me`, plus ulang saat `visibilitychange`. Navbar menampilkan badge "ON DUTY s/d HH:mm".

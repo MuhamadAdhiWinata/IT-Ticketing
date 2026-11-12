@@ -121,7 +121,7 @@ interface MenuRow { id: string; label: string; icon: string; section: string; so
 interface Data { roles: RoleRow[]; permissions: { key: string; label: string; group: string }[]; menus: MenuRow[] }
 
 // Harus sama dengan ICONS di components/global/Sidebar.vue.
-const ICON_NAMES = ['Search', 'Kanban', 'Briefcase', 'CalendarDays', 'FileSpreadsheet', 'Settings', 'SlidersHorizontal', 'ClipboardList', 'KeyRound', 'ShieldCheck'];
+const ICON_NAMES = ['Search', 'Kanban', 'Briefcase', 'CalendarDays', 'FileSpreadsheet', 'Settings', 'SlidersHorizontal', 'ClipboardList', 'KeyRound', 'ShieldCheck', 'CalendarClock'];
 
 const store = useAppStore();
 const { showError } = useModal();

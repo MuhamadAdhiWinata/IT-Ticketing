@@ -188,7 +188,7 @@
                 <span class="font-bold text-foreground">{{ log.action }}</span>
                 <span class="text-[10px] text-muted-foreground">{{ new Date(log.performed_at).toLocaleString() }}</span>
               </div>
-              <p class="text-xs text-muted-foreground mt-1">Oleh: {{ log.performed_by_name }}</p>
+              <p class="text-xs text-muted-foreground mt-1">Oleh: {{ log.performed_by_name }}<span v-if="log.on_duty" class="ml-1.5 px-1.5 py-0.5 rounded bg-success/10 text-success border border-success/30 text-[9px] font-bold uppercase">On Duty</span></p>
               <p v-if="log.notes" class="text-xs text-muted-foreground italic mt-0.5">"{{ log.notes }}"</p>
               <p v-for="wl in matchingWorklogs(log.action)" :key="wl.id" class="text-xs text-muted-foreground italic mt-0.5">"{{ toPlainText(wl.description) }}"</p>
             </div>

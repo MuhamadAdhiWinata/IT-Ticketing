@@ -105,7 +105,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Search, Kanban, Briefcase, CalendarDays, FileSpreadsheet, Settings, SlidersHorizontal, ClipboardList, KeyRound, ShieldCheck, X } from 'lucide-vue-next';
+import { Search, Kanban, Briefcase, CalendarDays, FileSpreadsheet, Settings, SlidersHorizontal, ClipboardList, KeyRound, ShieldCheck, CalendarClock, X } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
 import { useCompany } from '~/composables/useCompany';
 import { formatOrgLabel } from '~/utils/identity';
@@ -117,7 +117,7 @@ const logoError = ref(false);
 const profileOrgLabel = computed(() => formatOrgLabel(store.currentUser ?? {}));
 
 // Ikon dipetakan dari nama yang tersimpan di DB; nama tak dikenal memakai ikon bawaan.
-const ICONS: Record<string, any> = { Search, Kanban, Briefcase, CalendarDays, FileSpreadsheet, Settings, SlidersHorizontal, ClipboardList, KeyRound, ShieldCheck };
+const ICONS: Record<string, any> = { Search, Kanban, Briefcase, CalendarDays, FileSpreadsheet, Settings, SlidersHorizontal, ClipboardList, KeyRound, ShieldCheck, CalendarClock };
 
 const navGroups = computed(() => {
   const groups: { label: string; items: { id: string; label: string; icon: any }[] }[] = [];

@@ -45,7 +45,7 @@ export const notWorkPhaseMsg = (t: TicketLike) =>
 
 // Worker hanya boleh mengambil untuk dirinya; PM (klaim ticket.triage) menugaskan worker lain.
 export function canTargetOther(a: Actor) {
-  return canTriageRole(a.role);
+  return canTriageRole(a.role, a.dutyActive);
 }
 
 export interface AllowedActions {

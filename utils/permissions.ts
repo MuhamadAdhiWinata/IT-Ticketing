@@ -17,7 +17,11 @@ export const CLAIM = {
   VIEW_ALL_WORKLOGS: 'worklog.view_all',
   MANAGE_MASTER: 'master.manage',
   MANAGE_SETTINGS: 'settings.manage',
+  MANAGE_DUTY: 'duty.manage',
 } as const;
+
+// Peran yang klaimnya digabungkan ke pemilik jadwal duty aktif (tabel duty_schedules).
+export const DUTY_ROLE = 'DUTY_ENGINEER';
 
 // Menu "access" (kelola hak akses) khusus SYSTEM_ADMIN: tidak punya klaim, tidak bisa diberikan ke peran lain.
 export const ACCESS_MENU = 'access';
@@ -32,6 +36,7 @@ export const MENUS: MenuDef[] = [
   { id: 'dashboard', label: 'Dashboard', icon: 'Kanban', section: 'Menu Utama', sortOrder: 30 },
   { id: 'my-work', label: 'Pekerjaan Saya', icon: 'Briefcase', section: 'Menu Utama', sortOrder: 40 },
   { id: 'daily-work', label: 'Log Harian', icon: 'CalendarDays', section: 'Menu Utama', sortOrder: 50 },
+  { id: 'duty-schedule', label: 'Jadwal Duty', icon: 'CalendarClock', section: 'Menu Utama', sortOrder: 55 },
   { id: 'reports', label: 'Laporan', icon: 'FileSpreadsheet', section: 'Menu Utama', sortOrder: 60 },
   { id: 'admin', label: 'Master Data', icon: 'Settings', section: 'Data Master', sortOrder: 70 },
   { id: 'settings', label: 'Pengaturan', icon: 'SlidersHorizontal', section: 'Pengaturan', sortOrder: 80 },
@@ -47,18 +52,19 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: CLAIM.INTAKE, label: 'Buat tiket atas nama pengguna dan pilih Kanal Asal', group: 'Tiket' },
   { key: CLAIM.DELETE_TICKET, label: 'Hapus tiket', group: 'Tiket' },
   { key: CLAIM.VIEW_ALL_WORKLOGS, label: 'Lihat Log Harian semua worker', group: 'Tiket' },
+  { key: CLAIM.MANAGE_DUTY, label: 'Kelola jadwal shift Duty Engineer (buat, ubah, batalkan, tukar)', group: 'Tiket' },
   { key: CLAIM.MANAGE_MASTER, label: 'Kelola data master dan pengguna', group: 'Administrasi' },
   { key: CLAIM.MANAGE_SETTINGS, label: 'Ubah pengaturan perusahaan', group: 'Administrasi' },
 ];
 
 const REQUESTER = ['menu.tracking', 'menu.my-tickets'];
-const IT = [...REQUESTER, CLAIM.IT, 'menu.dashboard', 'menu.my-work', 'menu.daily-work', 'menu.mcp-token'];
+const IT = [...REQUESTER, CLAIM.IT, 'menu.dashboard', 'menu.my-work', 'menu.daily-work', 'menu.duty-schedule', 'menu.mcp-token'];
 
 export const DEFAULT_ROLES: RoleDef[] = [
   { id: 'USER_NON_IT', name: 'Pengguna (Non-IT)', description: 'Pemohon tiket', claims: REQUESTER },
   { id: 'IT_WORKER', name: 'IT Worker', description: 'Pelaksana tim IT', claims: IT },
-  { id: 'PM', name: 'PM', description: 'Triase dan penugasan tiket', claims: [...IT, CLAIM.TRIAGE, CLAIM.INTAKE] },
-  { id: 'DUTY_ENGINEER', name: 'Duty Engineer', description: 'Konfirmasi insiden P1/P2', claims: [...IT, CLAIM.DUTY, CLAIM.INTAKE] },
+  { id: 'PM', name: 'PM', description: 'Triase dan penugasan tiket', claims: [...IT, CLAIM.TRIAGE, CLAIM.INTAKE, CLAIM.MANAGE_DUTY] },
+  { id: 'DUTY_ENGINEER', name: 'Duty Engineer', description: 'Konfirmasi insiden P1/P2 (juga diberikan otomatis ke pemilik jadwal duty aktif)', claims: [...IT, CLAIM.DUTY, CLAIM.INTAKE] },
   { id: ADMIN_ROLE, name: 'System Admin', description: 'Administrator sistem: semua klaim kecuali operasional tiket (PM/Duty), tidak dapat diubah', claims: PERMISSIONS.map(p => p.key).filter(k => !OPERATIONAL_CLAIMS.includes(k)) },
 ];
 
@@ -68,14 +74,18 @@ export const setRbacMatrix = (m: RbacMatrix) => { matrix = m; };
 export const getRbacMatrix = (): RbacMatrix => matrix;
 
 // SYSTEM_ADMIN lolos semua klaim non-operasional: terkunci di kode agar admin tidak bisa mengunci dirinya sendiri.
-export const roleHas = (role: string | null | undefined, key: string): boolean =>
-  !!role && ((role === ADMIN_ROLE && !OPERATIONAL_CLAIMS.includes(key)) || !!matrix[role]?.includes(key));
+// dutyActive: pemilik jadwal duty aktif menambah klaim peran DUTY_ENGINEER di atas klaim perannya (tidak mengubah users.role).
+export const roleHas = (role: string | null | undefined, key: string, dutyActive = false): boolean =>
+  !!role && ((role === ADMIN_ROLE && !OPERATIONAL_CLAIMS.includes(key)) || !!matrix[role]?.includes(key)
+    || (dutyActive && !!matrix[DUTY_ROLE]?.includes(key)));
 
-export const claimsOf = (role: string | null | undefined): string[] =>
-  role === ADMIN_ROLE ? PERMISSIONS.map(p => p.key).filter(k => !OPERATIONAL_CLAIMS.includes(k)) : (role ? matrix[role] ?? [] : []);
+export const claimsOf = (role: string | null | undefined, dutyActive = false): string[] => {
+  const base = role === ADMIN_ROLE ? PERMISSIONS.map(p => p.key).filter(k => !OPERATIONAL_CLAIMS.includes(k)) : (role ? matrix[role] ?? [] : []);
+  return dutyActive ? [...new Set([...base, ...(matrix[DUTY_ROLE] ?? [])])] : base;
+};
 
 export const rolesWith = (key: string): string[] =>
   [...new Set([ADMIN_ROLE, ...Object.keys(matrix)])].filter(r => roleHas(r, key));
 
-export const menuAllowed = (role: string | null | undefined, menuId: string): boolean =>
-  menuId === ACCESS_MENU ? role === ADMIN_ROLE : roleHas(role, `menu.${menuId}`);
+export const menuAllowed = (role: string | null | undefined, menuId: string, dutyActive = false): boolean =>
+  menuId === ACCESS_MENU ? role === ADMIN_ROLE : roleHas(role, `menu.${menuId}`, dutyActive);

@@ -9,8 +9,9 @@ import { seedRbac } from '../services/rbac';
 import {
   companies, divisions, users, companySettings, categories, projectKendala, submodules, vendors,
   tickets, ticketMembers, worklogs, comments, internalNotes, files, worklogFiles, commentFiles,
-  auditLogs, notifications, userPreferences,
+  auditLogs, notifications, userPreferences, dutySchedules,
 } from './schema';
+import { nowDbUtc } from '../../utils/utcTime';
 
 // Seeder rujukan: setiap tabel terisi, setiap status tiket (DRAFT/PROCESS/DELEGASI/SELESAI)
 // dan tiap jenis delegasi punya contoh. ID sengaja tetap supaya seed ulang menghasilkan data identik.
@@ -525,7 +526,7 @@ async function cleanup() {
   console.log('[SEED] Membersihkan data lama...');
   await db.execute(sql.raw('SET FOREIGN_KEY_CHECKS = 0'));
   const tables = [
-    'comment_files', 'worklog_files', 'files', 'comments', 'internal_notes', 'notifications',
+    'duty_schedules', 'comment_files', 'worklog_files', 'files', 'comments', 'internal_notes', 'notifications',
     'audit_logs', 'worklogs', 'ticket_members', 'tickets', 'vendors',
     'user_preferences', 'submodules', 'project_kendala', 'categories', 'users',
     'divisions', 'companies', 'company_settings',
@@ -670,6 +671,21 @@ async function seedDiscussion() {
   console.log(`[SEED] ${WORKLOGS.length} worklogs, ${COMMENTS.length} comments, ${INTERNAL_NOTES.length} internal notes, ${FILES.length} files, ${NOTIFS.length} notifications berhasil.`);
 }
 
+// Jadwal duty relatif terhadap waktu seed (UTC) supaya demo selalu punya satu shift berjalan, satu terjadwal, satu selesai.
+async function seedDuty() {
+  const HOUR = 3_600_000;
+  const at = (h: number) => nowDbUtc(Date.now() + h * HOUR);
+  const rows: [string, string, number, number, string | null][] = [
+    ['DTY-001', 'IT-004', -30, -22, 'Shift kemarin'],
+    ['DTY-002', 'IT-001', -1, 7, 'Shift berjalan (demo ON DUTY untuk Budi)'],
+    ['DTY-003', 'IT-002', 7, 15, null],
+  ];
+  await db.insert(dutySchedules).values(rows.map(([id, userId, s, e, notes]) => ({
+    id, userId, startAt: at(s), endAt: at(e), status: 'SCHEDULED', notes, createdBy: 'PM-001', createdAt: at(0), updatedAt: at(0),
+  })));
+  console.log(`[SEED] ${rows.length} jadwal duty berhasil.`);
+}
+
 console.log('='.repeat(50));
 console.log('[SEED] Mulai seeding data...');
 console.log('='.repeat(50));
@@ -685,6 +701,7 @@ await seedProjectKendala();
 await seedSubmodules();
 await seedTicketData();
 await seedDiscussion();
+await seedDuty();
 
 console.log('='.repeat(50));
 console.log('[SEED] Semua data berhasil dimasukkan!');

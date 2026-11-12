@@ -6,6 +6,7 @@ import { ADMIN_ROLE, DEFAULT_ROLES, MENUS, PERMISSIONS, setRbacMatrix, type Rbac
 // Idempoten. Katalog klaim disinkronkan dari kode; menu dan peran hanya ditambah bila belum ada,
 // jadi perubahan yang dibuat SYSTEM_ADMIN lewat UI tidak pernah ditimpa.
 export async function seedRbac() {
+  const knownKeys = new Set((await db.select({ key: permissions.key }).from(permissions)).map(p => p.key));
   await db.insert(permissions)
     .values(PERMISSIONS.map((p, i) => ({ key: p.key, label: p.label, groupName: p.group, sortOrder: i })))
     .onDuplicateKeyUpdate({ set: { label: sql`VALUES(label)`, groupName: sql`VALUES(group_name)`, sortOrder: sql`VALUES(sort_order)` } });
@@ -15,6 +16,11 @@ export async function seedRbac() {
     .onDuplicateKeyUpdate({ set: { id: sql`id` } });
 
   const have = new Set((await db.select({ id: roles.id }).from(roles)).map(r => r.id));
+  // Klaim yang baru masuk katalog diberikan sekali ke peran bawaan yang sudah ada; klaim lama tidak disentuh (perubahan admin aman).
+  const fresh = PERMISSIONS.map(p => p.key).filter(k => !knownKeys.has(k) && knownKeys.size > 0);
+  const grants = DEFAULT_ROLES.filter(r => have.has(r.id) && r.id !== ADMIN_ROLE)
+    .flatMap(r => r.claims.filter(c => fresh.includes(c)).map(permissionKey => ({ roleId: r.id, permissionKey })));
+  if (grants.length) await db.insert(rolePermissions).values(grants).onDuplicateKeyUpdate({ set: { roleId: sql`role_id` } });
   for (const r of DEFAULT_ROLES.filter(d => !have.has(d.id))) {
     await db.insert(roles).values({ id: r.id, name: r.name, description: r.description, isSystem: 1 });
     // SYSTEM_ADMIN tidak butuh baris klaim: dijamin di kode.

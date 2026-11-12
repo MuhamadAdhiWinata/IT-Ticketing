@@ -3,6 +3,7 @@ import {
   varchar,
   text,
   timestamp,
+  datetime,
   int,
   json,
   index,
@@ -319,6 +320,8 @@ export const worklogs = mysqlTable('worklogs', {
   finishAt: varchar('finish_at', { length: 5 }).notNull(),
   durationMinutes: int('duration_minutes', { unsigned: true }).default(0),
   description: text('description').notNull(),
+  // 1 = ditulis saat penulisnya sedang ON DUTY (jadwal duty_schedules aktif).
+  onDuty: int('on_duty', { unsigned: true }).notNull().default(0),
   createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
 }, (table) => ({
   idxTicket: index('idx_worklogs_ticket').on(table.ticketId),
@@ -341,6 +344,7 @@ export const auditLogs = mysqlTable('audit_logs', {
   performedBy: varchar('performed_by', { length: 50 }).notNull().references(() => users.id),
   detail: text('detail'),
   notes: text('notes'),
+  onDuty: int('on_duty', { unsigned: true }).notNull().default(0),
 }, (table) => ({
   idxTicket: index('idx_audit_ticket').on(table.ticketId),
 }));
@@ -495,3 +499,20 @@ export const menus = mysqlTable('menus', {
   sortOrder: int('sort_order', { unsigned: true }).notNull().default(0),
   isActive: int('is_active', { unsigned: true }).notNull().default(1),
 });
+
+// ── Jadwal shift Duty Engineer. Semua waktu disimpan UTC (datetime tanpa konversi zona). ──
+// Selama jadwal aktif (start_at <= sekarang < end_at, status bukan CANCELLED) pemilik jadwal mendapat klaim
+// peran DUTY_ENGINEER di atas klaim perannya sendiri. Tanpa cron: dievaluasi tiap request (server/services/duty.ts).
+export const dutySchedules = mysqlTable('duty_schedules', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  userId: varchar('user_id', { length: 50 }).notNull().references(() => users.id),
+  startAt: datetime('start_at', { mode: 'string' }).notNull(),
+  endAt: datetime('end_at', { mode: 'string' }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('SCHEDULED'), // SCHEDULED | ACTIVE | COMPLETED | CANCELLED
+  notes: text('notes'),
+  createdBy: varchar('created_by', { length: 50 }).notNull().references(() => users.id),
+  createdAt: datetime('created_at', { mode: 'string' }).notNull(),
+  updatedAt: datetime('updated_at', { mode: 'string' }).notNull(),
+}, (table) => ({
+  idxUserWindow: index('idx_duty_user_window').on(table.userId, table.startAt, table.endAt),
+}));

@@ -34,11 +34,11 @@ const ExecutionSchema = z.object({
 });
 
 const audit = (tx: DbExec, ticketId: string, actor: Actor, action: string, detail?: string, notes?: string) =>
-  tx.insert(auditLogs).values({ id: newId('AUD'), ticketId, action, performedAt: nowTs(), performedBy: actor.id, detail: detail ?? null, notes: notes ?? null });
+  tx.insert(auditLogs).values({ id: newId('AUD'), ticketId, action, performedAt: nowTs(), performedBy: actor.id, onDuty: actor.dutyActive ? 1 : 0, detail: detail ?? null, notes: notes ?? null });
 
 // Tombol "Akui": PM mengakui tiket baru. Idempoten; waktu pertama yang disimpan.
 export async function acknowledgeTicket(actor: Actor, input: { ticketId: string }, exec?: DbExec) {
-  if (!canTriageRole(actor.role)) fail(403, 'Forbidden: hanya PM');
+  if (!canTriageRole(actor.role, actor.dutyActive)) fail(403, 'Forbidden: hanya PM');
   return inTx(exec, async (tx) => {
     const t = await lockTicket(tx, input.ticketId);
     if (t.status === 'SELESAI') fail(409, 'Tiket SELESAI tidak dapat diakui');
@@ -55,7 +55,7 @@ export async function acknowledgeTicket(actor: Actor, input: { ticketId: string 
 
 // Tombol "Mulai Triase": PM memindahkan tiket Diakui ke fase Ditriase. Idempoten.
 export async function startTriage(actor: Actor, input: { ticketId: string }, exec?: DbExec) {
-  if (!canTriageRole(actor.role)) fail(403, 'Forbidden: hanya PM');
+  if (!canTriageRole(actor.role, actor.dutyActive)) fail(403, 'Forbidden: hanya PM');
   return inTx(exec, async (tx) => {
     const t = await lockTicket(tx, input.ticketId);
     if (t.status === 'SELESAI') fail(409, 'Tiket SELESAI: triase terkunci');
@@ -85,7 +85,7 @@ export async function acceptTicket(actor: Actor, input: { ticketId: string }, ex
 
 // Konfirmasi Duty Engineer: nama + waktu. Wajib untuk Insiden P1/P2 sebelum diproses.
 export async function confirmDuty(actor: Actor, input: { ticketId: string }, exec?: DbExec) {
-  if (!isDutyRole(actor.role)) fail(403, 'Forbidden: hanya Duty Engineer');
+  if (!isDutyRole(actor.role, actor.dutyActive)) fail(403, 'Forbidden: hanya Duty Engineer');
   return inTx(exec, async (tx) => {
     const t = await lockTicket(tx, input.ticketId);
     if (t.status === 'SELESAI') fail(409, 'Tiket SELESAI tidak dapat dikonfirmasi');
@@ -97,7 +97,7 @@ export async function confirmDuty(actor: Actor, input: { ticketId: string }, exe
 
 // Triase oleh PM: jenis, dampak, urgensi, prioritas, katalog, pengalihan. Pelaksana ditugaskan nanti, di fase Dikerjakan.
 export async function triageTicket(actor: Actor, input: z.input<typeof TriageSchema>, exec?: DbExec) {
-  if (!canTriageRole(actor.role)) fail(403, 'Forbidden: hanya PM');
+  if (!canTriageRole(actor.role, actor.dutyActive)) fail(403, 'Forbidden: hanya PM');
   const v = parse(TriageSchema, input);
   return inTx(exec, async (tx) => {
     const t = await lockTicket(tx, v.ticketId);
@@ -189,7 +189,7 @@ export async function updateExecution(actor: Actor, input: z.input<typeof Execut
 
 // Tutup tiket SELESAI (status Ditutup). Hanya PM.
 export async function closeTicket(actor: Actor, input: { ticketId: string }, exec?: DbExec) {
-  if (!canTriageRole(actor.role)) fail(403, 'Forbidden: hanya PM');
+  if (!canTriageRole(actor.role, actor.dutyActive)) fail(403, 'Forbidden: hanya PM');
   return inTx(exec, async (tx) => {
     const t = await lockTicket(tx, input.ticketId);
     if (t.status !== 'SELESAI') fail(409, 'Hanya tiket SELESAI yang dapat ditutup');

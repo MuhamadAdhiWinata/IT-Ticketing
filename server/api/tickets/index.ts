@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const intake = isIntakeRole(user?.role);
+    const intake = isIntakeRole(user?.role, user?.dutyActive);
     let requestedBy = userId;
     let requestedByName = user?.name || body.requestedByName || userId;
     let requestedByDept = user?.department || body.requestedByDept || '';
@@ -132,6 +132,7 @@ export default defineEventHandler(async (event) => {
       action: shouldIssue ? 'TIKET_DITERBITKAN' : 'TIKET_DRAFT_DISIMPAN',
       performedAt: ts,
       performedBy: userId,
+      onDuty: user?.dutyActive ? 1 : 0,
     }).execute();
 
     if (createdByAdminId) {
@@ -142,6 +143,7 @@ export default defineEventHandler(async (event) => {
         detail: `Dibuat oleh ${user?.name || userId} atas nama ${requestedByName}`,
         performedAt: ts,
         performedBy: userId,
+        onDuty: user?.dutyActive ? 1 : 0,
       }).execute();
     }
 

@@ -291,7 +291,7 @@
                   ]"
                 >
                   <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
-                    <span class="font-bold text-primary">{{ wl.worker_name || 'Worker' }}</span>
+                    <span class="font-bold text-primary">{{ wl.worker_name || 'Worker' }}<span v-if="wl.on_duty" class="ml-1.5 px-1.5 py-0.5 rounded bg-success/10 text-success border border-success/30 text-[9px] font-bold uppercase">On Duty</span></span>
                     <span>{{ new Date(wl.created_at || Date.now()).toLocaleString() }}</span>
                   </div>
                   <div class="rich-text text-foreground" v-html="toSafeHtml(wl.description)" @click="onRichTextClick"></div>

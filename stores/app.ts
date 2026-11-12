@@ -3,6 +3,7 @@ import type { AppUser, Ticket, CategoryItem, ProjectKendalaItem, SubmoduleItem, 
 import { useAuthStore } from '~/stores/auth';
 import { refreshThemeTokens } from '~/composables/useCompany';
 import { apiFetch } from '~/services/api';
+import { useDutyStore } from '~/stores/duty';
 import { setRbacMatrix, type RbacMatrix } from '~/utils/permissions';
 
 export interface NavMenu { id: string; label: string; icon: string; section: string }
@@ -49,11 +50,12 @@ export const useAppStore = defineStore('app', {
     // Klaim, matriks peran, dan menu sidebar dari DB (sebelum halaman dirender agar filter peran benar).
     async loadRbac() {
       try {
-        const res = await apiFetch<{ success: boolean; data: { claims: string[]; matrix: RbacMatrix; menus: NavMenu[] } }>('/api/rbac/me');
+        const res = await apiFetch<{ success: boolean; data: { claims: string[]; matrix: RbacMatrix; menus: NavMenu[]; is_duty_active: boolean; current_duty_end_at: string | null; next_duty_start_at: string | null } }>('/api/rbac/me');
         setRbacMatrix(res.data.matrix);
         this.claims = res.data.claims;
         this.roleIds = Object.keys(res.data.matrix);
         this.navMenus = res.data.menus;
+        useDutyStore().apply(res.data);
       } catch (e) {
         console.error('Gagal memuat hak akses:', e);
       }
