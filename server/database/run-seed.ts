@@ -5,6 +5,7 @@ config({ path: resolve(process.cwd(), '.env') });
 import bcrypt from 'bcryptjs';
 import { sql } from 'drizzle-orm';
 import { db } from './client';
+import { seedRbac } from '../services/rbac';
 import {
   companies, divisions, users, companySettings, categories, projectKendala, submodules, vendors,
   tickets, ticketMembers, worklogs, comments, internalNotes, files, worklogFiles, commentFiles,
@@ -674,6 +675,7 @@ console.log('[SEED] Mulai seeding data...');
 console.log('='.repeat(50));
 
 await cleanup();
+await seedRbac();
 const hash = await bcrypt.hash('password123', 10);
 
 await seedOrg(hash);

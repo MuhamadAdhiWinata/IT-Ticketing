@@ -4,6 +4,7 @@ import { companySettings, users } from '~/server/database/schema';
 import { eq } from 'drizzle-orm';
 import { getCurrentUserId } from '~/server/utils/user-context';
 import { errorResponse } from '~/server/utils/response';
+import { CLAIM, roleHas } from '~/utils/permissions';
 
 const DEFAULTS = {
   id: 'default',
@@ -39,8 +40,8 @@ export default defineEventHandler(async (event) => {
     if (!userId) throw errorResponse('Unauthorized', 401);
 
     const user = await db.query.users.findFirst({ where: (u, { eq }) => eq(u.id, userId) });
-    if (!user || user.role !== 'SYSTEM_ADMIN') {
-      throw errorResponse('Forbidden: admin only', 403);
+    if (!user || !roleHas(user.role, CLAIM.MANAGE_SETTINGS)) {
+      throw errorResponse('Forbidden: butuh klaim settings.manage', 403);
     }
 
     const body = await readBody(event);

@@ -2,7 +2,8 @@ import { eq } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { divisions, users } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
-import { requireRole } from '~/server/utils/authorize';
+import { requireClaim } from '~/server/utils/authorize';
+import { CLAIM } from '~/utils/permissions';
 
 function serializeDivision(d: { id: string; companyId: string; name: string }) {
   return { id: d.id, company_id: d.companyId, name: d.name };
@@ -11,7 +12,7 @@ function serializeDivision(d: { id: string; companyId: string; name: string }) {
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
   const method = event.method;
-  await requireRole(event, 'SYSTEM_ADMIN');
+  await requireClaim(event, CLAIM.MANAGE_MASTER);
 
   if (!id) {
     throw createError({ statusCode: 400, statusMessage: 'Division ID required' });

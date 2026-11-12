@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import { worklogs, users } from '~/server/database/schema';
 import { serializeWorklog } from '~/server/utils/serialize';
 import {
-  type Actor, type DbExec, type UploadInput, IT_ROLES,
+  type Actor, type DbExec, type UploadInput, isITRole,
   fail, inTx, lockTicket, newId, nowTs, parse, requireIT, ticketSummary, withFileCleanup, hm,
 } from './common';
 import { uploadFiles, linkFilesToWorklog } from './files';
@@ -106,7 +106,7 @@ export async function logWorkTime(
     let workerName = actor.name;
     if (opts.workerId && opts.workerId !== actor.id) {
       const target = (await tx.select().from(users).where(eq(users.id, opts.workerId)))[0];
-      if (!target || !IT_ROLES.includes(target.role)) fail(400, 'worker_id bukan pengguna IT');
+      if (!target || !isITRole(target.role)) fail(400, 'worker_id bukan pengguna IT');
       workerId = target.id;
       workerName = target.name;
     }

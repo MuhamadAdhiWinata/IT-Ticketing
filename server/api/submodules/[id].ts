@@ -1,7 +1,8 @@
 import { db } from '~/server/database/client';
 import { submodules } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
-import { requireRole } from '~/server/utils/authorize';
+import { requireClaim } from '~/server/utils/authorize';
+import { CLAIM } from '~/utils/permissions';
 import { serializeSubmodule } from '~/server/utils/serialize';
 import { eq } from 'drizzle-orm';
 
@@ -24,7 +25,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (method === 'PUT') {
-    await requireRole(event, 'SYSTEM_ADMIN');
+    await requireClaim(event, CLAIM.MANAGE_MASTER);
     const body = await readBody(event);
     const projectKendalaId = body.projectKendalaId ?? body.project_kendala_id;
 
@@ -40,7 +41,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (method === 'DELETE') {
-    await requireRole(event, 'SYSTEM_ADMIN');
+    await requireClaim(event, CLAIM.MANAGE_MASTER);
     await db.delete(submodules).where(eq(submodules.id, id)).execute();
     return successResponse({ id, deleted: true });
   }

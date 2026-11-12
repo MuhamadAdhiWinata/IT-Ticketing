@@ -1,7 +1,7 @@
-import { IT_ROLES } from '~/utils/roles';
+import { CLAIM } from '~/utils/permissions';
 import { db } from '~/server/database/client';
 import { successResponse } from '~/server/utils/response';
-import { requireRole } from '~/server/utils/authorize';
+import { requireClaim } from '~/server/utils/authorize';
 import { serializeInternalNote } from '~/server/utils/serialize';
 import { toActor } from '~/server/services/ticketing/common';
 import { addInternalNote } from '~/server/services/ticketing/discussion';
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   if (!id) throw createError({ statusCode: 400, statusMessage: 'Ticket ID required' });
 
   if (event.method === 'GET') {
-    await requireRole(event, ...IT_ROLES);
+    await requireClaim(event, CLAIM.IT);
 
     const existing = await db.query.tickets.findFirst({
       where: (t, { eq: e }) => e(t.id, id),
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (event.method === 'POST') {
-    const user = await requireRole(event, ...IT_ROLES);
+    const user = await requireClaim(event, CLAIM.IT);
     const body = await readBody(event);
     const { note } = await addInternalNote(toActor(user), { ticketId: id, note: body?.note });
     return successResponse(note);

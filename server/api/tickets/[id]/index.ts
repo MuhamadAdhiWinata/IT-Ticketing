@@ -1,10 +1,10 @@
-import { IT_ROLES } from '~/utils/roles';
+import { CLAIM } from '~/utils/permissions';
 import { eq, and, count } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { tickets, files, ticketMembers, worklogs, auditLogs, comments, internalNotes } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 import { getTicketById } from '~/server/utils/tickets';
-import { requireRole } from '~/server/utils/authorize';
+import { requireClaim } from '~/server/utils/authorize';
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (method === 'PUT') {
-    await requireRole(event, ...IT_ROLES);
+    await requireClaim(event, CLAIM.IT);
     const body = await readBody(event);
 
     const existing = await db.query.tickets.findFirst({
@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (method === 'DELETE') {
-    await requireRole(event, 'SYSTEM_ADMIN');
+    await requireClaim(event, CLAIM.DELETE_TICKET);
     const existing = await db.query.tickets.findFirst({
       where: (t, { eq: e }) => e(t.id, id),
     });

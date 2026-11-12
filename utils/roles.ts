@@ -1,11 +1,11 @@
-// Peran dipakai server dan UI. PM & DUTY_ENGINEER termasuk tim IT.
-export const IT_ROLES: string[] = ['IT_WORKER', 'SYSTEM_ADMIN', 'PM', 'DUTY_ENGINEER'];
-export const TRIAGE_ROLES: string[] = ['PM', 'SYSTEM_ADMIN'];
-export const DUTY_ROLES: string[] = ['DUTY_ENGINEER', 'SYSTEM_ADMIN'];
-// Boleh memilih Kanal Asal dan "Buat atas nama" saat membuat tiket.
-export const INTAKE_ROLES: string[] = ['PM', 'DUTY_ENGINEER', 'SYSTEM_ADMIN'];
+// Peran dan klaim dinamis (DB, diatur SYSTEM_ADMIN); lihat utils/permissions.ts.
+// PM & DUTY_ENGINEER termasuk tim IT lewat klaim it.access.
+import { CLAIM, roleHas, rolesWith } from './permissions';
 
-export const isITRole = (role?: string | null) => !!role && IT_ROLES.includes(role);
-export const canTriageRole = (role?: string | null) => !!role && TRIAGE_ROLES.includes(role);
-export const isDutyRole = (role?: string | null) => !!role && DUTY_ROLES.includes(role);
-export const isIntakeRole = (role?: string | null) => !!role && INTAKE_ROLES.includes(role);
+export const isITRole = (role?: string | null) => roleHas(role, CLAIM.IT);
+export const canTriageRole = (role?: string | null) => roleHas(role, CLAIM.TRIAGE);
+export const isDutyRole = (role?: string | null) => roleHas(role, CLAIM.DUTY);
+// Boleh memilih Kanal Asal dan "Buat atas nama" saat membuat tiket.
+export const isIntakeRole = (role?: string | null) => roleHas(role, CLAIM.INTAKE);
+// Peran bertanda it.access (untuk query daftar worker).
+export const itRoles = () => rolesWith(CLAIM.IT);

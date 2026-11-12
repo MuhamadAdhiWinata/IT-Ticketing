@@ -74,7 +74,7 @@
         </span>
       </div>
 
-      <!-- Buat Atas Nama (Hanya untuk SYSTEM_ADMIN) -->
+      <!-- Buat Atas Nama (klaim ticket.intake) -->
       <div v-if="isIntake" class="p-3.5 bg-amber-50/60 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800/40 space-y-2">
         <div class="flex items-center gap-2">
           <Shield class="w-4 h-4 text-warning" />
@@ -324,9 +324,11 @@ import RichTextEditor from '~/components/common/RichTextEditor.vue';
 import { isRichTextEmpty } from '~/utils/richText';
 import WorkerPickerModal from '~/components/common/WorkerPickerModal.vue';
 
+import { isIntakeRole } from '~/utils/roles';
+
 const store = useAppStore();
 const { showError, showSuccess } = useModal();
-const isIntake = computed(() => store.currentUser && ['PM', 'DUTY_ENGINEER', 'SYSTEM_ADMIN'].includes(store.currentUser.role));
+const isIntake = computed(() => isIntakeRole(store.currentUser?.role));
 const isOpen = computed(() => store.activeView === 'create-ticket');
 
 const serviceView = ref<'SUPPORT_IT' | 'IT_PROGRAMMER'>('SUPPORT_IT');

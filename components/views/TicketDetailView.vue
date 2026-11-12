@@ -115,7 +115,8 @@
 
         <!-- Stepper Pipeline with Inter-step Connectors -->
         <div class="py-2">
-          <div class="flex items-center justify-start sm:justify-center gap-3 sm:gap-4 overflow-x-auto w-full py-2 custom-scrollbar">
+          <div class="overflow-x-auto w-full px-1 py-2 custom-scrollbar">
+          <div class="flex items-center gap-3 sm:gap-4 w-max mx-auto">
             <template v-for="(step, i) in stepperStages" :key="i">
               <!-- Stepper Card -->
               <div
@@ -164,6 +165,7 @@
                 class="w-4 sm:w-6 h-0.5 shrink-0 bg-gray-300 dark:bg-slate-600"
               />
             </template>
+          </div>
           </div>
         </div>
 
@@ -311,7 +313,7 @@
           </div>
 
           <!-- Aksi catatan / selesaikan: hanya di fase aktif -->
-          <div v-if="store.currentUser?.role !== 'USER_NON_IT' && selectedStep?.current" class="pt-3 border-t border-border space-y-3">
+          <div v-if="isITRole(store.currentUser?.role) && selectedStep?.current" class="pt-3 border-t border-border space-y-3">
             <div class="space-y-1.5">
               <label class="block text-[11px] font-bold text-foreground">Catatan:</label>
               <RichTextEditor
@@ -438,7 +440,7 @@
       </section>
 
       <!-- Internal Note: khusus IT (Rule 15: tidak terlihat oleh User Non-IT) -->
-      <section v-if="store.currentUser?.role !== 'USER_NON_IT'" class="space-y-3 border-t border-border pt-4">
+      <section v-if="isITRole(store.currentUser?.role)" class="space-y-3 border-t border-border pt-4">
         <div class="flex items-center justify-between border-b border-border pb-2">
           <h3 class="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
             <Lock class="w-3.5 h-3.5" />
@@ -674,7 +676,7 @@ const noteSending = ref(false);
 const commentDraft = ref('');
 const noteDraft = ref('');
 
-const isViewerNonIT = computed(() => store.currentUser?.role === 'USER_NON_IT');
+const isViewerNonIT = computed(() => !isITRole(store.currentUser?.role));
 
 const roleLabel = (role: string): string => {
   if (role === 'SYSTEM_ADMIN') return 'Admin';

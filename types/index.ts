@@ -1,4 +1,5 @@
-export type UserRole = 'USER_NON_IT' | 'IT_WORKER' | 'SYSTEM_ADMIN' | 'PM' | 'DUTY_ENGINEER';
+// ID peran dinamis (tabel roles). Bawaan: USER_NON_IT, IT_WORKER, PM, DUTY_ENGINEER, SYSTEM_ADMIN.
+export type UserRole = string;
 
 export type TicketStatus = 'DRAFT' | 'PROCESS' | 'DELEGASI' | 'SELESAI';
 

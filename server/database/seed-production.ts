@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import { eq, sql } from 'drizzle-orm';
 import { db } from './client';
+import { seedRbac } from '../services/rbac';
 import { users, userPreferences, companySettings, categories } from './schema';
 
 // Seeder production: data kosong, hanya akun admin, company_settings 'default', dan 2 kategori.
@@ -45,6 +46,9 @@ await db.insert(categories).values([
   { id: 'CAT-02', name: 'IT Programmer' },
 ]).onDuplicateKeyUpdate({ set: { name: sql`name` } });
 console.log('[SEED:PROD] categories: Support IT, IT Programmer siap.');
+
+await seedRbac();
+console.log('[SEED:PROD] peran, klaim, dan menu bawaan siap.');
 
 console.log('[SEED:PROD] Selesai.');
 process.exit(0);

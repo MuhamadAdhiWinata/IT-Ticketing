@@ -1,12 +1,13 @@
 import { eq, and, or, like, between, sql, inArray } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { tickets, worklogs, users } from '~/server/database/schema';
+import { itRoles } from '~/utils/roles';
 import { successResponse } from '~/server/utils/response';
 import { getTicketsWithRelations } from '~/server/utils/tickets';
 
 export default defineEventHandler(async (event) => {
   const usersRes = await db.query.users.findMany({
-    where: (u) => inArray(u.role, ['IT_WORKER', 'PM', 'DUTY_ENGINEER']),
+    where: (u) => inArray(u.role, itRoles().filter(r => r !== 'SYSTEM_ADMIN')),
   });
 
   const ticketsRes = await getTicketsWithRelations();

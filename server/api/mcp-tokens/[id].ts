@@ -1,10 +1,10 @@
-import { IT_ROLES } from '~/utils/roles';
+import { CLAIM } from '~/utils/permissions';
 import { successResponse } from '~/server/utils/response';
-import { requireRole } from '~/server/utils/authorize';
+import { requireClaim } from '~/server/utils/authorize';
 import { revealMcpToken, revokeMcpToken } from '~/server/services/ticketing/mcp-auth';
 
 export default defineEventHandler(async (event) => {
-  const user = await requireRole(event, ...IT_ROLES);
+  const user = await requireClaim(event, CLAIM.IT);
   const id = getRouterParam(event, 'id');
   if (!id) throw createError({ statusCode: 400, statusMessage: 'Token ID required' });
 

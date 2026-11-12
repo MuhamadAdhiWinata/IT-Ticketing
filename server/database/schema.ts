@@ -461,3 +461,37 @@ export const companySettings = mysqlTable('company_settings', {
   createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
   updatedAt: timestamp('updated_at', { mode: 'string' }).notNull(),
 });
+
+// ── RBAC dinamis: peran, klaim (permission), dan menu disimpan di DB, diatur SYSTEM_ADMIN ──
+// users.role menyimpan roles.id. SYSTEM_ADMIN superuser di kode (selalu lolos semua klaim).
+export const roles = mysqlTable('roles', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: varchar('description', { length: 255 }),
+  isSystem: int('is_system', { unsigned: true }).notNull().default(0),
+});
+
+// Katalog klaim: menu.<id> membuka menu, sisanya izin aksi. Kuncinya dirujuk kode (utils/permissions.ts).
+export const permissions = mysqlTable('permissions', {
+  key: varchar('key', { length: 60 }).primaryKey(),
+  label: varchar('label', { length: 150 }).notNull(),
+  groupName: varchar('group_name', { length: 50 }).notNull(),
+  sortOrder: int('sort_order', { unsigned: true }).notNull().default(0),
+});
+
+export const rolePermissions = mysqlTable('role_permissions', {
+  roleId: varchar('role_id', { length: 50 }).notNull().references(() => roles.id, { onDelete: 'cascade' }),
+  permissionKey: varchar('permission_key', { length: 60 }).notNull().references(() => permissions.key, { onDelete: 'cascade' }),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.roleId, table.permissionKey] }),
+}));
+
+// Daftar menu sidebar. id = kunci tab di pages/index.vue; klaim pembukanya selalu `menu.<id>`.
+export const menus = mysqlTable('menus', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  label: varchar('label', { length: 100 }).notNull(),
+  icon: varchar('icon', { length: 50 }).notNull(),
+  section: varchar('section', { length: 100 }).notNull(),
+  sortOrder: int('sort_order', { unsigned: true }).notNull().default(0),
+  isActive: int('is_active', { unsigned: true }).notNull().default(1),
+});

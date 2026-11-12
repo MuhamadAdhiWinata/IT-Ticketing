@@ -71,8 +71,8 @@
           </div>
         </div>
 
-        <!-- Worker Filter (hanya untuk SYSTEM_ADMIN) -->
-        <div v-if="store.currentUser?.role === 'SYSTEM_ADMIN'" class="w-full sm:w-auto flex items-center justify-end sm:justify-start gap-2 pt-3 sm:pt-0 border-t sm:border-t-0 border-border">
+        <!-- Worker Filter (klaim worklog.view_all) -->
+        <div v-if="canViewAll" class="w-full sm:w-auto flex items-center justify-end sm:justify-start gap-2 pt-3 sm:pt-0 border-t sm:border-t-0 border-border">
           <span class="text-xs font-bold text-muted-foreground shrink-0">Worker:</span>
           <div class="min-w-[180px]">
             <AppSelect
@@ -382,6 +382,7 @@
 
 <script setup lang="ts">
 import { isITRole } from '~/utils/roles';
+import { CLAIM, roleHas } from '~/utils/permissions';
 import { ref, computed, watch } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { useToast } from '~/composables/useToast';
@@ -429,11 +430,12 @@ const presets = [
   { id: 'custom', label: 'Rentang Kustom' },
 ];
 
+const canViewAll = roleHas(store.currentUser?.role, CLAIM.VIEW_ALL_WORKLOGS);
 const activePreset = ref<'today' | '7days' | '30days' | 'month' | 'custom'>('7days');
 const startDate = ref(getDaysAgoIso(6));
 const endDate = ref(getTodayIso());
 const selectedWorkerId = ref(
-  store.currentUser?.role !== 'SYSTEM_ADMIN'
+  !canViewAll
     ? store.currentUser!.id
     : 'ALL'
 );
@@ -448,7 +450,7 @@ const newWlDesc = ref('');
 const newWlStage = ref('ASSIGN');
 
 const itWorkers = computed(() => {
-  return store.allUsers.filter(u => isITRole(u.role) && u.role !== 'SYSTEM_ADMIN');
+  return store.allUsers.filter(u => isITRole(u.role) && !roleHas(u.role, CLAIM.VIEW_ALL_WORKLOGS));
 });
 
 const applyPreset = (presetId: string) => {

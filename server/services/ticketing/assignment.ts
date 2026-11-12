@@ -3,13 +3,13 @@ import { eq } from 'drizzle-orm';
 import { tickets, ticketMembers, users, auditLogs } from '~/server/database/schema';
 import { serializeTicketMember } from '~/server/utils/serialize';
 import { createNotification } from '~/server/utils/notifications';
-import { type Actor, type DbExec, IT_ROLES, fail, inTx, lockTicket, newId, nowTs, parse, ticketSummary } from './common';
+import { type Actor, type DbExec, isITRole, fail, inTx, lockTicket, newId, nowTs, parse, ticketSummary } from './common';
 import { canAddMembers, canAssign, canTargetOther } from './permissions';
 
 async function requireITUser(tx: DbExec, userId: string) {
   const u = (await tx.select().from(users).where(eq(users.id, userId)))[0];
   if (!u) fail(400, `Pengguna ${userId} tidak ditemukan`);
-  if (!IT_ROLES.includes(u.role)) fail(400, `Pengguna ${userId} bukan IT_WORKER/SYSTEM_ADMIN`);
+  if (!isITRole(u.role)) fail(400, `Pengguna ${userId} bukan anggota tim IT`);
   return u;
 }
 

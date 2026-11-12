@@ -3,6 +3,9 @@ import type { AppUser, Ticket, CategoryItem, ProjectKendalaItem, SubmoduleItem, 
 import { useAuthStore } from '~/stores/auth';
 import { refreshThemeTokens } from '~/composables/useCompany';
 import { apiFetch } from '~/services/api';
+import { setRbacMatrix, type RbacMatrix } from '~/utils/permissions';
+
+export interface NavMenu { id: string; label: string; icon: string; section: string }
 
 export const useAppStore = defineStore('app', {
   state: () => ({
@@ -26,6 +29,9 @@ export const useAppStore = defineStore('app', {
     isSidebarCollapsed: false,
     isMobileSidebarOpen: false,
     successNotification: null as string | null,
+    claims: [] as string[],
+    navMenus: [] as NavMenu[],
+    roleIds: [] as string[],
   }),
 
   actions: {
@@ -40,9 +46,23 @@ export const useAppStore = defineStore('app', {
       }
     },
 
+    // Klaim, matriks peran, dan menu sidebar dari DB (sebelum halaman dirender agar filter peran benar).
+    async loadRbac() {
+      try {
+        const res = await apiFetch<{ success: boolean; data: { claims: string[]; matrix: RbacMatrix; menus: NavMenu[] } }>('/api/rbac/me');
+        setRbacMatrix(res.data.matrix);
+        this.claims = res.data.claims;
+        this.roleIds = Object.keys(res.data.matrix);
+        this.navMenus = res.data.menus;
+      } catch (e) {
+        console.error('Gagal memuat hak akses:', e);
+      }
+    },
+
     async initApp() {
       const authStore = useAuthStore();
       this.currentUser = authStore.user;
+      await this.loadRbac();
 
       const [usersRes, ticketsRes, catsRes, projectKendalaRes, submodsRes, prefsRes, companiesRes, divisionsRes] = await Promise.all([
         apiFetch<{ success: boolean; data: AppUser[] }>('/api/users').catch(() => null),

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import type { AppUser } from '~/types';
 import { apiFetch } from '~/services/api';
 import { isITRole, canTriageRole, isDutyRole, isIntakeRole } from '~/utils/roles';
+import { ADMIN_ROLE, CLAIM, roleHas } from '~/utils/permissions';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -12,10 +13,10 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   getters: {
-    isSystemAdmin: (state) => state.user?.role === 'SYSTEM_ADMIN',
+    isSystemAdmin: (state) => state.user?.role === ADMIN_ROLE,
     isITWorker: (state) => isITRole(state.user?.role),
-    isUserNonIT: (state) => state.user?.role === 'USER_NON_IT',
-    canManageUsers: (state) => state.user?.role === 'SYSTEM_ADMIN',
+    isUserNonIT: (state) => !isITRole(state.user?.role),
+    canManageUsers: (state) => roleHas(state.user?.role, CLAIM.MANAGE_MASTER),
     canAssignTickets: (state) => isITRole(state.user?.role),
     canTriage: (state) => canTriageRole(state.user?.role),
     isDuty: (state) => isDutyRole(state.user?.role),

@@ -1,7 +1,8 @@
 import { db } from '~/server/database/client';
 import { categories } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
-import { requireRole } from '~/server/utils/authorize';
+import { requireClaim } from '~/server/utils/authorize';
+import { CLAIM } from '~/utils/permissions';
 import { eq } from 'drizzle-orm';
 
 export default defineEventHandler(async (event) => {
@@ -15,7 +16,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (method === 'POST') {
-    await requireRole(event, 'SYSTEM_ADMIN');
+    await requireClaim(event, CLAIM.MANAGE_MASTER);
     const body = await readBody(event);
     if (!body.name) throw createError({ statusCode: 400, statusMessage: 'Nama kategori wajib diisi' });
 

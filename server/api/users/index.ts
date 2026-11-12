@@ -3,12 +3,13 @@ import { db } from '~/server/database/client';
 import { users } from '~/server/database/schema';
 import { successResponse, errorResponse } from '~/server/utils/response';
 import { departmentFromDivision, shapeUserRow, shapeUsers } from '~/server/utils/org';
-import { requireRole } from '~/server/utils/authorize';
+import { requireClaim } from '~/server/utils/authorize';
+import { CLAIM } from '~/utils/permissions';
 import { UNITS } from '~/utils/ticketSpec';
 
 export default defineEventHandler(async (event) => {
   const method = event.method;
-  if (method !== 'GET') await requireRole(event, 'SYSTEM_ADMIN');
+  if (method !== 'GET') await requireClaim(event, CLAIM.MANAGE_MASTER);
 
   if (method === 'GET') {
     const query = getQuery(event);
@@ -48,6 +49,9 @@ export default defineEventHandler(async (event) => {
 
     if (!body.id || !body.name || !body.email || !body.role) {
       throw createError({ statusCode: 400, statusMessage: 'Required fields: id, name, email, role' });
+    }
+    if (!(await db.query.roles.findFirst({ where: (r, { eq: e }) => e(r.id, body.role) }))) {
+      throw createError({ statusCode: 400, statusMessage: `Peran ${body.role} tidak ada` });
     }
     const idTaken = await db.query.users.findFirst({ where: (u, { eq: e }) => e(u.id, body.id) });
     if (idTaken) throw createError({ statusCode: 409, statusMessage: 'ID pengguna sudah dipakai' });

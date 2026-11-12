@@ -1,7 +1,8 @@
 import { db } from '~/server/database/client';
 import { projectKendala } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
-import { requireRole } from '~/server/utils/authorize';
+import { requireClaim } from '~/server/utils/authorize';
+import { CLAIM } from '~/utils/permissions';
 import { serializeProjectKendalas, serializeProjectKendala } from '~/server/utils/serialize';
 
 export default defineEventHandler(async (event) => {
@@ -15,7 +16,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (method === 'POST') {
-    await requireRole(event, 'SYSTEM_ADMIN');
+    await requireClaim(event, CLAIM.MANAGE_MASTER);
     const body = await readBody(event);
     const categoryId = body.categoryId ?? body.category_id;
     if (!body.name || !categoryId) throw createError({ statusCode: 400, statusMessage: 'Nama dan ID Kategori wajib diisi' });

@@ -99,3 +99,14 @@ Keputusan desain: prioritas tetap 4 level di DB (`LOW/MEDIUM/HIGH/CRITICAL`). P1
 ## Matriks kepatuhan 35 field
 
 Lihat [spesifikasi-field-tiket.csv](./spesifikasi-field-tiket.csv): tiap field dipetakan ke kolom DB, endpoint, dan UI. Kanban/filter Dashboard dan Laporan memakai fase (Baru, Diakui, Ditriase, Dikerjakan, Menunggu Pemohon, Selesai dengan hasil Selesai/Ditutup/Dialihkan). Pelaksana dapat ditunjuk PM/Admin dari detail tiket.
+
+
+## Hak akses dinamis (RBAC)
+
+Peran, klaim, dan menu sidebar disimpan di DB (`roles`, `permissions`, `role_permissions`, `menus`; migrasi 0007) dan hanya SYSTEM_ADMIN yang dapat mengubahnya lewat menu **Hak Akses**. `users.role` menyimpan `roles.id`.
+
+- Klaim aksi: `it.access` (tim IT), `ticket.triage`, `ticket.duty`, `ticket.intake`, `ticket.delete`, `worklog.view_all`, `master.manage`, `settings.manage`. Klaim menu: `menu.<id>`.
+- SYSTEM_ADMIN superuser di kode (selalu lolos semua klaim, tidak dapat diubah, menu Hak Akses tidak dapat dinonaktifkan) agar admin tidak mengunci dirinya sendiri.
+- Server: `requireClaim(event, CLAIM.x)`; service memakai `isITRole`/`canTriageRole`/dst yang membaca matriks di memori (disegarkan dari DB tiap 5 detik dan seketika setelah admin menyimpan). Klien: `GET /api/rbac/me` (klaim + menu), admin: `/api/rbac`, `/api/rbac/roles[/:id]`, `/api/rbac/menus[/:id]`.
+- Seeder `seedRbac()` idempoten (jalan saat start server, `seed`, `seed:demo`); tidak menimpa perubahan admin. Menu baru murni (halaman baru) tetap butuh kode; admin mengatur label, ikon, seksi, urutan, dan aktif.
+- Peran bawaan: USER_NON_IT, IT_WORKER, PM, DUTY_ENGINEER, SYSTEM_ADMIN (tidak dapat dihapus). Peran kustom dapat ditambah dan dihapus bila tidak dipakai pengguna.

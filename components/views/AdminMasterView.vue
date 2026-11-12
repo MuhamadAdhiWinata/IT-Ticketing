@@ -566,7 +566,7 @@
                     :class="[
                       'px-2 py-0.5 rounded text-[10px] font-bold uppercase',
                       u.role === 'SYSTEM_ADMIN' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' :
-                      u.role !== 'USER_NON_IT' ? 'bg-primary/5 text-primary dark:bg-blue-950 dark:text-blue-300' :
+                      isITRole(u.role) ? 'bg-primary/5 text-primary dark:bg-blue-950 dark:text-blue-300' :
                       'bg-muted text-foreground'
                     ]"
                   >
@@ -853,6 +853,7 @@ import { getTicketPriorityLabel, getTicketPriorityBadgeClass, getProjectKendalaL
 import { nextId } from '~/utils/id';
 import { useToast } from '~/composables/useToast';
 import { UNITS } from '~/utils/ticketSpec';
+import { isITRole } from '~/utils/roles';
 import AppSelect from '~/components/common/AppSelect.vue';
 
 const store = useAppStore();
@@ -886,13 +887,8 @@ const projectKendalaFormOptions = computed(() => store.projectKendala.map(s => (
   label: `[${s.id}] ${s.name}`
 })));
 
-const roleFormOptions = [
-  { value: 'USER_NON_IT', label: 'USER_NON_IT' },
-  { value: 'IT_WORKER', label: 'IT_WORKER' },
-  { value: 'SYSTEM_ADMIN', label: 'SYSTEM_ADMIN' },
-  { value: 'PM', label: 'PM' },
-  { value: 'DUTY_ENGINEER', label: 'DUTY_ENGINEER' },
-];
+// Peran dinamis dari matriks RBAC (DB); ditambah lewat menu Hak Akses.
+const roleFormOptions = computed(() => store.roleIds.map(r => ({ value: r, label: r })));
 const unitFormOptions = [{ value: '', label: '-- Tanpa Unit --' }, ...UNITS.map(u => ({ value: u, label: u }))];
 
 // ── Opsi dropdown Perusahaan & Divisi ──
