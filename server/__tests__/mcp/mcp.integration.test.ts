@@ -5,7 +5,7 @@ import { auditLogs, comments, mcpIdempotency, mcpTokens, tickets, worklogs, file
 import { getTicketById } from '~/server/utils/tickets';
 import { authenticateMcp, createMcpToken, revokeMcpToken } from '~/server/services/ticketing/mcp-auth';
 import { TOOL_KINDS } from '~/server/mcp/server';
-import { ADMIN, IT_A, IT_B, OTHER_REQ, REQ, as, closeAll, seedTicket, seedUsers } from './helpers';
+import { ADMIN, IT_A, IT_B, OTHER_REQ, PM, REQ, as, closeAll, seedTicket, seedUsers } from './helpers';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -52,9 +52,10 @@ describe('2-5. repeated activities on one ticket', () => {
   it('rejects stage not available for the status and empty content', async () => {
     const id = await seedTicket({ status: 'PROCESS' });
     const w = await as(IT_A);
-    const bad = await w.call('add_ticket_activity', { ticketId: id, description: 'x', stageKey: 'COMPLETION' });
+    const bad = await w.call('add_ticket_activity', { ticketId: id, description: 'x', stageKey: 'Selesai' });
     expect(bad.isError).toBe(true);
-    expect(bad.data.allowed_stages).toContain('IN_PROGRESS');
+    expect(bad.data.allowed_stages).toContain('Dikerjakan');
+    expect(bad.data.allowed_stages).not.toContain('Selesai');
     expect((await w.call('add_ticket_activity', { ticketId: id, description: '   ' })).isError).toBe(true);
     expect(await countWorklogs(id)).toBe(0);
   });
@@ -90,7 +91,7 @@ describe('6. comments', () => {
 describe('7-9. status transitions & completion rules', () => {
   it('walks DRAFT > PROCESS > SELESAI > PROCESS with audit, timestamps and worklog for notes', async () => {
     const id = await seedTicket({ status: 'DRAFT' });
-    const w = await as(IT_A);
+    const w = await as(PM);
 
     const start = await w.call('transition_ticket_status', { ticketId: id, to: 'PROCESS', notes: 'mulai' });
     expect(start.isError).toBe(false);
@@ -166,25 +167,33 @@ describe('10. permissions', () => {
     expect(await countWorklogs(id)).toBe(0);
   });
 
-  it('assignment: worker self-assigns only; admin may assign others; locked after SELESAI; target must be IT', async () => {
-    const id = await seedTicket({ status: 'PROCESS' });
+  it('assignment: hanya fase Dikerjakan; worker ambil untuk diri sendiri; PM menugaskan; admin tidak', async () => {
+    const early = await seedTicket({ status: 'DRAFT', triaged: true });
     const a = await as(IT_A);
+    expect((await a.call('assign_ticket', { ticketId: early })).data.status).toBe(409);
+    expect((await (await as(PM)).call('assign_ticket', { ticketId: early, userId: IT_B.id })).data.status).toBe(409);
+
+    const id = await seedTicket({ status: 'PROCESS' });
     expect((await a.call('assign_ticket', { ticketId: id, userId: IT_B.id })).data.status).toBe(403);
     expect((await a.call('assign_ticket', { ticketId: id })).data.ticket.assigned_to).toBe(IT_A.id);
+    expect((await (await as(IT_B)).call('assign_ticket', { ticketId: id })).data.status).toBe(409);
 
-    const admin = await as(ADMIN);
-    expect((await admin.call('assign_ticket', { ticketId: id, userId: IT_B.id })).data.ticket.assigned_to).toBe(IT_B.id);
-    expect((await admin.call('assign_ticket', { ticketId: id, userId: REQ.id })).isError).toBe(true);
+    const pm = await as(PM);
+    expect((await pm.call('assign_ticket', { ticketId: id, userId: IT_B.id })).data.ticket.assigned_to).toBe(IT_B.id);
+    expect((await pm.call('assign_ticket', { ticketId: id, userId: REQ.id })).isError).toBe(true);
+    expect((await (await as(ADMIN)).call('assign_ticket', { ticketId: id, userId: IT_A.id })).data.status).toBe(403);
 
     const done = await seedTicket({ status: 'SELESAI', assignedTo: IT_A.id });
-    const locked = await a.call('assign_ticket', { ticketId: done });
-    expect(locked.data.status).toBe(409);
+    expect((await a.call('assign_ticket', { ticketId: done })).data.status).toBe(409);
   });
 
   it('members: add skips duplicates, blocked when SELESAI, non-IT target rejected', async () => {
     const id = await seedTicket({ status: 'PROCESS' });
     const a = await as(IT_A);
-    const r1 = await a.call('add_ticket_members', { ticketId: id, userIds: [IT_A.id, IT_B.id] });
+    expect((await a.call('add_ticket_members', { ticketId: id, userIds: [IT_B.id] })).data.status).toBe(403);
+    const early = await seedTicket({ status: 'DRAFT', triaged: true });
+    expect((await a.call('add_ticket_members', { ticketId: early, userIds: [IT_A.id] })).data.status).toBe(409);
+    const r1 = await (await as(PM)).call('add_ticket_members', { ticketId: id, userIds: [IT_A.id, IT_B.id] });
     expect(r1.data.added).toHaveLength(2);
     const r2 = await a.call('add_ticket_members', { ticketId: id, userIds: [IT_A.id] });
     expect(r2.data.added).toHaveLength(0);
@@ -205,17 +214,17 @@ describe('10. permissions', () => {
     expect((await a.call('log_work_time', { ...base, start_at: '12:00', finish_at: '11:00' })).isError).toBe(true);
     const draft = await seedTicket({ status: 'DRAFT' });
     expect((await a.call('log_work_time', { ticketId: draft, description: 'x', start_at: '09:00', finish_at: '10:00' })).data.status).toBe(409);
-    expect((await a.call('log_work_time', { ticketId: draft, description: 'x', start_at: '09:00', finish_at: '10:00', stageKey: 'IN_PROGRESS' })).data.status).toBe(409);
+    expect((await a.call('log_work_time', { ticketId: draft, description: 'x', start_at: '09:00', finish_at: '10:00', stageKey: 'Dikerjakan' })).data.status).toBe(409);
   });
 
-  it('log_work_time on DRAFT is accepted for stage ASSIGN and keeps the stage', async () => {
+  it('log_work_time on DRAFT is accepted for the current phase and keeps the stage', async () => {
     const draft = await seedTicket({ status: 'DRAFT' });
     const a = await as(IT_A);
-    const r = await a.call('log_work_time', { ticketId: draft, description: '<p>assign <strong>log</strong></p>', start_at: '13:00', finish_at: '13:30', date: '2026-10-07', stageKey: 'ASSIGN' });
+    const r = await a.call('log_work_time', { ticketId: draft, description: '<p>assign <strong>log</strong></p>', start_at: '13:00', finish_at: '13:30', date: '2026-10-07', stageKey: 'Baru' });
     expect(r.isError).toBe(false);
-    expect(r.data.activity.stageKey).toBe('ASSIGN');
+    expect(r.data.activity.stageKey).toBe('Baru');
     const [row] = await db.select().from(worklogs).where(eq(worklogs.ticketId, draft));
-    expect([row!.stageKey, row!.description]).toEqual(['ASSIGN', '<p>assign <strong>log</strong></p>']);
+    expect([row!.stageKey, row!.description]).toEqual(['Baru', '<p>assign <strong>log</strong></p>']);
   });
 
   it('accepts rich-text description beyond 5000 chars', async () => {
@@ -285,7 +294,7 @@ describe('12. idempotent retry', () => {
 
   it('concurrent transition with same key runs once', async () => {
     const id = await seedTicket({ status: 'DRAFT' });
-    const a = await as(IT_A);
+    const a = await as(PM);
     const args = { ticketId: id, to: 'PROCESS', idempotencyKey: `idem-tr-${id}` };
     const rs = await Promise.all([a.call('transition_ticket_status', args), a.call('transition_ticket_status', args)]);
     expect(rs.filter(r => !r.isError).length).toBeGreaterThanOrEqual(1);
@@ -318,7 +327,7 @@ describe('13. failure leaves no partial state', () => {
 
   it('failed write with idempotency key does not burn the key', async () => {
     const id = await seedTicket({ status: 'DRAFT' });
-    const a = await as(IT_A);
+    const a = await as(PM);
     const key = `idem-fail-${id}`;
     const bad = await a.call('transition_ticket_status', { ticketId: id, to: 'SELESAI', idempotencyKey: key });
     expect(bad.isError).toBe(true);
@@ -330,7 +339,7 @@ describe('13. failure leaves no partial state', () => {
   it('attachment stores file and row together; empty/oversize rejected', async () => {
     const id = await seedTicket({ status: 'PROCESS' });
     const a = await as(IT_A);
-    const ok = await a.call('add_attachment', { ticketId: id, fileName: 'bukti.txt', contentBase64: Buffer.from('isi').toString('base64'), stage: 'IN_PROGRESS', visibility: 'INTERNAL_ONLY' });
+    const ok = await a.call('add_attachment', { ticketId: id, fileName: 'bukti.txt', contentBase64: Buffer.from('isi').toString('base64'), stage: 'Dikerjakan', visibility: 'INTERNAL_ONLY' });
     expect(ok.isError).toBe(false);
     expect(ok.data.attachments[0]).toMatchObject({ file_name: 'bukti.txt', visibility: 'INTERNAL_ONLY', uploaded_by: IT_A.id });
     expect((await a.call('add_attachment', { ticketId: id, fileName: 'k.txt', contentBase64: '=' })).isError).toBe(true);
@@ -347,7 +356,7 @@ describe('13. failure leaves no partial state', () => {
 describe('14. UI sees the same data', () => {
   it('getTicketById (used by web UI) reflects MCP writes in worklogs, audit and status', async () => {
     const id = await seedTicket({ status: 'DRAFT' });
-    const a = await as(IT_A);
+    const a = await as(PM);
     await a.call('transition_ticket_status', { ticketId: id, to: 'PROCESS' });
     await a.call('add_ticket_activity', { ticketId: id, description: 'kerja 1' });
     await a.call('add_ticket_activity', { ticketId: id, description: 'kerja 2' });
@@ -356,7 +365,7 @@ describe('14. UI sees the same data', () => {
     const ui: any = await getTicketById(id);
     expect(ui!.status).toBe('SELESAI');
     expect(ui!.worklogs.map((w: any) => w.description)).toEqual(expect.arrayContaining(['kerja 1', 'kerja 2', 'tuntas']));
-    expect(ui!.worklogs.find((w: any) => w.description === 'kerja 1')!.worker_name).toBe(IT_A.name);
+    expect(ui!.worklogs.find((w: any) => w.description === 'kerja 1')!.worker_name).toBe(PM.name);
     expect(ui!.audit_logs.map((l: any) => l.action)).toContain('TAHAP_IN_PROGRESS_SELESAI');
 
     const viaTool = await a.call('get_ticket', { ticketId: id });
@@ -392,7 +401,7 @@ describe('token self-service scoping', () => {
     const { listMcpTokens } = await import('~/server/services/ticketing/mcp-auth');
     expect((await listMcpTokens(IT_A.id)).every(t => t.userId === IT_A.id)).toBe(true);
     expect(await revokeMcpToken(theirs.id, IT_A.id)).toBe(0);
-    expect(await authenticateMcp(`Bearer ${theirs.token}`)).toEqual(IT_B);
+    expect(await authenticateMcp(`Bearer ${theirs.token}`)).toEqual({ ...IT_B, dutyActive: false });
     expect(await revokeMcpToken(mine.id, IT_A.id)).toBe(1);
     expect(await authenticateMcp(`Bearer ${mine.token}`)).toBeNull();
   });
@@ -403,7 +412,7 @@ describe('token reveal', () => {
     const { revealMcpToken } = await import('~/server/services/ticketing/mcp-auth');
     const { id, token } = await createMcpToken(IT_A.id, 'reveal');
     expect(await revealMcpToken(id, IT_A.id)).toBe(token);
-    expect(await authenticateMcp(`Bearer ${await revealMcpToken(id, IT_A.id)}`)).toEqual(IT_A);
+    expect(await authenticateMcp(`Bearer ${await revealMcpToken(id, IT_A.id)}`)).toEqual({ ...IT_A, dutyActive: false });
 
     await expect(revealMcpToken(id, IT_B.id)).rejects.toMatchObject({ statusCode: 404 });
 
@@ -423,7 +432,7 @@ describe('token reveal', () => {
 describe('token auth', () => {
   it('resolves actor from DB by token hash; revoked and unknown tokens rejected; role is live', async () => {
     const { id, token } = await createMcpToken(IT_A.id, 'test');
-    expect(await authenticateMcp(`Bearer ${token}`)).toEqual(IT_A);
+    expect(await authenticateMcp(`Bearer ${token}`)).toEqual({ ...IT_A, dutyActive: false });
     expect(await authenticateMcp('Bearer itk_nope')).toBeNull();
     expect(await authenticateMcp(undefined)).toBeNull();
     const stored = (await db.select().from(mcpTokens).where(eq(mcpTokens.id, id)))[0]!;

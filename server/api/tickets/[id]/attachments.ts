@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Filter visibility: USER_VISIBLE untuk semua, INTERNAL_ONLY hanya untuk IT_WORKER/SYSTEM_ADMIN
-    const isIT = isITRole(user.role);
+    const isIT = isITRole(user.role, user.dutyActive);
 
     const results = await db.query.files.findMany({
       where: (a, { eq: e, and: aOp }) => {
@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
   const user = getCurrentUser(event);
   const userId = getCurrentUserId(event);
   if (!user) throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
-  if (!isITRole(user.role)) {
+  if (!isITRole(user.role, user.dutyActive)) {
     throw createError({ statusCode: 403, statusMessage: 'Forbidden' });
   }
 
@@ -75,7 +75,7 @@ export default defineEventHandler(async (event) => {
   await db.insert(files).values({
     id: attachId,
     ticketId: id,
-    stage: body.stage || 'REQUEST',
+    stage: body.stage || 'Baru',
     visibility: body.visibility || 'USER_VISIBLE',
     fileName: body.file_name || '',
     fileSize: body.file_size || '',

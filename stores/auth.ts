@@ -2,6 +2,8 @@ import { defineStore } from 'pinia';
 import type { AppUser } from '~/types';
 import { apiFetch } from '~/services/api';
 import { isITRole, canTriageRole, isDutyRole, isIntakeRole } from '~/utils/roles';
+import { ADMIN_ROLE, CLAIM, roleHas } from '~/utils/permissions';
+import { useDutyStore } from '~/stores/duty';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -12,14 +14,15 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   getters: {
-    isSystemAdmin: (state) => state.user?.role === 'SYSTEM_ADMIN',
-    isITWorker: (state) => isITRole(state.user?.role),
-    isUserNonIT: (state) => state.user?.role === 'USER_NON_IT',
-    canManageUsers: (state) => state.user?.role === 'SYSTEM_ADMIN',
-    canAssignTickets: (state) => isITRole(state.user?.role),
-    canTriage: (state) => canTriageRole(state.user?.role),
-    isDuty: (state) => isDutyRole(state.user?.role),
-    isIntake: (state) => isIntakeRole(state.user?.role),
+    isSystemAdmin: (state) => state.user?.role === ADMIN_ROLE,
+    isITWorker: (state) => isITRole(state.user?.role, useDutyStore().isActive),
+    isUserNonIT: (state) => !isITRole(state.user?.role, useDutyStore().isActive),
+    canManageUsers: (state) => roleHas(state.user?.role, CLAIM.MANAGE_MASTER),
+    canAssignTickets: (state) => isITRole(state.user?.role, useDutyStore().isActive),
+    // Klaim peran DUTY_ENGINEER ikut berlaku selama shift aktif (useDutyStore).
+    canTriage: (state) => canTriageRole(state.user?.role, useDutyStore().isActive),
+    isDuty: (state) => isDutyRole(state.user?.role, useDutyStore().isActive),
+    isIntake: (state) => isIntakeRole(state.user?.role, useDutyStore().isActive),
   },
 
   actions: {
@@ -53,6 +56,7 @@ export const useAuthStore = defineStore('auth', {
       this.user = null;
       this.isAuthenticated = false;
       this.error = null;
+      useDutyStore().stop();
     },
 
     async restoreSession() {

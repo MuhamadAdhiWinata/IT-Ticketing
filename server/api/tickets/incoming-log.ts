@@ -3,6 +3,7 @@ import { db } from '~/server/database/client';
 import { tickets } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
 import { getCurrentUserId, getCurrentUser } from '~/server/utils/user-context';
+import { isITRole } from '~/utils/roles';
 import { deriveStatusLabel } from '~/utils/ticketSpec';
 import { loadOrgMaps, resolveCompanyOf, resolveDivisionOf } from '~/server/utils/org';
 
@@ -21,8 +22,8 @@ export default defineEventHandler(async (event) => {
   const sevenDaysStart = sevenDaysAgo.toISOString().slice(0, 19);
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 19);
 
-  // RBAC: USER_NON_IT only sees own tickets
-  const userFilter = user?.role === 'USER_NON_IT'
+  // RBAC: non-IT (tanpa klaim it.access) hanya melihat tiket sendiri
+  const userFilter = !isITRole(user?.role, user?.dutyActive)
     ? eq(tickets.requestedBy, userId)
     : undefined;
 

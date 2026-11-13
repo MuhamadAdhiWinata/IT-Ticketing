@@ -5,11 +5,14 @@ config({ path: resolve(process.cwd(), '.env') });
 import bcrypt from 'bcryptjs';
 import { sql } from 'drizzle-orm';
 import { db } from './client';
+import { seedRbac } from '../services/rbac';
+import { seedSlaMaster } from '../services/sla-master';
 import {
   companies, divisions, users, companySettings, categories, projectKendala, submodules, vendors,
   tickets, ticketMembers, worklogs, comments, internalNotes, files, worklogFiles, commentFiles,
-  auditLogs, notifications, userPreferences,
+  auditLogs, notifications, userPreferences, dutySchedules,
 } from './schema';
+import { nowDbUtc } from '../../utils/utcTime';
 
 // Seeder rujukan: setiap tabel terisi, setiap status tiket (DRAFT/PROCESS/DELEGASI/SELESAI)
 // dan tiap jenis delegasi punya contoh. ID sengaja tetap supaya seed ulang menghasilkan data identik.
@@ -88,6 +91,7 @@ function ticket(t: {
     workStatus: 'DAPAT_MENUNGGU',
     evidenceSteps: '<ol><li>Buka menu terkait</li><li>Kendala <strong>muncul</strong></li></ol>',
     channel: 'FORM',
+    contact: user(requester).email,
     ...rest,
     submodule: t.submodule ?? null,
     createdBy: creator,
@@ -301,7 +305,8 @@ const EXTRA_TICKETS: TicketIn[] = [
     category: 'Support IT', projectKendala: 'Email Perusahaan & Office 365', submodule: 'Outlook Desktop Client', location: 'Gedung Utama, Lantai 2 - HR',
     priority: 'LOW', status: 'PROCESS', requester: 'USR-002', assignee: 'IT-001', createdAt: nov('05', '10:00:00'),
     issued: nov('05', '10:05:00'), started: nov('05', '10:30:00'), acknowledgedAt: nov('05', '10:10:00'), acceptedAt: nov('05', '10:25:00'),
-    ticketType: 'PERTANYAAN', waitingStartedAt: nov('05', '11:00:00'),
+    ticketType: 'PERTANYAAN', waitingStartedAt: nov('05', '11:00:00'), submittedBy: 'Budi Santoso',
+    solutionType: 'PANDUAN', resolutionSummary: 'Dikirim langkah membuat tanda tangan otomatis di Outlook (File > Options > Mail > Signatures).',
   }),
   // Fase Dikerjakan: Proyek Baru tertahan rilis
   ticket({
@@ -382,7 +387,13 @@ const TICKETS: TicketIn[] = [
     ...(PATCH[t.id] ?? {}),
   })),
   ...EXTRA_TICKETS,
-];
+].map((t): TicketIn => ({
+  ...t,
+  triagedAt: t.ticketType ? addMin(t.acknowledgedAt ?? t.createdAt, 10) : null,
+  // Selesai pertama = penyelesaian asli (Dialihkan bukan penyelesaian); tiket Insiden dinilai kelengkapannya oleh PM.
+  firstCompletedAt: t.completedAt && !t.transferTarget ? t.completedAt : null,
+  dataComplete: t.ticketType === 'INSIDEN' ? 'YA' : null,
+}));
 
 // Riwayat audit diturunkan dari data tiket agar selalu cocok dengan status dan timestamp-nya.
 function auditRows() {
@@ -404,6 +415,7 @@ function auditRows() {
   for (const t of TICKETS) {
     const id = t.id;
     if (t.acknowledgedAt) add(id, 'TIKET_DIAKUI', 'IT-001', t.acknowledgedAt);
+    if (t.triagedAt) add(id, 'TRIASE_DIMULAI', 'PM-001', t.triagedAt);
     if (t.ticketType) add(id, t.transferTarget ? 'TIKET_DIALIHKAN' : 'TIKET_DITRIASE', 'PM-001', addMin(t.acknowledgedAt ?? t.createdAt, 10), t.transferTarget ?? 'ticketType', t.changeReason ?? undefined);
     if (t.dutyConfirmedAt) add(id, 'KONFIRMASI_DUTY_ENGINEER', 'DE-001', t.dutyConfirmedAt, `Dikonfirmasi ${t.dutyConfirmedBy}`);
     if (t.acceptedAt && t.assignedTo) add(id, 'TIKET_DITERIMA', t.assignedTo, t.acceptedAt);
@@ -432,24 +444,24 @@ const MEMBERS: [string, string][] = [
 // ── Worklog (HTML dari editor Tiptap) ──
 // [id, ticket, stage, worker, date, start, finish, html]
 const WORKLOGS: [string, string, string, string, string, string, string, string][] = [
-  ['WL-001', 'TCK-202609-001', 'IN_PROGRESS', 'IT-001', '2026-09-01', '09:15', '09:45', '<p>Pengecekan fisik printer. <strong>Head tersumbat</strong>, sudah dibersihkan.</p>'],
-  ['WL-002', 'TCK-202609-001', 'IN_PROGRESS', 'IT-002', '2026-09-01', '10:00', '10:40', '<p>Tes cetak lewat driver:</p><ul><li>Test page berhasil</li><li>Invoice masih <em>paper jam</em> di tray belakang</li><li>Roller perlu diganti, dipesan ke vendor</li></ul>'],
-  ['WL-003', 'TCK-202609-002', 'IN_PROGRESS', 'IT-002', '2026-09-02', '14:10', '14:45', '<p>Unlock user lewat transaksi <code>SU01</code>, password direset dan wajib diganti saat login.</p>'],
-  ['WL-004', 'TCK-202609-002', 'COMPLETION', 'IT-002', '2026-09-02', '14:45', '14:50', '<p>Konfirmasi ke user: login berhasil. Tiket ditutup.</p>'],
-  ['WL-005', 'TCK-202609-003', 'IN_PROGRESS', 'IT-003', '2026-09-03', '08:50', '10:15', '<p>Cek log controller wifi, AP boardroom <strong>reboot tiap ~20 menit</strong>. Kabel PoE dan switch sudah dicek normal.</p><p>Referensi firmware: <a href="https://example.com/ap-firmware-notes" target="_blank" rel="noopener noreferrer">catatan rilis vendor</a></p>'],
-  ['WL-006', 'TCK-202609-003', 'DELEGATION', 'IT-003', '2026-09-03', '10:20', '10:20', '<p>Didelegasikan ke PT Telkom Indonesia, ref <code>TLK-WO-8821</code>.</p>'],
-  ['WL-007', 'TCK-202609-005', 'IN_PROGRESS', 'IT-004', '2026-09-05', '08:00', '09:15', '<p>Kill <em>blocked transactions</em> di server payroll. CPU turun dari 96% ke 40%.</p>'],
-  ['WL-008', 'TCK-202609-005', 'IN_PROGRESS', 'IT-005', '2026-09-05', '09:30', '10:30', `<p>Pemantauan setelah tindakan, grafik CPU stabil:</p><p><img src="${shot('Grafik CPU server payroll')}" alt="grafik cpu"></p>`],
-  ['WL-009', 'TCK-202609-006', 'IN_PROGRESS', 'IT-001', '2026-09-06', '10:30', '11:45', '<p>Ganti kabel HDMI, garis hilang. Monitor normal.</p>'],
-  ['WL-010', 'TCK-202609-007', 'IN_PROGRESS', 'IT-002', '2026-09-07', '13:30', '14:20', '<p>Header error dari server:</p><blockquote>550 5.7.1 Unable to relay</blockquote><p>IP client belum masuk daftar relay. Menunggu persetujuan penambahan.</p>'],
-  ['WL-011', 'TCK-202609-008', 'IN_PROGRESS', 'IT-002', '2026-09-08', '09:30', '11:00', '<p>Instalasi ERP client di 6 dari 10 PC:</p><ol><li>Copy installer dari share</li><li>Konfigurasi koneksi database</li><li>Uji login per user</li></ol>'],
-  ['WL-012', 'TCK-202609-009', 'IN_PROGRESS', 'IT-005', '2026-09-09', '11:20', '13:00', '<p>Ganti 4 lampu LED panel 40W. Semua menyala normal.</p>'],
-  ['WL-013', 'TCK-202609-010', 'IN_PROGRESS', 'IT-005', '2026-09-10', '08:50', '10:20', '<p>Reproduksi bug: jam lembur lewat tengah malam terpotong di <code>OvertimeCalculator</code>. Perbaikan sedang diuji di dev trial.</p>'],
-  ['WL-014', 'TCK-202610-001', 'DELEGATION', 'IT-003', '2026-10-05', '11:00', '11:00', '<p>Didelegasikan ke teknisi gedung (<code>WO-GDG-1015</code>) untuk pengecekan panel listrik.</p>'],
-  ['WL-015', 'TCK-202610-002', 'IN_PROGRESS', 'IT-001', '2026-10-08', '10:30', '11:15', '<p>Driver sudah diinstal ulang, scanner tetap tidak terdeteksi. Indikasi kerusakan hardware.</p>'],
-  ['WL-016', 'TCK-202610-002', 'DELEGATION', 'IT-001', '2026-10-08', '13:00', '13:00', '<p>Unit dikirim ke CV Sinar Printer Service, ref <code>SPS-2210-07</code>.</p>'],
-  ['WL-017', 'TCK-202610-004', 'IN_PROGRESS', 'IT-002', '2026-10-14', '09:15', '10:20', '<p>Penyebab: <strong>sesi SAP GUI lama</strong> di PC user masih mencoba login dengan password lama. Sesi dimatikan dan konfigurasi tersimpan dihapus.</p>'],
-  ['WL-018', 'TCK-202610-005', 'IN_PROGRESS', 'IT-001', '2026-10-20', '08:30', '09:30', '<p>Laptop pertama selesai (Office, antivirus, VPN). Laptop kedua menunggu lisensi.</p>'],
+  ['WL-001', 'TCK-202609-001', 'Dikerjakan', 'IT-001', '2026-09-01', '09:15', '09:45', '<p>Pengecekan fisik printer. <strong>Head tersumbat</strong>, sudah dibersihkan.</p>'],
+  ['WL-002', 'TCK-202609-001', 'Dikerjakan', 'IT-002', '2026-09-01', '10:00', '10:40', '<p>Tes cetak lewat driver:</p><ul><li>Test page berhasil</li><li>Invoice masih <em>paper jam</em> di tray belakang</li><li>Roller perlu diganti, dipesan ke vendor</li></ul>'],
+  ['WL-003', 'TCK-202609-002', 'Dikerjakan', 'IT-002', '2026-09-02', '14:10', '14:45', '<p>Unlock user lewat transaksi <code>SU01</code>, password direset dan wajib diganti saat login.</p>'],
+  ['WL-004', 'TCK-202609-002', 'Selesai', 'IT-002', '2026-09-02', '14:45', '14:50', '<p>Konfirmasi ke user: login berhasil. Tiket ditutup.</p>'],
+  ['WL-005', 'TCK-202609-003', 'Dikerjakan', 'IT-003', '2026-09-03', '08:50', '10:15', '<p>Cek log controller wifi, AP boardroom <strong>reboot tiap ~20 menit</strong>. Kabel PoE dan switch sudah dicek normal.</p><p>Referensi firmware: <a href="https://example.com/ap-firmware-notes" target="_blank" rel="noopener noreferrer">catatan rilis vendor</a></p>'],
+  ['WL-006', 'TCK-202609-003', 'Dikerjakan', 'IT-003', '2026-09-03', '10:20', '10:20', '<p>Didelegasikan ke PT Telkom Indonesia, ref <code>TLK-WO-8821</code>.</p>'],
+  ['WL-007', 'TCK-202609-005', 'Dikerjakan', 'IT-004', '2026-09-05', '08:00', '09:15', '<p>Kill <em>blocked transactions</em> di server payroll. CPU turun dari 96% ke 40%.</p>'],
+  ['WL-008', 'TCK-202609-005', 'Dikerjakan', 'IT-005', '2026-09-05', '09:30', '10:30', `<p>Pemantauan setelah tindakan, grafik CPU stabil:</p><p><img src="${shot('Grafik CPU server payroll')}" alt="grafik cpu"></p>`],
+  ['WL-009', 'TCK-202609-006', 'Dikerjakan', 'IT-001', '2026-09-06', '10:30', '11:45', '<p>Ganti kabel HDMI, garis hilang. Monitor normal.</p>'],
+  ['WL-010', 'TCK-202609-007', 'Dikerjakan', 'IT-002', '2026-09-07', '13:30', '14:20', '<p>Header error dari server:</p><blockquote>550 5.7.1 Unable to relay</blockquote><p>IP client belum masuk daftar relay. Menunggu persetujuan penambahan.</p>'],
+  ['WL-011', 'TCK-202609-008', 'Dikerjakan', 'IT-002', '2026-09-08', '09:30', '11:00', '<p>Instalasi ERP client di 6 dari 10 PC:</p><ol><li>Copy installer dari share</li><li>Konfigurasi koneksi database</li><li>Uji login per user</li></ol>'],
+  ['WL-012', 'TCK-202609-009', 'Dikerjakan', 'IT-005', '2026-09-09', '11:20', '13:00', '<p>Ganti 4 lampu LED panel 40W. Semua menyala normal.</p>'],
+  ['WL-013', 'TCK-202609-010', 'Dikerjakan', 'IT-005', '2026-09-10', '08:50', '10:20', '<p>Reproduksi bug: jam lembur lewat tengah malam terpotong di <code>OvertimeCalculator</code>. Perbaikan sedang diuji di dev trial.</p>'],
+  ['WL-014', 'TCK-202610-001', 'Dikerjakan', 'IT-003', '2026-10-05', '11:00', '11:00', '<p>Didelegasikan ke teknisi gedung (<code>WO-GDG-1015</code>) untuk pengecekan panel listrik.</p>'],
+  ['WL-015', 'TCK-202610-002', 'Dikerjakan', 'IT-001', '2026-10-08', '10:30', '11:15', '<p>Driver sudah diinstal ulang, scanner tetap tidak terdeteksi. Indikasi kerusakan hardware.</p>'],
+  ['WL-016', 'TCK-202610-002', 'Dikerjakan', 'IT-001', '2026-10-08', '13:00', '13:00', '<p>Unit dikirim ke CV Sinar Printer Service, ref <code>SPS-2210-07</code>.</p>'],
+  ['WL-017', 'TCK-202610-004', 'Dikerjakan', 'IT-002', '2026-10-14', '09:15', '10:20', '<p>Penyebab: <strong>sesi SAP GUI lama</strong> di PC user masih mencoba login dengan password lama. Sesi dimatikan dan konfigurasi tersimpan dihapus.</p>'],
+  ['WL-018', 'TCK-202610-005', 'Dikerjakan', 'IT-001', '2026-10-20', '08:30', '09:30', '<p>Laptop pertama selesai (Office, antivirus, VPN). Laptop kedua menunggu lisensi.</p>'],
 ];
 
 // ── Komentar diskusi User ↔ IT ──
@@ -485,12 +497,12 @@ const INTERNAL_NOTES: [string, string, string, string, string][] = [
 const FILES: [string, string, string | null, string, string, string, string, string][] = [
   ['FILE-001', 'TCK-202609-001', null, 'USER_VISIBLE', 'hasil-cek-printer.pdf', '12 KB', 'IT-001', ts('2026-09-01', '09:45:00')],
   ['FILE-002', 'TCK-202609-001', null, 'USER_VISIBLE', 'foto-error.png', '48 KB', 'USR-001', ts('2026-09-01', '09:10:00')],
-  ['FILE-003', 'TCK-202609-002', 'IN_PROGRESS', 'USER_VISIBLE', 'bukti-unlock-user.png', '31 KB', 'IT-002', ts('2026-09-02', '14:45:00')],
-  ['FILE-004', 'TCK-202609-003', 'DELEGATION', 'USER_VISIBLE', 'work-order-telkom.pdf', '96 KB', 'IT-003', ts('2026-09-03', '10:20:00')],
-  ['FILE-005', 'TCK-202609-005', 'IN_PROGRESS', 'INTERNAL_ONLY', 'slow-query-log.txt', '212 KB', 'IT-004', ts('2026-09-05', '09:15:00')],
-  ['FILE-006', 'TCK-202609-006', 'COMPLETION', 'USER_VISIBLE', 'foto-monitor-setelah-perbaikan.jpg', '184 KB', 'IT-001', ts('2026-09-06', '11:45:00')],
-  ['FILE-007', 'TCK-202610-002', 'DELEGATION', 'USER_VISIBLE', 'tanda-terima-servis.pdf', '64 KB', 'IT-001', ts('2026-10-08', '13:00:00')],
-  ['FILE-008', 'TCK-202610-004', 'COMPLETION', 'USER_VISIBLE', 'berita-acara.pdf', '58 KB', 'IT-002', ts('2026-10-14', '10:30:00')],
+  ['FILE-003', 'TCK-202609-002', 'Dikerjakan', 'USER_VISIBLE', 'bukti-unlock-user.png', '31 KB', 'IT-002', ts('2026-09-02', '14:45:00')],
+  ['FILE-004', 'TCK-202609-003', 'Dikerjakan', 'USER_VISIBLE', 'work-order-telkom.pdf', '96 KB', 'IT-003', ts('2026-09-03', '10:20:00')],
+  ['FILE-005', 'TCK-202609-005', 'Dikerjakan', 'INTERNAL_ONLY', 'slow-query-log.txt', '212 KB', 'IT-004', ts('2026-09-05', '09:15:00')],
+  ['FILE-006', 'TCK-202609-006', 'Selesai', 'USER_VISIBLE', 'foto-monitor-setelah-perbaikan.jpg', '184 KB', 'IT-001', ts('2026-09-06', '11:45:00')],
+  ['FILE-007', 'TCK-202610-002', 'Dikerjakan', 'USER_VISIBLE', 'tanda-terima-servis.pdf', '64 KB', 'IT-001', ts('2026-10-08', '13:00:00')],
+  ['FILE-008', 'TCK-202610-004', 'Selesai', 'USER_VISIBLE', 'berita-acara.pdf', '58 KB', 'IT-002', ts('2026-10-14', '10:30:00')],
 ];
 const WORKLOG_FILES: [string, string][] = [['WL-001', 'FILE-001']];
 const COMMENT_FILES: [string, string][] = [['CMT-001', 'FILE-002']];
@@ -523,7 +535,7 @@ async function cleanup() {
   console.log('[SEED] Membersihkan data lama...');
   await db.execute(sql.raw('SET FOREIGN_KEY_CHECKS = 0'));
   const tables = [
-    'comment_files', 'worklog_files', 'files', 'comments', 'internal_notes', 'notifications',
+    'duty_schedules', 'comment_files', 'worklog_files', 'files', 'comments', 'internal_notes', 'notifications',
     'audit_logs', 'worklogs', 'ticket_members', 'tickets', 'vendors',
     'user_preferences', 'submodules', 'project_kendala', 'categories', 'users',
     'divisions', 'companies', 'company_settings',
@@ -668,11 +680,28 @@ async function seedDiscussion() {
   console.log(`[SEED] ${WORKLOGS.length} worklogs, ${COMMENTS.length} comments, ${INTERNAL_NOTES.length} internal notes, ${FILES.length} files, ${NOTIFS.length} notifications berhasil.`);
 }
 
+// Jadwal duty relatif terhadap waktu seed (UTC) supaya demo selalu punya satu shift berjalan, satu terjadwal, satu selesai.
+async function seedDuty() {
+  const HOUR = 3_600_000;
+  const at = (h: number) => nowDbUtc(Date.now() + h * HOUR);
+  const rows: [string, string, number, number, string | null][] = [
+    ['DTY-001', 'IT-004', -30, -22, 'Shift kemarin'],
+    ['DTY-002', 'IT-001', -1, 7, 'Shift berjalan (demo ON DUTY untuk Budi)'],
+    ['DTY-003', 'IT-002', 7, 15, null],
+  ];
+  await db.insert(dutySchedules).values(rows.map(([id, userId, s, e, notes]) => ({
+    id, userId, startAt: at(s), endAt: at(e), status: 'SCHEDULED', notes, createdBy: 'PM-001', createdAt: at(0), updatedAt: at(0),
+  })));
+  console.log(`[SEED] ${rows.length} jadwal duty berhasil.`);
+}
+
 console.log('='.repeat(50));
 console.log('[SEED] Mulai seeding data...');
 console.log('='.repeat(50));
 
 await cleanup();
+await seedRbac();
+await seedSlaMaster();
 const hash = await bcrypt.hash('password123', 10);
 
 await seedOrg(hash);
@@ -682,6 +711,7 @@ await seedProjectKendala();
 await seedSubmodules();
 await seedTicketData();
 await seedDiscussion();
+await seedDuty();
 
 console.log('='.repeat(50));
 console.log('[SEED] Semua data berhasil dimasukkan!');

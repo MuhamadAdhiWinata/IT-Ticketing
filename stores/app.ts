@@ -1,8 +1,12 @@
 import { defineStore } from 'pinia';
-import type { AppUser, Ticket, CategoryItem, ProjectKendalaItem, SubmoduleItem, CompanyItem, DivisionItem, PendingAttachment } from '~/types';
+import type { TriageMaster, SlaMaster, AppUser, Ticket, CategoryItem, ProjectKendalaItem, SubmoduleItem, CompanyItem, DivisionItem, PendingAttachment } from '~/types';
 import { useAuthStore } from '~/stores/auth';
 import { refreshThemeTokens } from '~/composables/useCompany';
 import { apiFetch } from '~/services/api';
+import { useDutyStore } from '~/stores/duty';
+import { setRbacMatrix, type RbacMatrix } from '~/utils/permissions';
+
+export interface NavMenu { id: string; label: string; icon: string; section: string }
 
 export const useAppStore = defineStore('app', {
   state: () => ({
@@ -16,6 +20,8 @@ export const useAppStore = defineStore('app', {
     myTickets: [] as Ticket[],
     myTicketsLoading: false,
     categories: [] as CategoryItem[],
+    triageMaster: null as TriageMaster | null,
+    slaMaster: null as SlaMaster | null,
     projectKendala: [] as ProjectKendalaItem[],
     submodules: [] as SubmoduleItem[],
     companies: [] as CompanyItem[],
@@ -26,6 +32,9 @@ export const useAppStore = defineStore('app', {
     isSidebarCollapsed: false,
     isMobileSidebarOpen: false,
     successNotification: null as string | null,
+    claims: [] as string[],
+    navMenus: [] as NavMenu[],
+    roleIds: [] as string[],
   }),
 
   actions: {
@@ -40,9 +49,42 @@ export const useAppStore = defineStore('app', {
       }
     },
 
+    // Master Dampak, Urgensi, Prioritas P1-P4 dan matriksnya (dipakai panel triase, dashboard, dan tab master).
+    async loadTriageMaster() {
+      try {
+        this.triageMaster = (await apiFetch<{ data: TriageMaster }>('/api/triage-master')).data;
+      } catch (e) {
+        console.error('Gagal memuat master triase:', e);
+      }
+    },
+
+    async loadSlaMaster() {
+      try {
+        this.slaMaster = (await apiFetch<{ data: SlaMaster }>('/api/sla-master')).data;
+      } catch (e) {
+        console.error('Gagal memuat master SLA:', e);
+      }
+    },
+
+    // Klaim, matriks peran, dan menu sidebar dari DB (sebelum halaman dirender agar filter peran benar).
+    async loadRbac() {
+      try {
+        const res = await apiFetch<{ success: boolean; data: { claims: string[]; matrix: RbacMatrix; menus: NavMenu[]; is_duty_active: boolean; current_duty_end_at: string | null; next_duty_start_at: string | null } }>('/api/rbac/me');
+        setRbacMatrix(res.data.matrix);
+        this.claims = res.data.claims;
+        this.roleIds = Object.keys(res.data.matrix);
+        this.navMenus = res.data.menus;
+        useDutyStore().apply(res.data);
+      } catch (e) {
+        console.error('Gagal memuat hak akses:', e);
+      }
+    },
+
     async initApp() {
       const authStore = useAuthStore();
       this.currentUser = authStore.user;
+      await this.loadRbac();
+      await Promise.all([this.loadTriageMaster(), this.loadSlaMaster()]);
 
       const [usersRes, ticketsRes, catsRes, projectKendalaRes, submodsRes, prefsRes, companiesRes, divisionsRes] = await Promise.all([
         apiFetch<{ success: boolean; data: AppUser[] }>('/api/users').catch(() => null),
@@ -270,21 +312,6 @@ export const useAppStore = defineStore('app', {
         }
       } catch (e) {
         console.error('Failed to update ticket:', e);
-      }
-    },
-
-    async updateTicketStatus(ticketId: string, status: Ticket['status']) {
-      try {
-        await apiFetch(`/api/tickets/${ticketId}/status`, {
-          method: 'PATCH',
-          body: { status },
-        });
-        this.tickets = this.tickets.map(t => t.id === ticketId ? { ...t, status } : t);
-        if (this.selectedTicket?.id === ticketId) {
-          this.selectedTicket = { ...this.selectedTicket, status };
-        }
-      } catch (e) {
-        console.error('Failed to update status:', e);
       }
     },
 

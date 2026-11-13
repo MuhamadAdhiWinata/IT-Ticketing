@@ -104,9 +104,8 @@
 </template>
 
 <script setup lang="ts">
-import { IT_ROLES } from '~/utils/roles';
 import { ref, computed } from 'vue';
-import { Search, Kanban, Briefcase, CalendarDays, FileSpreadsheet, Settings, SlidersHorizontal, ClipboardList, KeyRound, X } from 'lucide-vue-next';
+import { Search, Kanban, Briefcase, CalendarDays, FileSpreadsheet, Settings, SlidersHorizontal, ClipboardList, KeyRound, ShieldCheck, CalendarClock, X } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
 import { useCompany } from '~/composables/useCompany';
 import { formatOrgLabel } from '~/utils/identity';
@@ -117,33 +116,16 @@ const logoError = ref(false);
 
 const profileOrgLabel = computed(() => formatOrgLabel(store.currentUser ?? {}));
 
-const allNavItems = [
-  { id: 'tracking', label: 'Tracking', icon: Search, group: 'workspace', roles: ['USER_NON_IT', ...IT_ROLES] },
-  { id: 'my-tickets', label: 'Tiket Saya', icon: ClipboardList, group: 'workspace', roles: ['USER_NON_IT', ...IT_ROLES] },
-  { id: 'dashboard', label: 'Dashboard', icon: Kanban, group: 'workspace', roles: IT_ROLES },
-  { id: 'my-work', label: 'Pekerjaan Saya', icon: Briefcase, group: 'workspace', roles: IT_ROLES },
-  { id: 'daily-work', label: 'Log Harian', icon: CalendarDays, group: 'workspace', roles: IT_ROLES },
-  { id: 'reports', label: 'Laporan', icon: FileSpreadsheet, group: 'workspace', roles: ['SYSTEM_ADMIN'] },
-  { id: 'admin', label: 'Master Data', icon: Settings, group: 'master', roles: ['SYSTEM_ADMIN'] },
-  { id: 'settings', label: 'Pengaturan', icon: SlidersHorizontal, group: 'settings', roles: ['SYSTEM_ADMIN'] },
-  { id: 'mcp-token', label: 'Token MCP', icon: KeyRound, group: 'settings', roles: IT_ROLES },
-];
-
-const groupOrder = [
-  { key: 'workspace', label: 'Menu Utama' },
-  { key: 'master', label: 'Data Master' },
-  { key: 'settings', label: 'Pengaturan' },
-];
+// Ikon dipetakan dari nama yang tersimpan di DB; nama tak dikenal memakai ikon bawaan.
+const ICONS: Record<string, any> = { Search, Kanban, Briefcase, CalendarDays, FileSpreadsheet, Settings, SlidersHorizontal, ClipboardList, KeyRound, ShieldCheck, CalendarClock };
 
 const navGroups = computed(() => {
-  if (!store.currentUser) return [];
-  const userRole = store.currentUser.role;
-
-  return groupOrder
-    .map(g => ({
-      label: g.label,
-      items: allNavItems.filter(item => item.group === g.key && item.roles.includes(userRole)),
-    }))
-    .filter(g => g.items.length > 0);
+  const groups: { label: string; items: { id: string; label: string; icon: any }[] }[] = [];
+  for (const m of store.navMenus) {
+    let g = groups.find(x => x.label === m.section);
+    if (!g) groups.push(g = { label: m.section, items: [] });
+    g.items.push({ id: m.id, label: m.label, icon: ICONS[m.icon] ?? Settings });
+  }
+  return groups;
 });
 </script>

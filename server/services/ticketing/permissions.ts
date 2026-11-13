@@ -1,24 +1,16 @@
 import { canTriageRole } from '~/utils/roles';
+import { PHASES, derivePhase, type Phase, type StatusSource } from '~/utils/ticketSpec';
 import { getValidTransitions } from '~/server/utils/ticket-lifecycle';
 import { type Actor, type DbExec, getMemberIds, getTicketRow, isIT } from './common';
 
-type TicketLike = { status: string; requestedBy: string; createdBy: string; assignedTo: string | null };
+type TicketLike = { status: string; requestedBy: string; createdBy: string; assignedTo: string | null } & Partial<StatusSource>;
 
-export type ActivityStage = 'ASSIGN' | 'IN_PROGRESS' | 'COMPLETION';
-
-// Kirim di tahap ASSIGN selalu ada; IN_PROGRESS hanya saat PROCESS; COMPLETION hanya saat SELESAI (sama dengan TicketDetailView).
-export function activityStagesFor(status: string): ActivityStage[] {
-  const stages: ActivityStage[] = ['ASSIGN'];
-  if (status === 'PROCESS') stages.push('IN_PROGRESS');
-  if (status === 'SELESAI') stages.push('COMPLETION');
-  return stages;
+// Tahap log/berkas = fase tiket. Boleh mencatat di fase saat ini dan fase sebelumnya, tidak di fase yang belum tercapai.
+export function activityStagesFor(t: StatusSource): Phase[] {
+  return PHASES.slice(0, PHASES.indexOf(derivePhase(t)) + 1);
 }
 
-export function defaultActivityStage(status: string): ActivityStage {
-  if (status === 'PROCESS') return 'IN_PROGRESS';
-  if (status === 'SELESAI') return 'COMPLETION';
-  return 'ASSIGN';
-}
+export const defaultActivityStage = (t: StatusSource): Phase => derivePhase(t);
 
 // Rule 06/07: assignment & member terkunci setelah SELESAI.
 export const isLocked = (t: TicketLike) => t.status === 'SELESAI';
@@ -28,22 +20,29 @@ export function canViewTicket(t: TicketLike, a: Actor) {
   return isIT(a) || isRequesterSide(t, a);
 }
 
+// Ambil tiket dan penugasan hanya di fase Dikerjakan; fase Baru sampai Ditriase adalah pekerjaan PM.
+export const isWorkPhase = (t: TicketLike) => derivePhase(t as StatusSource) === 'Dikerjakan';
+
 export function canAddMembers(t: TicketLike, a: Actor) {
-  return !isLocked(t) && (isIT(a) || isRequesterSide(t, a));
+  return isWorkPhase(t) && isIT(a);
 }
 
 export function canAssign(t: TicketLike, a: Actor) {
-  return isIT(a) && !isLocked(t);
+  return isWorkPhase(t) && isIT(a);
 }
 
-// Worker hanya boleh mengambil untuk dirinya (PRD: self-assign); SYSTEM_ADMIN boleh menunjuk siapa saja.
+export const notWorkPhaseMsg = (t: TicketLike) =>
+  isLocked(t) ? 'Tiket SELESAI: assignment terkunci' : `Ambil tiket dan penugasan hanya di fase Dikerjakan (fase saat ini: ${derivePhase(t as StatusSource)})`;
+
+// Worker hanya boleh mengambil untuk dirinya; PM (klaim ticket.triage) menugaskan worker lain.
 export function canTargetOther(a: Actor) {
-  return canTriageRole(a.role);
+  return canTriageRole(a.role, a.dutyActive);
 }
 
 export interface AllowedActions {
   ticket_id: string;
   status: string;
+  phase: string;
   is_assignee: boolean;
   is_member: boolean;
   transitions: { to: string; tool: string; note?: string }[];
@@ -56,7 +55,7 @@ export async function getAllowedActions(exec: DbExec, actor: Actor, ticketId: st
   const members = await getMemberIds(exec, ticketId);
   const it = isIT(actor);
   const need = (ok: boolean, reason: string) => (ok ? { allowed: true } : { allowed: false, reason });
-  const notIT = 'Hanya IT_WORKER atau SYSTEM_ADMIN';
+  const notIT = 'Hanya tim IT (klaim it.access)';
 
   const transitions = it
     ? getValidTransitions(t.status).map(to => ({
@@ -66,10 +65,11 @@ export async function getAllowedActions(exec: DbExec, actor: Actor, ticketId: st
       }))
     : [];
 
-  const stages = activityStagesFor(t.status);
+  const stages = activityStagesFor(t);
   return {
     ticket_id: t.id,
     status: t.status,
+    phase: derivePhase(t),
     is_assignee: t.assignedTo === actor.id,
     is_member: members.includes(actor.id),
     transitions,
@@ -79,15 +79,16 @@ export async function getAllowedActions(exec: DbExec, actor: Actor, ticketId: st
       add_comment: need(canViewTicket(t, actor), 'Bukan pihak tiket ini'),
       add_internal_note: need(it, notIT),
       add_attachment: need(it, notIT),
-      assign_ticket: need(canAssign(t, actor), it ? 'Tiket SELESAI: assignment terkunci' : notIT),
-      add_ticket_members: need(canAddMembers(t, actor), isLocked(t) ? 'Tiket SELESAI: member terkunci' : 'Bukan pihak tiket ini'),
+      assign_ticket: need(canAssign(t, actor), it ? notWorkPhaseMsg(t) : notIT),
+      add_ticket_members: need(canAddMembers(t, actor), it ? notWorkPhaseMsg(t) : notIT),
       reopen_ticket: need(it && t.status === 'SELESAI', it ? 'Hanya tiket SELESAI' : notIT),
     },
     rules: [
       'Aktivitas baru selalu menjadi record baru dan tidak mengubah status (Rule 18).',
       'Perubahan status memakai transition_ticket_status; SELESAI -> PROCESS lewat reopen_ticket.',
       'Setelah SELESAI, assignment dan member terkunci (Rule 06/07).',
-      'IT_WORKER hanya dapat menugaskan/mengambil tiket untuk dirinya sendiri; SYSTEM_ADMIN dapat untuk IT lain.',
+      'Fase Baru sampai Ditriase (akui, triase, mulai dikerjakan) adalah pekerjaan PM.',
+      'Ambil tiket dan penugasan hanya di fase Dikerjakan. Worker hanya mengambil tiket untuk dirinya sendiri (bila belum ada Pelaksana); PM menugaskan worker lain.',
     ],
   };
 }

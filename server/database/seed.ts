@@ -221,10 +221,10 @@ async function seedTickets() {
 async function seedWorklogs(ticketIds: string[]) {
   console.log('[SEED] Seeding worklogs...');
   const data = [
-    { ticketId: ticketIds[0]!, stageKey: 'IN_PROGRESS', workerId: 'IT-001', date: '2026-09-01', startAt: '09:15', finishAt: '09:45', durationMinutes: 30, description: 'Pengecekan fisik printer.' },
-    { ticketId: ticketIds[1]!, stageKey: 'IN_PROGRESS', workerId: 'IT-002', date: '2026-09-02', startAt: '14:10', finishAt: '14:45', durationMinutes: 35, description: 'Unlock user SU01.' },
-    { ticketId: ticketIds[4]!, stageKey: 'IN_PROGRESS', workerId: 'IT-004', date: '2026-09-05', startAt: '08:00', finishAt: '09:15', durationMinutes: 75, description: 'Kill blocked transactions.' },
-    { ticketId: ticketIds[5]!, stageKey: 'IN_PROGRESS', workerId: 'IT-001', date: '2026-09-06', startAt: '10:30', finishAt: '11:45', durationMinutes: 75, description: 'Ganti kabel HDMI.' },
+    { ticketId: ticketIds[0]!, stageKey: 'Dikerjakan', workerId: 'IT-001', date: '2026-09-01', startAt: '09:15', finishAt: '09:45', durationMinutes: 30, description: 'Pengecekan fisik printer.' },
+    { ticketId: ticketIds[1]!, stageKey: 'Dikerjakan', workerId: 'IT-002', date: '2026-09-02', startAt: '14:10', finishAt: '14:45', durationMinutes: 35, description: 'Unlock user SU01.' },
+    { ticketId: ticketIds[4]!, stageKey: 'Dikerjakan', workerId: 'IT-004', date: '2026-09-05', startAt: '08:00', finishAt: '09:15', durationMinutes: 75, description: 'Kill blocked transactions.' },
+    { ticketId: ticketIds[5]!, stageKey: 'Dikerjakan', workerId: 'IT-001', date: '2026-09-06', startAt: '10:30', finishAt: '11:45', durationMinutes: 75, description: 'Ganti kabel HDMI.' },
   ];
   for (const w of data) await db.insert(worklogs).values({ id: randomId('WL'), ...w, createdAt: ts(w.date, w.finishAt) });
   console.log(`[SEED] ${data.length} worklogs berhasil.`);

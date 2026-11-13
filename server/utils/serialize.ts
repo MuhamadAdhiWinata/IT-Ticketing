@@ -35,6 +35,7 @@ export function serializeWorklog(w: any) {
     finish_at: w.finishAt,
     duration_minutes: w.durationMinutes,
     description: w.description,
+    on_duty: !!w.onDuty,
     created_at: w.createdAt,
   };
 }
@@ -49,6 +50,7 @@ export function serializeAuditLog(a: any) {
     performed_by_name: a.performedByName || a.actor?.name || '',
     detail: a.detail ?? null,
     notes: a.notes ?? null,
+    on_duty: !!a.onDuty,
   };
 }
 
@@ -139,6 +141,10 @@ export function serializeTicket(t: any) {
     evidence_steps: t.evidenceSteps ?? null,
     channel: t.channel ?? 'FORM',
 
+    contact: t.contact ?? null,
+    data_complete: t.dataComplete ?? null,
+    first_completed_at: t.firstCompletedAt ?? null,
+    sla: t.sla ?? null,
     ticket_type: t.ticketType ?? null,
     impact: t.impact ?? null,
     urgency: t.urgency ?? null,
@@ -151,6 +157,12 @@ export function serializeTicket(t: any) {
     duty_confirmed_at: t.dutyConfirmedAt ?? null,
     waiting_started_at: t.waitingStartedAt ?? null,
     waiting_ended_at: t.waitingEndedAt ?? null,
+    submitted_by: t.submittedBy ?? null,
+    review_started_at: t.reviewStartedAt ?? null,
+    review_started_by: t.reviewStartedBy ?? null,
+    verified_at: t.verifiedAt ?? null,
+    verified_by: t.verifiedBy ?? null,
+    review_skipped: !!t.reviewSkipped,
     blocked_by: t.blockedBy ?? null,
     closed_at: t.closedAt ?? null,
     status_label: deriveStatusLabel(t),
@@ -165,6 +177,7 @@ export function serializeTicket(t: any) {
     ticket_number: t.ticketNumber ?? null,
     issued_at: t.issuedAt ?? null,
     acknowledged_at: t.acknowledgedAt ?? null,
+    triaged_at: t.triagedAt ?? null,
     accepted_at: t.acceptedAt ?? null,
     process_started_at: t.processStartedAt ?? null,
     completed_at: t.completedAt ?? null,

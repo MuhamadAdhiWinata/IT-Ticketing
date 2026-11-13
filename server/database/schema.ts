@@ -3,7 +3,9 @@ import {
   varchar,
   text,
   timestamp,
+  datetime,
   int,
+  double,
   json,
   index,
   primaryKey,
@@ -203,11 +205,12 @@ export const tickets = mysqlTable('tickets', {
   expectedBehavior: text('expected_behavior'),
   sinceAt: timestamp('since_at', { mode: 'string' }),
   affectedScope: varchar('affected_scope', { length: 30 }), // SATU_PENGGUNA | SATU_UNIT | SEMUA_PENGGUNA
-  workStatus: varchar('work_status', { length: 30 }), // BERHENTI_TOTAL | TERGANGGU | DAPAT_MENUNGGU
+  workStatus: varchar('work_status', { length: 30 }), // BERHENTI_TOTAL | TERGANGGU | DAPAT_MENUNGGU | BELUM_TAHU
   workaround: text('workaround'),
   isEvent: int('is_event', { unsigned: true }).notNull().default(0),
   evidenceSteps: text('evidence_steps'),
   channel: varchar('channel', { length: 20 }).notNull().default('FORM'), // FORM | PERCAKAPAN | INTERNAL
+  contact: varchar('contact', { length: 255 }), // kontak yang dapat dihubungi (Tally: "Kontak yang dapat dihubungi")
 
   // Triase (PM)
   ticketType: varchar('ticket_type', { length: 30 }),
@@ -219,11 +222,19 @@ export const tickets = mysqlTable('tickets', {
   transferTarget: varchar('transfer_target', { length: 40 }),
   dutyConfirmedBy: varchar('duty_confirmed_by', { length: 255 }), // nama Duty Engineer
   dutyConfirmedAt: timestamp('duty_confirmed_at', { mode: 'string' }),
+  dataComplete: varchar('data_complete', { length: 20 }), // YA | TIDAK; null = belum dinilai (kolom "Lengkap saat masuk")
 
   // Eksekusi (Pelaksana)
   waitingStartedAt: timestamp('waiting_started_at', { mode: 'string' }),
   waitingEndedAt: timestamp('waiting_ended_at', { mode: 'string' }),
   blockedBy: varchar('blocked_by', { length: 20 }), // RILIS | PIHAK_KETIGA | LAINNYA
+  // Pengecekan pemohon di fase Menunggu Pemohon (waktu kirim = waitingStartedAt). Nama disimpan langsung, seperti dutyConfirmedBy.
+  submittedBy: varchar('submitted_by', { length: 255 }),
+  reviewStartedAt: timestamp('review_started_at', { mode: 'string' }),
+  reviewStartedBy: varchar('review_started_by', { length: 255 }),
+  verifiedAt: timestamp('verified_at', { mode: 'string' }), // lolos pengecekan pemohon, atau dilewati PM (reviewSkipped)
+  verifiedBy: varchar('verified_by', { length: 255 }),
+  reviewSkipped: int('review_skipped', { unsigned: true }).notNull().default(0),
   closedAt: timestamp('closed_at', { mode: 'string' }),
 
   // Timestamps
@@ -231,9 +242,11 @@ export const tickets = mysqlTable('tickets', {
   ticketNumber: varchar('ticket_number', { length: 50 }),
   issuedAt: timestamp('issued_at', { mode: 'string' }),
   acknowledgedAt: timestamp('acknowledged_at', { mode: 'string' }),
+  triagedAt: timestamp('triaged_at', { mode: 'string' }), // tombol "Mulai Triase": masuk fase Ditriase
   acceptedAt: timestamp('accepted_at', { mode: 'string' }),
   processStartedAt: timestamp('process_started_at', { mode: 'string' }),
   completedAt: timestamp('completed_at', { mode: 'string' }),
+  firstCompletedAt: timestamp('first_completed_at', { mode: 'string' }), // selesai pertama; tidak ditimpa saat dibuka ulang (dasar SLA resolusi)
 }, (table) => ({
   idxStatus: index('idx_tickets_status').on(table.status),
   idxCreatedBy: index('idx_tickets_created_by').on(table.createdBy),
@@ -318,6 +331,8 @@ export const worklogs = mysqlTable('worklogs', {
   finishAt: varchar('finish_at', { length: 5 }).notNull(),
   durationMinutes: int('duration_minutes', { unsigned: true }).default(0),
   description: text('description').notNull(),
+  // 1 = ditulis saat penulisnya sedang ON DUTY (jadwal duty_schedules aktif).
+  onDuty: int('on_duty', { unsigned: true }).notNull().default(0),
   createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
 }, (table) => ({
   idxTicket: index('idx_worklogs_ticket').on(table.ticketId),
@@ -340,6 +355,7 @@ export const auditLogs = mysqlTable('audit_logs', {
   performedBy: varchar('performed_by', { length: 50 }).notNull().references(() => users.id),
   detail: text('detail'),
   notes: text('notes'),
+  onDuty: int('on_duty', { unsigned: true }).notNull().default(0),
 }, (table) => ({
   idxTicket: index('idx_audit_ticket').on(table.ticketId),
 }));
@@ -459,4 +475,102 @@ export const companySettings = mysqlTable('company_settings', {
 
   createdAt: timestamp('created_at', { mode: 'string' }).notNull(),
   updatedAt: timestamp('updated_at', { mode: 'string' }).notNull(),
+});
+
+// ── RBAC dinamis: peran, klaim (permission), dan menu disimpan di DB, diatur SYSTEM_ADMIN ──
+// users.role menyimpan roles.id. SYSTEM_ADMIN superuser di kode (selalu lolos semua klaim).
+export const roles = mysqlTable('roles', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: varchar('description', { length: 255 }),
+  isSystem: int('is_system', { unsigned: true }).notNull().default(0),
+});
+
+// Katalog klaim: menu.<id> membuka menu, sisanya izin aksi. Kuncinya dirujuk kode (utils/permissions.ts).
+export const permissions = mysqlTable('permissions', {
+  key: varchar('key', { length: 60 }).primaryKey(),
+  label: varchar('label', { length: 150 }).notNull(),
+  groupName: varchar('group_name', { length: 50 }).notNull(),
+  sortOrder: int('sort_order', { unsigned: true }).notNull().default(0),
+});
+
+export const rolePermissions = mysqlTable('role_permissions', {
+  roleId: varchar('role_id', { length: 50 }).notNull().references(() => roles.id, { onDelete: 'cascade' }),
+  permissionKey: varchar('permission_key', { length: 60 }).notNull().references(() => permissions.key, { onDelete: 'cascade' }),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.roleId, table.permissionKey] }),
+}));
+
+// Daftar menu sidebar. id = kunci tab di pages/index.vue; klaim pembukanya selalu `menu.<id>`.
+export const menus = mysqlTable('menus', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  label: varchar('label', { length: 100 }).notNull(),
+  icon: varchar('icon', { length: 50 }).notNull(),
+  section: varchar('section', { length: 100 }).notNull(),
+  sortOrder: int('sort_order', { unsigned: true }).notNull().default(0),
+  isActive: int('is_active', { unsigned: true }).notNull().default(1),
+});
+
+// ── Jadwal shift Duty Engineer. Semua waktu disimpan UTC (datetime tanpa konversi zona). ──
+// Selama jadwal aktif (start_at <= sekarang < end_at, status bukan CANCELLED) pemilik jadwal mendapat klaim
+// peran DUTY_ENGINEER di atas klaim perannya sendiri. Tanpa cron: dievaluasi tiap request (server/services/duty.ts).
+export const dutySchedules = mysqlTable('duty_schedules', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  userId: varchar('user_id', { length: 50 }).notNull().references(() => users.id),
+  startAt: datetime('start_at', { mode: 'string' }).notNull(),
+  endAt: datetime('end_at', { mode: 'string' }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('SCHEDULED'), // SCHEDULED | ACTIVE | COMPLETED | CANCELLED
+  notes: text('notes'),
+  createdBy: varchar('created_by', { length: 50 }).notNull().references(() => users.id),
+  createdAt: datetime('created_at', { mode: 'string' }).notNull(),
+  updatedAt: datetime('updated_at', { mode: 'string' }).notNull(),
+}, (table) => ({
+  idxUserWindow: index('idx_duty_user_window').on(table.userId, table.startAt, table.endAt),
+}));
+
+// ── Master triase: Dampak, Urgensi, Prioritas (P1-P4) dan matriks Dampak x Urgensi -> Prioritas. ──
+// tickets.impact / tickets.urgency menyimpan id master (tanpa FK agar nilai lama tetap terbaca bila master diubah);
+// penghapusan master yang masih dipakai tiket ditolak oleh server/services/triage-master.ts.
+export const impacts = mysqlTable('impacts', {
+  id: varchar('id', { length: 20 }).primaryKey(),
+  label: varchar('label', { length: 100 }).notNull(),
+  sortOrder: int('sort_order', { unsigned: true }).notNull().default(0),
+  isActive: int('is_active', { unsigned: true }).notNull().default(1),
+});
+
+export const urgencies = mysqlTable('urgencies', {
+  id: varchar('id', { length: 20 }).primaryKey(),
+  label: varchar('label', { length: 100 }).notNull(),
+  sortOrder: int('sort_order', { unsigned: true }).notNull().default(0),
+  isActive: int('is_active', { unsigned: true }).notNull().default(1),
+});
+
+// P1-P4 tetap empat level (dipetakan ke CRITICAL/HIGH/MEDIUM/LOW demi SLA kategori); label dan deskripsi dapat diubah.
+export const priorityLevels = mysqlTable('priority_levels', {
+  id: varchar('id', { length: 10 }).primaryKey(),
+  label: varchar('label', { length: 100 }).notNull(),
+  description: varchar('description', { length: 255 }),
+  sortOrder: int('sort_order', { unsigned: true }).notNull().default(0),
+});
+
+export const priorityMatrix = mysqlTable('priority_matrix', {
+  impactId: varchar('impact_id', { length: 20 }).notNull(),
+  urgencyId: varchar('urgency_id', { length: 20 }).notNull(),
+  priorityId: varchar('priority_id', { length: 10 }).notNull(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.impactId, table.urgencyId] }),
+}));
+
+// ── Master SLA (sheet "SLA Configuration"): target per prioritas + parameter jam kerja. ──
+// priority_id: P1-P4 untuk Insiden, DEFAULT untuk tiket yang belum ditriase. coverage: ALWAYS (24/7) | BUSINESS (jam kerja).
+export const slaTargets = mysqlTable('sla_targets', {
+  priorityId: varchar('priority_id', { length: 10 }).primaryKey(),
+  responseHours: double('response_hours').notNull(),
+  resolutionHours: double('resolution_hours').notNull(),
+  coverage: varchar('coverage', { length: 10 }).notNull(),
+});
+
+export const slaSettings = mysqlTable('sla_settings', {
+  key: varchar('key', { length: 40 }).primaryKey(),
+  value: double('value').notNull(),
 });

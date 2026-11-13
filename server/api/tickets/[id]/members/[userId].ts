@@ -1,14 +1,14 @@
-import { IT_ROLES } from '~/utils/roles';
+import { CLAIM } from '~/utils/permissions';
 import { eq, and } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { ticketMembers } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
-import { requireRole } from '~/server/utils/authorize';
+import { requireClaim } from '~/server/utils/authorize';
 import { getTicketRow } from '~/server/services/ticketing/common';
 import { isLocked } from '~/server/services/ticketing/permissions';
 
 export default defineEventHandler(async (event) => {
-  await requireRole(event, ...IT_ROLES);
+  await requireClaim(event, CLAIM.IT);
   const ticketId = getRouterParam(event, 'id');
   const userId = getRouterParam(event, 'userId');
 

@@ -21,10 +21,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'No file uploaded' });
   }
 
-  const ticketId = fields.ticketId || 'general';
-  const stage = fields.stage || 'REQUEST';
+  // ponytail: tanpa ticketId (gambar inline di form Buat Tiket, tiket belum ada) berkas hanya disimpan, tanpa baris `files`; sisa draft yang batal tidak dibersihkan.
+  const ticketId = fields.ticketId || '';
+  const stage = fields.stage || 'Baru';
   const visibility = fields.visibility || 'USER_VISIBLE';
-  const safeId = ticketId.replace(/[^a-zA-Z0-9-_]/g, '_');
+  const safeId = ticketId ? ticketId.replace(/[^a-zA-Z0-9-_]/g, '_') : `drafts/${(userId || 'anon').replace(/[^a-zA-Z0-9-_]/g, '_')}`;
 
   const ts = now();
   const results: any[] = [];
@@ -42,17 +43,19 @@ export default defineEventHandler(async (event) => {
       );
 
       const attachId = `ATT-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-      await db.insert(filesTable).values({
-        id: attachId,
-        ticketId,
-        stage,
-        visibility: visibility as any,
-        fileName,
-        fileSize: `${(file.size / 1024).toFixed(1)} KB`,
-        filePath: uploaded.url,
-        uploadedBy: userId || 'system',
-        uploadedAt: ts,
-      }).execute();
+      if (ticketId) {
+        await db.insert(filesTable).values({
+          id: attachId,
+          ticketId,
+          stage,
+          visibility: visibility as any,
+          fileName,
+          fileSize: `${(file.size / 1024).toFixed(1)} KB`,
+          filePath: uploaded.url,
+          uploadedBy: userId || 'system',
+          uploadedAt: ts,
+        }).execute();
+      }
 
       results.push({
         id: attachId,

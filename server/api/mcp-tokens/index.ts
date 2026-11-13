@@ -1,7 +1,7 @@
-import { IT_ROLES } from '~/utils/roles';
+import { CLAIM } from '~/utils/permissions';
 import { z } from 'zod';
 import { successResponse } from '~/server/utils/response';
-import { requireRole } from '~/server/utils/authorize';
+import { requireClaim } from '~/server/utils/authorize';
 import { createMcpToken, listMcpTokens } from '~/server/services/ticketing/mcp-auth';
 import { parse } from '~/server/services/ticketing/common';
 
@@ -10,7 +10,7 @@ const CreateSchema = z.object({ name: z.string().trim().min(1, 'Nama wajib diisi
 
 // Token MCP hanya untuk IT; USER_NON_IT ditolak 403. Token mentah hanya dikembalikan saat dibuat.
 export default defineEventHandler(async (event) => {
-  const user = await requireRole(event, ...IT_ROLES);
+  const user = await requireClaim(event, CLAIM.IT);
 
   if (event.method === 'GET') {
     const rows = await listMcpTokens(user.id);

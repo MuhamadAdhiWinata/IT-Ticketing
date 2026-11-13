@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { tickets, files } from '~/server/database/schema';
 import { transitionStatus, reopenTicket } from '~/server/services/ticketing/workflow';
-import { IT_A, closeAll, seedTicket, seedUsers } from './helpers';
+import { IT_A, closeAll, seedTicket, seedUsers, PM } from './helpers';
 
 beforeAll(seedUsers);
 afterAll(closeAll);
@@ -37,7 +37,7 @@ describe('solusi penyelesaian', () => {
 
   it('solution hanya untuk transisi ke SELESAI', async () => {
     const id = await seedTicket({ status: 'DRAFT', assignedTo: IT_A.id });
-    await expect(transitionStatus(IT_A, { ticketId: id, to: 'PROCESS', solution: { type: 'PANDUAN', summary: 'x' } })).rejects.toMatchObject({ statusCode: 400 });
+    await expect(transitionStatus(PM, { ticketId: id, to: 'PROCESS', solution: { type: 'PANDUAN', summary: 'x' } })).rejects.toMatchObject({ statusCode: 400 });
   });
 });
 
@@ -56,12 +56,12 @@ describe('reopen counter', () => {
 describe('CRITICAL wajib lampiran (server, dari tabel files)', () => {
   it('DRAFT>PROCESS ditolak tanpa berkas, lolos bila sudah ada berkas', async () => {
     const id = await seedTicket({ status: 'DRAFT', priority: 'CRITICAL', assignedTo: IT_A.id });
-    await expect(transitionStatus(IT_A, { ticketId: id, to: 'PROCESS' })).rejects.toMatchObject({ statusCode: 400 });
+    await expect(transitionStatus(PM, { ticketId: id, to: 'PROCESS' })).rejects.toMatchObject({ statusCode: 400 });
     await db.insert(files).values({
       id: `F-T-${id}`, ticketId: id, fileName: 'bukti.pdf', fileSize: '1',
-      filePath: '/api/uploads/x', stage: 'REQUEST', visibility: 'USER_VISIBLE', uploadedBy: IT_A.id, uploadedAt: '2026-10-01 08:00:00',
+      filePath: '/api/uploads/x', stage: 'Baru', visibility: 'USER_VISIBLE', uploadedBy: IT_A.id, uploadedAt: '2026-10-01 08:00:00',
     });
-    await transitionStatus(IT_A, { ticketId: id, to: 'PROCESS' });
+    await transitionStatus(PM, { ticketId: id, to: 'PROCESS' });
     expect((await row(id)).status).toBe('PROCESS');
   });
 });

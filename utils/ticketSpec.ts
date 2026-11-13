@@ -14,6 +14,7 @@ export const WORK_STATUSES: Opt[] = [
   { value: 'BERHENTI_TOTAL', label: 'Berhenti total' },
   { value: 'TERGANGGU', label: 'Terganggu, ada cara lain' },
   { value: 'DAPAT_MENUNGGU', label: 'Dapat menunggu' },
+  { value: 'BELUM_TAHU', label: 'Belum tahu (perlu triase)' },
 ];
 
 export const CHANNELS: Opt[] = [
@@ -32,6 +33,8 @@ export const TICKET_TYPES: Opt[] = [
   { value: 'DI_LUAR_LAYANAN', label: 'Di Luar Layanan Aplikasi' },
 ];
 
+// IMPACTS, URGENCIES, PRIORITY_LEVELS, dan DEFAULT_MATRIX hanya nilai awal master (di-seed ke tabel impacts, urgencies,
+// priority_levels, priority_matrix). Sumber kebenaran saat berjalan adalah DB lewat /api/triage-master.
 export const IMPACTS: Opt[] = [
   { value: 'LUAS', label: 'Luas' },
   { value: 'SEDANG', label: 'Sedang' },
@@ -69,27 +72,36 @@ export const SOLUTION_TYPES: Opt[] = [
 export const values = (o: Opt[]) => o.map(x => x.value) as [string, ...string[]];
 export const labelOf = (o: Opt[], v?: string | null) => o.find(x => x.value === v)?.label ?? (v || '');
 
-// Prioritas P1-P4 dipetakan ke 4 level yang sudah ada (SLA kategori tetap dipakai).
+// Prioritas P1-P4 dipetakan ke 4 level yang sudah ada (SLA kategori tetap dipakai), jadi himpunan P tetap empat;
+// admin hanya mengubah label dan deskripsinya.
 export const P_TO_PRIORITY = { P1: 'CRITICAL', P2: 'HIGH', P3: 'MEDIUM', P4: 'LOW' } as const;
 export type PLevel = keyof typeof P_TO_PRIORITY;
+export const PLEVELS = ['P1', 'P2', 'P3', 'P4'] as [PLevel, ...PLevel[]];
+export const PRIORITY_LEVELS: { id: PLevel; label: string; description: string }[] = [
+  { id: 'P1', label: 'Kritis', description: 'Layanan berhenti total atau berdampak luas; langsung ditangani.' },
+  { id: 'P2', label: 'Tinggi', description: 'Gangguan besar pada banyak pengguna atau proses penting.' },
+  { id: 'P3', label: 'Sedang', description: 'Gangguan terbatas, ada cara lain; dijadwalkan normal.' },
+  { id: 'P4', label: 'Rendah', description: 'Dampak kecil atau permintaan biasa; dikerjakan bila ada waktu.' },
+];
 export const priorityToP = (p?: string | null): PLevel | null =>
   (Object.entries(P_TO_PRIORITY).find(([, v]) => v === p)?.[0] as PLevel | undefined) ?? null;
 
-// Matriks Dampak x Urgensi. Nilai awal (spesifikasi belum menyebut angka); ubah di sini bila PM berbeda.
-const MATRIX: Record<string, Record<string, PLevel>> = {
+// Matriks Dampak x Urgensi (nilai awal; admin mengubahnya di master Prioritas & Triase).
+export type PriorityMatrix = Record<string, Record<string, string>>;
+export const DEFAULT_MATRIX: PriorityMatrix = {
   LUAS: { TINGGI: 'P1', SEDANG: 'P2', RENDAH: 'P3' },
   SEDANG: { TINGGI: 'P2', SEDANG: 'P3', RENDAH: 'P4' },
   TERBATAS: { TINGGI: 'P3', SEDANG: 'P4', RENDAH: 'P4' },
 };
-export const priorityFromMatrix = (impact?: string | null, urgency?: string | null): PLevel | null =>
-  (impact && urgency && MATRIX[impact]?.[urgency]) || null;
+export const priorityFromMatrix = (impact?: string | null, urgency?: string | null, matrix: PriorityMatrix = DEFAULT_MATRIX): PLevel | null =>
+  ((impact && urgency && matrix[impact]?.[urgency]) || null) as PLevel | null;
 
 // P1/P2 pada Insiden wajib konfirmasi Duty Engineer sebelum diproses.
 export const needsDutyConfirm = (ticketType?: string | null, priority?: string | null) =>
   ticketType === 'INSIDEN' && (priority === 'CRITICAL' || priority === 'HIGH');
 
 // Fase tampilan diturunkan dari status alur + kolom triase; DB tetap DRAFT/PROCESS/DELEGASI/SELESAI.
-// Urutan: Baru > Diakui > Ditriase > Dikerjakan > Menunggu Pemohon > Selesai.
+// Urutan: Baru > Diakui (klik Akui) > Ditriase (klik Mulai Triase) > Dikerjakan > Menunggu Pemohon > Selesai.
 // "Selesai" satu fase akhir dengan tiga hasil: Selesai, Ditutup, Dialihkan.
 export const PHASES = ['Baru', 'Diakui', 'Ditriase', 'Dikerjakan', 'Menunggu Pemohon', 'Selesai'] as const;
 export type Phase = (typeof PHASES)[number];
@@ -98,7 +110,7 @@ export type Outcome = 'Selesai' | 'Ditutup' | 'Dialihkan';
 export interface StatusSource {
   status: string;
   acknowledgedAt?: string | null;
-  ticketType?: string | null;
+  triagedAt?: string | null;
   waitingStartedAt?: string | null;
   waitingEndedAt?: string | null;
   transferTarget?: string | null;
@@ -113,8 +125,12 @@ export function derivePhase(t: StatusSource): Phase {
   if (t.status === 'PROCESS' || t.status === 'DELEGASI') {
     return t.waitingStartedAt && !t.waitingEndedAt ? 'Menunggu Pemohon' : 'Dikerjakan';
   }
-  if (t.ticketType) return 'Ditriase';
+  if (t.triagedAt) return 'Ditriase';
   return t.acknowledgedAt ? 'Diakui' : 'Baru';
 }
 // Label ringkas untuk badge: fase, atau hasil akhir bila tiket sudah di fase akhir.
+// Pilihan filter status di semua daftar tiket: fase, plus hasil akhir Ditutup / Dialihkan.
+export const STATUS_FILTERS = [...PHASES, 'Ditutup', 'Dialihkan'] as const;
+export const matchesStatusFilter = (t: { status_phase?: string; status_label?: string }, f: string) =>
+  f === 'ALL' || t.status_phase === f || t.status_label === f;
 export const deriveStatusLabel = (t: StatusSource): string => deriveOutcome(t) ?? derivePhase(t);

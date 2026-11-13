@@ -1,4 +1,5 @@
 import { getUserFromToken } from '~/server/utils/auth';
+import { getDutyState } from '~/server/services/duty';
 import { createError } from 'h3';
 
 const PUBLIC_PATHS = [
@@ -22,6 +23,13 @@ export default defineEventHandler(async (event) => {
 
   // Verify JWT and load user from DB
   const user = await getUserFromToken(event);
+
+  // Shift duty dievaluasi tiap request (di-cache singkat): klaim DUTY_ENGINEER digabung dinamis, bukan disimpan di JWT/users.role.
+  if (user) {
+    const duty = await getDutyState(user.id);
+    user.dutyActive = duty.active;
+    user.dutyEndAt = duty.endAt;
+  }
 
   // Attach user to event context (null if not authenticated)
   (event as any).context.user = user;

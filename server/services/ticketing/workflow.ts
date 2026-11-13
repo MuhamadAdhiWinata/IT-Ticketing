@@ -8,7 +8,9 @@ import {
   fail, hm, inTx, lockTicket, newId, nowTs, parse, requireIT, ticketSummary, withFileCleanup,
 } from './common';
 import { insertAttachments } from './attachments';
-import { SOLUTION_TYPES, needsDutyConfirm, values } from '~/utils/ticketSpec';
+import { PHASES, SOLUTION_TYPES, derivePhase, deriveStatusLabel, needsDutyConfirm, values, type Phase } from '~/utils/ticketSpec';
+import { canTriageRole } from '~/utils/roles';
+import { requireSolution, submitPatch } from './triage';
 
 export const STATUSES = ['DRAFT', 'PROCESS', 'DELEGASI', 'SELESAI'] as const;
 
@@ -56,6 +58,13 @@ const STAGE_BY_TRANSITION: Record<string, 'START_WORK' | 'IN_PROGRESS' | 'DELEGA
   'PROCESS>DELEGASI': 'DELEGATION',
 };
 
+// Tahap (fase) tempat log dan berkas dari transisi itu dicatat.
+const PHASE_BY_STAGE: Record<'START_WORK' | 'IN_PROGRESS' | 'DELEGATION', Phase> = {
+  START_WORK: 'Ditriase',
+  IN_PROGRESS: 'Dikerjakan',
+  DELEGATION: 'Dikerjakan',
+};
+
 function rejectTransition(from: string, to: string): never {
   const allowed = getValidTransitions(from);
   fail(409, `Cannot transition from ${from} to ${to}. Transisi yang diizinkan dari ${from}: ${allowed.join(', ') || '(tidak ada)'}`, {
@@ -86,6 +95,7 @@ export async function transitionStatus(
     const ts = nowTs();
     const patch: Partial<typeof tickets.$inferInsert> = { status: v.to };
     if (stageKey === 'START_WORK') {
+      if (!canTriageRole(actor.role, actor.dutyActive)) fail(403, 'Forbidden: Mulai Dikerjakan (fase Baru sampai Ditriase) hanya untuk PM');
       if (t.priority === 'CRITICAL' && files.length === 0) {
         const [row] = await tx.select({ cnt: count() }).from(filesTbl).where(eq(filesTbl.ticketId, t.id));
         if (!row?.cnt) fail(400, 'Tiket CRITICAL membutuhkan minimal 1 lampiran dokumen pendukung sebelum diproses');
@@ -96,7 +106,12 @@ export async function transitionStatus(
       patch.processStartedAt = t.processStartedAt || ts;
       patch.issuedAt = t.issuedAt || ts;
     } else if (stageKey === 'IN_PROGRESS') {
+      if (t.waitingStartedAt && !t.waitingEndedAt) {
+        if (!t.verifiedAt) fail(409, 'Pengecekan pemohon belum lolos; tunggu pemohon atau PM klik Lewati Pengecekan');
+        patch.waitingEndedAt = ts;
+      }
       patch.completedAt = ts;
+      patch.firstCompletedAt = t.firstCompletedAt || ts;
       if (v.solution) {
         patch.solutionType = v.solution.type;
         patch.resolutionSummary = v.solution.summary;
@@ -133,6 +148,7 @@ export async function transitionStatus(
       action: stageKey ? `TAHAP_${stageKey}_SELESAI` : 'STATUS_DIUBAH',
       performedAt: ts,
       performedBy: actor.id,
+      onDuty: actor.dutyActive ? 1 : 0,
       detail: `${t.status} -> ${v.to}`,
       notes: v.notes || '',
     });
@@ -143,8 +159,9 @@ export async function transitionStatus(
         await tx.insert(worklogs).values({
           id: newId('WL'),
           ticketId: v.ticketId,
-          stageKey,
+          stageKey: PHASE_BY_STAGE[stageKey],
           workerId: actor.id,
+          onDuty: actor.dutyActive ? 1 : 0,
           date: ts.slice(0, 10),
           startAt: hm(),
           finishAt: hm(),
@@ -153,7 +170,7 @@ export async function transitionStatus(
           createdAt: ts,
         });
       }
-      attachments = await insertAttachments(tx, track, actor, v.ticketId, stageKey, 'USER_VISIBLE', ts, files);
+      attachments = await insertAttachments(tx, track, actor, v.ticketId, PHASE_BY_STAGE[stageKey], 'USER_VISIBLE', ts, files);
     } else if (files.length > 0) {
       fail(400, 'files: lampiran hanya didukung pada transisi DRAFT>PROCESS, PROCESS>SELESAI, PROCESS>DELEGASI');
     }
@@ -164,7 +181,7 @@ export async function transitionStatus(
         ticketId: v.ticketId,
         type: 'ASSIGNED',
         title: 'Status Tiket Berubah',
-        message: `Status tiket ${t.ticketNumber || t.id} berubah dari ${t.status} menjadi ${v.to}`,
+        message: `Tiket ${t.ticketNumber || t.id} berubah dari fase ${derivePhase(t)} menjadi ${deriveStatusLabel({ ...t, status: v.to })}`,
       }, tx);
     }
 
@@ -191,6 +208,80 @@ async function reopenIn(tx: DbExec, actor: Actor, t: typeof tickets.$inferSelect
     detail: 'Tiket dibuka ulang dari SELESAI ke PROCESS oleh IT',
   });
   return { previous_status: 'SELESAI', ticket: await ticketSummary(tx, t.id), attachments: [] };
+}
+
+const MovePhaseSchema = z.object({
+  ticketId: z.string().min(1),
+  to: z.enum(PHASES),
+  notes: z.string().trim().max(2000).optional(),
+});
+const EARLY_PHASES: Phase[] = ['Baru', 'Diakui', 'Ditriase'];
+
+// Pindah fase dari kanban: bebas maju atau mundur (kondisi lapangan dinamis), selalu tercatat di audit log.
+// Kolom penurun fase (acknowledged/triaged/waiting/completed) disesuaikan agar derivePhase() menghasilkan fase tujuan.
+export async function moveTicketPhase(actor: Actor, input: z.input<typeof MovePhaseSchema>, exec?: DbExec) {
+  requireIT(actor);
+  const v = parse(MovePhaseSchema, input);
+  return inTx(exec, async (tx) => {
+    const t = await lockTicket(tx, v.ticketId);
+    const from = derivePhase(t);
+    if (from === v.to) fail(409, `Tiket sudah di fase ${v.to}`);
+    const early = EARLY_PHASES.includes(v.to);
+    if ((early || EARLY_PHASES.includes(from)) && !canTriageRole(actor.role, actor.dutyActive)) {
+      fail(403, 'Forbidden: perpindahan dari/ke fase Baru, Diakui, Ditriase hanya untuk PM');
+    }
+    const ts = nowTs();
+    const patch: Partial<typeof tickets.$inferInsert> = {};
+
+    if (v.to === 'Baru') Object.assign(patch, { acknowledgedAt: null, triagedAt: null });
+    else {
+      if (!t.acknowledgedAt) patch.acknowledgedAt = ts;
+      if (v.to === 'Diakui') patch.triagedAt = null;
+      else if (!t.triagedAt) patch.triagedAt = ts;
+    }
+
+    if (early) patch.status = 'DRAFT';
+    else if (v.to === 'Selesai') Object.assign(patch, { status: 'SELESAI', completedAt: ts, firstCompletedAt: t.firstCompletedAt || ts, closedAt: null, transferTarget: null });
+    else if (t.status === 'DRAFT' || t.status === 'SELESAI') patch.status = 'PROCESS';
+
+    // Masuk ke pekerjaan dari fase awal: syarat yang sama dengan Mulai Dikerjakan.
+    if (!early && t.status === 'DRAFT') {
+      if (!t.ticketType) fail(400, 'Isi triase (Jenis Tiket) dulu sebelum tiket dikerjakan');
+      if (needsDutyConfirm(t.ticketType, t.priority) && !t.dutyConfirmedAt) fail(400, 'Insiden P1/P2 wajib dikonfirmasi Duty Engineer sebelum diproses');
+      patch.processStartedAt = t.processStartedAt || ts;
+      patch.issuedAt = t.issuedAt || ts;
+    }
+    if (t.status === 'SELESAI' && v.to !== 'Selesai') {
+      Object.assign(patch, { completedAt: null, closedAt: null, transferTarget: null, reopenCount: t.reopenCount + 1 });
+    }
+
+    if (v.to === 'Menunggu Pemohon') {
+      requireSolution(t);
+      Object.assign(patch, submitPatch(actor, ts));
+    } else if (t.waitingStartedAt && !t.waitingEndedAt) {
+      if (v.to === 'Selesai' && !t.verifiedAt) fail(409, 'Pengecekan pemohon belum lolos; tunggu pemohon atau PM klik Lewati Pengecekan');
+      patch.waitingEndedAt = ts;
+    }
+
+    await tx.update(tickets).set(patch).where(eq(tickets.id, t.id));
+    await tx.insert(auditLogs).values({
+      id: newId('AUD'),
+      ticketId: t.id,
+      action: 'FASE_DIPINDAHKAN',
+      performedAt: ts,
+      performedBy: actor.id,
+      onDuty: actor.dutyActive ? 1 : 0,
+      detail: `${deriveStatusLabel(t)} -> ${v.to}`,
+      notes: v.notes ?? null,
+    });
+    if (t.requestedBy !== actor.id) {
+      await createNotification({
+        userId: t.requestedBy, ticketId: t.id, type: 'ASSIGNED', title: 'Status Tiket Berubah',
+        message: `Tiket ${t.ticketNumber || t.id} dipindahkan dari fase ${deriveStatusLabel(t)} ke ${v.to} oleh ${actor.name}`,
+      }, tx);
+    }
+    return { previous_phase: from, ticket: await ticketSummary(tx, t.id) };
+  });
 }
 
 export async function reopenTicket(actor: Actor, input: { ticketId: string }, exec?: DbExec) {

@@ -21,25 +21,6 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
             type="button"
-            @click="serviceView = 'SUPPORT_IT'"
-            :class="[
-              'p-4 rounded-lg border text-left transition-all flex items-center gap-3',
-              serviceView === 'SUPPORT_IT'
-                ? 'bg-primary/5 border-primary ring-2 ring-primary/20 text-primary font-bold'
-                : 'bg-surface border-border text-foreground'
-            ]"
-          >
-            <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0 text-lg">
-              🖥️
-            </div>
-            <div>
-              <p class="text-sm font-bold">Support IT</p>
-              <p class="text-xs text-muted-foreground">Hardware, Jaringan, Printer, Akun</p>
-            </div>
-          </button>
-
-          <button
-            type="button"
             @click="serviceView = 'IT_PROGRAMMER'"
             :class="[
               'p-4 rounded-lg border text-left transition-all flex items-center gap-3',
@@ -54,6 +35,25 @@
             <div>
               <p class="text-sm font-bold">IT Programmer</p>
               <p class="text-xs text-muted-foreground">Aplikasi, ERP SAP, Bug, Fitur Baru</p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            @click="serviceView = 'SUPPORT_IT'"
+            :class="[
+              'p-4 rounded-lg border text-left transition-all flex items-center gap-3',
+              serviceView === 'SUPPORT_IT'
+                ? 'bg-primary/5 border-primary ring-2 ring-primary/20 text-primary font-bold'
+                : 'bg-surface border-border text-foreground'
+            ]"
+          >
+            <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0 text-lg">
+              🖥️
+            </div>
+            <div>
+              <p class="text-sm font-bold">Support IT</p>
+              <p class="text-xs text-muted-foreground">Hardware, Jaringan, Printer, Akun</p>
             </div>
           </button>
         </div>
@@ -74,7 +74,7 @@
         </span>
       </div>
 
-      <!-- Buat Atas Nama (Hanya untuk SYSTEM_ADMIN) -->
+      <!-- Buat Atas Nama (klaim ticket.intake) -->
       <div v-if="isIntake" class="p-3.5 bg-amber-50/60 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800/40 space-y-2">
         <div class="flex items-center gap-2">
           <Shield class="w-4 h-4 text-warning" />
@@ -101,6 +101,18 @@
           <div class="px-3 py-2.5 rounded-lg border border-border bg-muted/50 text-xs font-bold text-foreground">{{ pelaporIdentity.unit }}</div>
         </div>
         <AppSelect v-else v-model="unit" :options="UNITS.map(u => ({ value: u, label: u }))" label="Unit *" placeholder="-- Pilih Unit --" />
+      </div>
+
+      <!-- Kontak -->
+      <div>
+        <label class="block text-xs font-semibold text-foreground mb-1.5">Kontak yang Dapat Dihubungi <span class="text-red-500">*</span></label>
+        <input
+          v-model="contact"
+          maxlength="255"
+          type="text"
+          placeholder="Cth: 0812xxxxxxx atau nama@perusahaan.co.id"
+          class="w-full px-4 py-3 rounded-lg border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium"
+        />
       </div>
 
       <!-- Title -->
@@ -135,13 +147,16 @@
         />
       </div>
 
-      <!-- Lokasi (Support IT) -->
-      <div v-if="serviceView === 'SUPPORT_IT'">
-        <label class="block text-xs font-semibold text-foreground mb-1.5">Lokasi / Ruangan Anda <span class="text-red-500">*</span></label>
+      <!-- Lokasi / Cabang atau bagian -->
+      <div>
+        <label class="block text-xs font-semibold text-foreground mb-1.5">
+          {{ serviceView === 'SUPPORT_IT' ? 'Lokasi / Ruangan Anda' : 'Cabang atau Bagian (opsional)' }}
+          <span v-if="serviceView === 'SUPPORT_IT'" class="text-red-500">*</span>
+        </label>
         <input 
           v-model="location"
           type="text" 
-          placeholder="Cth: Lantai 3, Ruang Finance"
+          :placeholder="serviceView === 'SUPPORT_IT' ? 'Cth: Lantai 3, Ruang Finance' : 'Cth: Cabang Yogyakarta, bagian Akademik'"
           class="w-full px-4 py-3 rounded-lg border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium"
         />
       </div>
@@ -201,65 +216,30 @@
       </div>
 
       <!-- Bukti -->
-      <div ref="uploadSection" class="space-y-3">
-        <label class="block text-xs font-semibold text-foreground">
+      <div ref="uploadSection" class="space-y-1.5">
+        <label class="block text-[11px] font-bold text-foreground">
           Bukti <span class="text-red-500">*</span>
-          <span class="text-muted-foreground font-normal">(unggah berkas atau tulis langkah, minimal salah satu)</span>
+          <span class="text-muted-foreground font-normal">(tulis langkah, sisipkan gambar, atau lampirkan berkas; minimal salah satu)</span>
         </label>
-        <RichTextEditor v-model="evidenceSteps" placeholder="Langkah untuk mengulang kendala..." />
-        <div class="border-2 border-dashed border-border rounded-lg p-5 text-center bg-muted/30 relative">
-          <input 
-            type="file" 
-            multiple
-            @change="handleFileDrop"
-            class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-          />
-          <div v-if="pendingFiles.length > 0" class="space-y-2">
-            <div v-for="(pf, i) in pendingFiles" :key="i" class="flex items-center justify-center gap-2 text-sm text-primary font-semibold">
-              <Check class="w-4 h-4 shrink-0" />
-              <span>{{ pf.file.name }}</span>
-              <span class="text-xs text-muted-foreground font-normal">({{ (pf.file.size / 1024).toFixed(1) }} KB)</span>
-              <button @click.stop="removePendingFile(i)" class="text-red-400 hover:text-red-600 ml-1">
-                <X class="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <p class="text-[10px] text-muted-foreground">Klik area ini untuk menambah file lain</p>
-          </div>
-          <div v-else class="flex flex-col items-center justify-center space-y-1">
-            <Upload class="w-6 h-6 text-muted-foreground" />
-            <p class="text-xs text-muted-foreground font-medium">Klik atau seret file ke sini untuk unggah</p>
-            <p class="text-[10px] text-muted-foreground">Bisa pilih beberapa file sekaligus</p>
-          </div>
-        </div>
+        <RichTextEditor
+          v-model="evidenceSteps"
+          v-model:files="pendingFiles"
+          placeholder="Langkah untuk mengulang kendala..."
+          :upload="uploadInlineImage"
+        />
       </div>
 
       <!-- Submit Buttons -->
       <div class="pt-4 border-t border-border flex items-center justify-end gap-3">
         <button
           type="button"
-          @click="handleSubmit(true)"
-          class="px-5 py-3 rounded-lg border border-primary/15 bg-surface text-primary text-xs font-bold hover:bg-blue-50 transition-colors flex items-center gap-1.5"
-        >
-          <Check class="w-4 h-4" />
-          <span>Simpan & Assign</span>
-        </button>
-        <button
-          type="button"
-          @click="handleSubmit(false)"
+          @click="handleSubmit()"
           class="px-6 py-3 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold transition-colors shadow-md"
         >
           Simpan
         </button>
       </div>
     </div>
-
-    <!-- Worker Picker Modal -->
-    <WorkerPickerModal
-      :show="showWorkerPicker"
-      :users="store.allUsers"
-      @close="showWorkerPicker = false"
-      @confirm="handleWorkerConfirm"
-    />
 
     <!-- Modal Dialog Sukses Buat Tiket (Android / Mobile Responsive - Teleport to Body) -->
     <Teleport to="body">
@@ -312,7 +292,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { ArrowLeft, Upload, Check, CheckCircle2, Eye, X, Shield, AlertTriangle } from 'lucide-vue-next';
+import { ArrowLeft, CheckCircle2, Eye, X, Shield, AlertTriangle } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
 import { apiFetch } from '~/services/api';
 import { useModal } from '~/composables/useModal';
@@ -322,19 +302,18 @@ import { formatOrgLabel, formatRequesterIdentity } from '~/utils/identity';
 import AppSelect from '~/components/common/AppSelect.vue';
 import RichTextEditor from '~/components/common/RichTextEditor.vue';
 import { isRichTextEmpty } from '~/utils/richText';
-import WorkerPickerModal from '~/components/common/WorkerPickerModal.vue';
+
+import { useAuthStore } from '~/stores/auth';
 
 const store = useAppStore();
 const { showError, showSuccess } = useModal();
-const isIntake = computed(() => store.currentUser && ['PM', 'DUTY_ENGINEER', 'SYSTEM_ADMIN'].includes(store.currentUser.role));
+const isIntake = computed(() => useAuthStore().isIntake);
 const isOpen = computed(() => store.activeView === 'create-ticket');
 
-const serviceView = ref<'SUPPORT_IT' | 'IT_PROGRAMMER'>('SUPPORT_IT');
+const serviceView = ref<'SUPPORT_IT' | 'IT_PROGRAMMER'>('IT_PROGRAMMER');
 const ticketPrefix = computed(() => serviceView.value === 'SUPPORT_IT' ? 'TIKSP' : 'TIKPG');
 const ticketNumber = ref(Math.floor(100000 + Math.random() * 900000));
 const behalfUserId = ref<string | null>(null);
-const showWorkerPicker = ref(false);
-const selectedWorkers = ref<string[]>([]);
 const isSaving = ref(false);
 
 const behalfUserOptions = computed(() => [
@@ -358,11 +337,12 @@ const displayPelaporOrg = computed(() => formatOrgLabel(pelaporIdentity.value ??
 const title = ref('');
 const projectKendala = ref('');
 const submodule = ref('');
-const location = ref('Lantai 2');
+const location = ref('');
 const description = ref('');
 const expectedBehavior = ref('');
 const unit = ref('');
 const channel = ref('FORM');
+const contact = ref('');
 const sinceAt = ref('');
 const affectedScope = ref('');
 const workStatus = ref('');
@@ -409,26 +389,13 @@ watch(projectKendala, () => {
   submodule.value = '';
 });
 
-const handleFileDrop = (e: Event) => {
-  const target = e.target as HTMLInputElement;
-  if (target.files) {
-    for (const file of Array.from(target.files)) {
-      pendingFiles.value.push({ file });
-    }
-  }
-  target.value = '';
-};
-
-const removePendingFile = (index: number) => {
-  pendingFiles.value.splice(index, 1);
-};
-
-const handleSubmit = async (shouldAssign: boolean) => {
+const handleSubmit = async () => {
   const missing = (msg: string) => { showError('Formulir Tidak Lengkap', msg); return true; };
   if (!pelaporIdentity.value?.unit && !unit.value) return void missing('Mohon pilih Unit.');
   if (!projectKendala.value.trim()) {
     return void missing(serviceView.value === 'SUPPORT_IT' ? 'Mohon pilih Kendala yang dialami.' : 'Mohon pilih Aplikasi yang sedang dikerjakan.');
   }
+  if (!contact.value.trim()) return void missing('Mohon isi Kontak yang dapat dihubungi.');
   if (!title.value.trim()) return void missing('Mohon isi Judul (maksimal 120 karakter).');
   if (!description.value.trim()) return void missing('Mohon isi "Yang Terjadi".');
   if (!expectedBehavior.value.trim()) return void missing('Mohon isi "Yang Seharusnya Terjadi".');
@@ -441,17 +408,22 @@ const handleSubmit = async (shouldAssign: boolean) => {
     nextTick(() => uploadSection.value?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
     return;
   }
-  if (shouldAssign) {
-    showWorkerPicker.value = true;
-    return;
-  }
   await createTicket(false);
 };
 
-const handleWorkerConfirm = async (userIds: string[]) => {
-  showWorkerPicker.value = false;
-  selectedWorkers.value = userIds;
-  await createTicket(true);
+// Tiket belum ada: server menyimpan gambar ke folder draft dan hanya mengembalikan URL.
+const uploadInlineImage = async (file: File): Promise<string> => {
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const res = await apiFetch<{ success: boolean; data: { file_url: string }[] }>('/api/upload', { method: 'POST', body: fd });
+    const url = res.data?.[0]?.file_url;
+    if (!url) throw new Error('URL gambar tidak ditemukan');
+    return url;
+  } catch (e: any) {
+    showError('Gagal Upload Gambar', e?.data?.statusMessage || e?.message || 'Terjadi kesalahan.');
+    throw e;
+  }
 };
 
 const createTicket = async (shouldIssue: boolean = false) => {
@@ -459,10 +431,11 @@ const createTicket = async (shouldIssue: boolean = false) => {
   try {
     const ticketPayload = {
       title: title.value.trim(),
+      contact: contact.value.trim(),
       category: serviceView.value === 'SUPPORT_IT' ? 'Support IT' : 'IT Programmer',
       project_kendala: projectKendala.value,
       submodule: submodule.value,
-      location: serviceView.value === 'IT_PROGRAMMER' ? '' : location.value.trim(),
+      location: location.value.trim(),
       description: description.value.trim(),
       expected_behavior: expectedBehavior.value.trim(),
       unit: pelaporIdentity.value?.unit || unit.value || undefined,
@@ -476,16 +449,10 @@ const createTicket = async (shouldIssue: boolean = false) => {
     };
     const newTicket = await store.addTicket(ticketPayload, shouldIssue, behalfUserId.value || null, pendingFiles.value.length);
     if (newTicket) {
-      if (selectedWorkers.value.length > 0) {
-        await apiFetch(`/api/tickets/${newTicket.id}/members`, {
-          method: 'POST',
-          body: { userIds: selectedWorkers.value },
-        });
-      }
       if (pendingFiles.value.length > 0) {
         const fd = new FormData();
         fd.append('ticketId', newTicket.id);
-        fd.append('stage', 'REQUEST');
+        fd.append('stage', 'Baru');
         fd.append('visibility', 'USER_VISIBLE');
         for (const pf of pendingFiles.value) {
           fd.append('files', pf.file);
@@ -524,6 +491,7 @@ const closeSuccessModalAndGoMain = () => {
 
 const resetForm = () => {
   title.value = '';
+  contact.value = '';
   description.value = '';
   expectedBehavior.value = '';
   sinceAt.value = '';
@@ -535,6 +503,5 @@ const resetForm = () => {
   channel.value = 'FORM';
   pendingFiles.value = [];
   behalfUserId.value = null;
-  selectedWorkers.value = [];
 };
 </script>

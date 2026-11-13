@@ -1,3 +1,4 @@
+import { isITRole } from '~/utils/roles';
 import { deriveStatusLabel } from '~/utils/ticketSpec';
 import { or, and, like, eq, sql } from 'drizzle-orm';
 import { db } from '~/server/database/client';
@@ -16,7 +17,7 @@ export default defineEventHandler(async (event) => {
   const userRole = user?.role;
 
   if (!q) {
-    const whereClause = userRole === 'USER_NON_IT'
+    const whereClause = !isITRole(userRole, user?.dutyActive)
       ? eq(tickets.requestedBy, userId)
       : undefined;
 
@@ -49,7 +50,7 @@ export default defineEventHandler(async (event) => {
   }
 
   let baseWhere = or(...conditions);
-  if (userRole === 'USER_NON_IT') {
+  if (!isITRole(userRole, user?.dutyActive)) {
     baseWhere = or(
       and(baseWhere, eq(tickets.requestedBy, userId)),
       eq(tickets.requestedBy, userId),

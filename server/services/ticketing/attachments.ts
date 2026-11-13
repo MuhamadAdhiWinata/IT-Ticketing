@@ -1,16 +1,15 @@
 import { z } from 'zod';
 import { files } from '~/server/database/schema';
+import { PHASES } from '~/utils/ticketSpec';
 import { serializeAttachment } from '~/server/utils/serialize';
 import {
   type Actor, type DbExec, type UploadInput, VISIBILITIES,
   fail, getTicketRow, inTx, newId, nowTs, parse, requireIT, storeFile, withFileCleanup,
 } from './common';
 
-export const ATTACH_STAGES = ['ASSIGN', 'IN_PROGRESS', 'COMPLETION', 'DELEGATION'] as const;
-
 const Schema = z.object({
   ticketId: z.string().min(1),
-  stage: z.enum(ATTACH_STAGES).default('IN_PROGRESS'),
+  stage: z.enum(PHASES).default('Dikerjakan'),
   visibility: z.enum(VISIBILITIES).default('USER_VISIBLE'),
 });
 

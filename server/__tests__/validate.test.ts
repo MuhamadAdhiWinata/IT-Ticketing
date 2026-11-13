@@ -29,6 +29,7 @@ describe('Validation', () => {
       title: 'Test',
       description: 'Terjadi error',
       expected_behavior: 'Seharusnya normal',
+      contact: '08123456789',
       category: 'IT Programmer',
       project_kendala: 'Aplikasi A',
       priority: 'MEDIUM',

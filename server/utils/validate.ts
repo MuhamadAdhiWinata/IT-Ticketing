@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { UNITS, AFFECTED_SCOPES, WORK_STATUSES, CHANNELS, values } from '~/utils/ticketSpec';
+import { UNITS, AFFECTED_SCOPES, WORK_STATUSES, CHANNELS, PHASES, values } from '~/utils/ticketSpec';
 
 export const LoginSchema = z.object({
   email: z.string().email('Email tidak valid'),
@@ -10,6 +10,7 @@ const SINCE = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?$/;
 
 export const CreateTicketSchema = z.object({
   title: z.string().trim().min(1, 'Judul wajib diisi').max(120, 'Judul maksimal 120 karakter'),
+  contact: z.string().trim().min(1, 'Kontak wajib diisi').max(255, 'Kontak maksimal 255 karakter'),
   description: z.string().trim().min(1, 'Yang terjadi wajib diisi'),
   expected_behavior: z.string().trim().min(1, 'Yang seharusnya terjadi wajib diisi'),
   category: z.enum(['Support IT', 'IT Programmer']),
@@ -96,7 +97,7 @@ export const CustomWorklogSchema = z.object({
   finish_at: z.string().min(1),
   duration_minutes: z.number().min(0),
   description: z.string().min(1),
-  stageKey: z.string().min(1),
+  stageKey: z.enum(PHASES),
   worker_id: z.string().optional(),
   worker_name: z.string().optional(),
 });

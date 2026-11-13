@@ -17,7 +17,7 @@
           <UserCheck class="w-5 h-5" />
         </div>
         <div>
-          <p class="text-[10px] font-bold text-muted-foreground uppercase">Unassigned</p>
+          <p class="text-[10px] font-bold text-muted-foreground uppercase">Dikerjakan tanpa Pelaksana</p>
           <p class="text-xl font-bold text-foreground">{{ stats.unassigned }}</p>
         </div>
       </div>
@@ -37,7 +37,7 @@
           <Inbox class="w-5 h-5" />
         </div>
         <div>
-          <p class="text-[10px] font-bold text-muted-foreground uppercase">Incoming</p>
+          <p class="text-[10px] font-bold text-muted-foreground uppercase">Baru</p>
           <p class="text-xl font-bold text-foreground">{{ stats.incoming }}</p>
         </div>
       </div>
@@ -108,6 +108,8 @@
 
         <AppSelect v-model="statusFilter" :options="statusOptions" size="sm" />
         <AppSelect v-model="priorityFilter" :options="priorityOptions" size="sm" />
+        <AppSelect v-model="urgencyFilter" :options="urgencyOptions" size="sm" />
+        <AppSelect v-model="impactFilter" :options="impactOptions" size="sm" />
       </div>
 
       <!-- Technician Workload Summary -->
@@ -138,20 +140,17 @@
     <!-- Kanban -->
     <div
       v-if="viewMode === 'kanban'"
-      class="flex overflow-x-auto gap-4 pb-4 w-full custom-scrollbar xl:grid xl:grid-cols-6 xl:overflow-visible xl:pb-0 items-start"
+      class="flex overflow-x-auto gap-4 pb-4 w-full custom-scrollbar items-start snap-x snap-proximity overscroll-x-contain scroll-smooth [-webkit-overflow-scrolling:touch]"
     >
       <div
         v-for="col in kanbanColumns"
         :key="col.id"
         @dragover.prevent="draggedOverCol = col.id"
-        @dragleave="draggedOverCol = null"
+        @dragleave="draggedOverCol === col.id && (draggedOverCol = null)"
         @drop="handleDrop($event, col.id)"
         :class="[
-          'bg-muted/40 p-3 rounded-lg border transition-all space-y-3 min-h-[400px]',
-          'w-[85vw] sm:w-[260px] xl:w-full shrink-0',
-          draggedOverCol === col.id
-            ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
-            : 'border-border'
+          'p-3 rounded-lg border transition-colors space-y-3 min-h-[400px] w-[85vw] sm:w-[280px] shrink-0 snap-start',
+          draggedOverCol === col.id ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'bg-muted/40 border-border',
         ]"
       >
         <div class="flex items-center justify-between px-1">
@@ -173,18 +172,18 @@
             @dragend="handleDragEnd"
             @click="onSelectTicket(t)"
             :class="[
-              'bg-surface p-3 rounded-lg border border-border shadow-xs hover:shadow-sm transition-all cursor-grab active:cursor-grabbing space-y-2 group touch-pan-y',
-              draggedTicketId === t.id ? 'opacity-30 border-dashed border-primary' : ''
+              'bg-surface p-3 rounded-lg border border-border shadow-xs hover:shadow-sm transition-all cursor-grab active:cursor-grabbing space-y-2 group',
+              draggedTicketId === t.id ? 'opacity-30 border-dashed border-primary' : '',
             ]"
           >
             <div class="flex items-center justify-between text-[10px] font-semibold text-muted-foreground">
               <span class="font-mono text-primary font-bold">{{ t.id }}</span>
               <div class="flex items-center gap-1.5">
-                <div v-if="t.isSLABreached && t.status !== 'SELESAI'" class="flex items-center gap-0.5 text-red-600 animate-pulse" title="SLA Breached!">
+                <div v-if="isSlaBreached(t)" class="flex items-center gap-0.5 text-red-600 animate-pulse" title="SLA Breached!">
                   <AlertTriangle class="w-3 h-3" />
                   <span class="font-bold">SLA</span>
                 </div>
-                <UiStatusBadge :priority="t.priority" size="xs" />
+                <PriorityBadge :ticket="t" />
               </div>
             </div>
 
@@ -199,20 +198,13 @@
               </div>
               <div class="flex items-center gap-1 shrink-0" @click.stop>
                 <button
-                  v-if="!t.assignedTo && t.status !== 'SELESAI'"
+                  v-if="t.status_phase === 'Dikerjakan' && !t.assignedTo && !auth.canTriage"
                   @click="onTakeTicket(t)"
                   class="px-2 py-1 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground rounded text-[10px] font-bold transition-colors"
                 >
                   Ambil
                 </button>
-                <div class="min-w-[90px]">
-                  <AppSelect
-                    :modelValue="t.status"
-                    @update:modelValue="(val: string) => onMoveStatus(t.id, val as TicketStatus)"
-                    :options="cardStatusOptions"
-                    size="sm"
-                  />
-                </div>
+                <span v-else-if="t.assignedTo" class="truncate max-w-[110px] text-[10px] font-semibold text-foreground/80" :title="t.assignedToName">{{ t.assignedToName }}</span>
               </div>
             </div>
           </div>
@@ -247,7 +239,7 @@
               <td class="px-4 py-3">
                 <span class="font-mono font-bold text-primary">{{ t.id }}</span>
                 <div class="mt-0.5">
-                  <UiStatusBadge :priority="t.priority" size="xs" />
+                  <PriorityBadge :ticket="t" />
                 </div>
               </td>
               <td class="px-4 py-3">
@@ -296,11 +288,22 @@ import {
   Inbox,
   Clock
 } from 'lucide-vue-next';
-import type { AppUser, Ticket, TicketStatus } from '~/types';
+import type { AppUser, Ticket } from '~/types';
+import { useAuthStore } from '~/stores/auth';
+import { useAppStore } from '~/stores/app';
+import { apiFetch } from '~/services/api';
+import { useModal } from '~/composables/useModal';
+import { useToast } from '~/composables/useToast';
+import PriorityBadge from '~/components/common/PriorityBadge.vue';
 import TicketIncomingLog from '~/components/common/TicketIncomingLog.vue';
 import AppSelect from '~/components/common/AppSelect.vue';
 import { formatOrgLabel, formatRequesterIdentity } from '~/utils/identity';
-import { PHASES } from '~/utils/ticketSpec';
+import { STATUS_FILTERS, matchesStatusFilter } from '~/utils/ticketSpec';
+
+const isSlaBreached = (t: Ticket) =>
+  !!t.sla && (t.sla.response_status === 'BREACHED' || t.sla.resolution_status === 'BREACHED') && t.status !== 'SELESAI';
+
+const appStore = useAppStore();
 
 const props = withDefaults(defineProps<{
   tickets: Ticket[];
@@ -308,19 +311,20 @@ const props = withDefaults(defineProps<{
   currentUser: AppUser;
   onSelectTicket: (ticket: Ticket) => void;
   onTakeTicket: (ticket: Ticket) => void;
-  onMoveStatus: (ticketId: string, newStatus: TicketStatus) => void;
   activityCount?: number;
 }>(), {
   activityCount: 0,
 });
 
 // Stats
+const auth = useAuthStore();
+
 const stats = computed(() => {
   const all = props.tickets;
   return {
     total: all.length,
-    unassigned: all.filter(t => !t.assignedTo && t.status !== 'SELESAI').length,
-    slaBreached: all.filter(t => t.isSLABreached && t.status !== 'SELESAI').length,
+    unassigned: all.filter(t => !t.assignedTo && t.status_phase === 'Dikerjakan').length,
+    slaBreached: all.filter(isSlaBreached).length,
     incoming: all.filter(t => t.status_phase === 'Baru').length,
   };
 });
@@ -328,7 +332,7 @@ const stats = computed(() => {
 const technicianWorkload = computed(() => {
   const itWorkers = props.allUsers?.filter(u => isITRole(u.role) && u.role !== 'SYSTEM_ADMIN') || [];
   return itWorkers.map(w => {
-    const active = props.tickets.filter(t => t.assignedTo === w.id && t.status === 'PROCESS').length;
+    const active = props.tickets.filter(t => t.assignedTo === w.id && t.status_phase === 'Dikerjakan').length;
     return { ...w, activeCount: active };
   }).sort((a, b) => b.activeCount - a.activeCount);
 });
@@ -359,27 +363,24 @@ const showActivity = ref(false);
 
 const statusOptions = [
   { value: 'ALL', label: 'Semua Status' },
-  ...PHASES.map(p => ({ value: p, label: p })),
-  { value: 'Ditutup', label: 'Ditutup' },
-  { value: 'Dialihkan', label: 'Dialihkan' },
+  ...STATUS_FILTERS.map(p => ({ value: p, label: p })),
 ];
 
-const priorityOptions = [
+// Prioritas P1-P4, Urgensi, dan Dampak: opsi dan label dari master (Master Data > Prioritas & Triase).
+const urgencyFilter = ref('ALL');
+const impactFilter = ref('ALL');
+const priorityOptions = computed(() => [
   { value: 'ALL', label: 'Semua Prioritas' },
-  { value: 'LOW', label: 'Low' },
-  { value: 'MEDIUM', label: 'Medium' },
-  { value: 'HIGH', label: 'High' },
-  { value: 'CRITICAL', label: 'Critical' },
-];
-
-// Pemindahan lewat alur status DB; fase lain (Diakui, Ditriase, Menunggu Pemohon) diatur dari panel triase.
-const cardStatusOptions = [
-  { value: 'DRAFT', label: 'Baru' },
-  { value: 'PROCESS', label: 'Dikerjakan' },
-  { value: 'SELESAI', label: 'Selesai' },
-  { value: 'DELEGASI', label: 'Delegasi' },
-];
-const PHASE_TO_STATUS: Record<string, TicketStatus> = { Baru: 'DRAFT', Dikerjakan: 'PROCESS', Selesai: 'SELESAI' };
+  ...(appStore.triageMaster?.priorities ?? []).map(p => ({ value: p.id, label: `${p.id} · ${p.label}` })),
+]);
+const urgencyOptions = computed(() => [
+  { value: 'ALL', label: 'Semua Urgensi' },
+  ...(appStore.triageMaster?.urgencies ?? []).map(u => ({ value: u.id, label: u.label })),
+]);
+const impactOptions = computed(() => [
+  { value: 'ALL', label: 'Semua Dampak' },
+  ...(appStore.triageMaster?.impacts ?? []).map(i => ({ value: i.id, label: i.label })),
+]);
 
 const viewModes: Array<{ id: 'kanban' | 'table'; label: string; icon: any }> = [
   { id: 'kanban', label: 'Kanban', icon: Columns },
@@ -404,38 +405,43 @@ const filteredTickets = computed(() => {
       || (t.requested_by_company || '').toLowerCase().includes(q)
       || (t.requested_by_division || '').toLowerCase().includes(q)
       || (t.requestedByDept || '').toLowerCase().includes(q);
-    const matchStatus = statusFilter.value === 'ALL' || t.status_phase === statusFilter.value || t.status_label === statusFilter.value;
-    const matchPriority = priorityFilter.value === 'ALL' || t.priority === priorityFilter.value;
-    return matchSearch && matchStatus && matchPriority;
+    const matchStatus = matchesStatusFilter(t, statusFilter.value);
+    const matchPriority = priorityFilter.value === 'ALL' || t.p_level === priorityFilter.value;
+    const matchUrgency = urgencyFilter.value === 'ALL' || t.urgency === urgencyFilter.value;
+    const matchImpact = impactFilter.value === 'ALL' || t.impact === impactFilter.value;
+    return matchSearch && matchStatus && matchPriority && matchUrgency && matchImpact;
   });
 });
 
+const getTicketsByStatus = (phase: string) => filteredTickets.value.filter(t => t.status_phase === phase);
+
+// Drag & drop antar fase: bebas maju/mundur, server yang menjaga syarat dan mencatat log FASE_DIPINDAHKAN.
+const { showError } = useModal();
+const { toast } = useToast();
 const draggedTicketId = ref<string | null>(null);
 const draggedOverCol = ref<string | null>(null);
 
 const handleDragStart = (e: DragEvent, ticketId: string) => {
   draggedTicketId.value = ticketId;
-  if (e.dataTransfer) {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', ticketId);
-  }
+  e.dataTransfer?.setData('text/plain', ticketId);
+  if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
 };
-
 const handleDragEnd = () => {
   draggedTicketId.value = null;
   draggedOverCol.value = null;
 };
-
-const handleDrop = (e: DragEvent, phase: string) => {
+const handleDrop = async (e: DragEvent, phase: string) => {
   e.preventDefault();
   const ticketId = e.dataTransfer?.getData('text/plain') || draggedTicketId.value;
-  const newStatus = PHASE_TO_STATUS[phase];
-  if (ticketId && newStatus) {
-    props.onMoveStatus(ticketId, newStatus);
+  handleDragEnd();
+  const ticket = props.tickets.find(t => t.id === ticketId);
+  if (!ticket || ticket.status_phase === phase) return;
+  try {
+    await apiFetch(`/api/tickets/${ticket.id}/move-phase`, { method: 'POST', body: { to: phase } });
+    await appStore.refreshTicket(ticket.id);
+    toast(`Tiket dipindahkan ke ${phase}.`, 'success');
+  } catch (err: any) {
+    showError('Gagal Memindahkan Tiket', err?.data?.statusMessage || err?.message || 'Terjadi kesalahan.');
   }
-  draggedTicketId.value = null;
-  draggedOverCol.value = null;
 };
-
-const getTicketsByStatus = (phase: string) => filteredTickets.value.filter(t => t.status_phase === phase);
 </script>

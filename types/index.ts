@@ -1,10 +1,12 @@
-export type UserRole = 'USER_NON_IT' | 'IT_WORKER' | 'SYSTEM_ADMIN' | 'PM' | 'DUTY_ENGINEER';
+// ID peran dinamis (tabel roles). Bawaan: USER_NON_IT, IT_WORKER, PM, DUTY_ENGINEER, SYSTEM_ADMIN.
+export type UserRole = string;
 
 export type TicketStatus = 'DRAFT' | 'PROCESS' | 'DELEGASI' | 'SELESAI';
 
 export type DelegationType = 'DELEGASI_VENDOR' | 'DELEGASI_TEKNISI';
 
-export type AttachmentStage = 'REQUEST' | 'IN_PROGRESS' | 'DELEGATION' | 'COMPLETION';
+// Tahap log/berkas = nama fase tiket (lihat PHASES di utils/ticketSpec.ts).
+export type AttachmentStage = 'Baru' | 'Diakui' | 'Ditriase' | 'Dikerjakan' | 'Menunggu Pemohon' | 'Selesai';
 
 export type AttachmentVisibility = 'USER_VISIBLE' | 'INTERNAL_ONLY';
 
@@ -70,6 +72,7 @@ export interface Worklog {
   finish_at: string;
   duration_minutes: number;
   description: string;
+  on_duty?: boolean;
   created_at: string;
   files?: FileRecord[];
 }
@@ -96,6 +99,7 @@ export interface AuditLog {
   performed_by_name: string;
   detail?: string;
   notes?: string;
+  on_duty?: boolean;
 }
 
 export interface TicketComment {
@@ -157,6 +161,7 @@ export interface Ticket {
   odoo_task_url?: string | null;
   tech_debt_url?: string | null;
   acknowledged_at?: string | null;
+  triaged_at?: string | null;
   accepted_at?: string | null;
 
   unit?: string | null;
@@ -168,6 +173,9 @@ export interface Ticket {
   is_event?: boolean;
   evidence_steps?: string | null;
   channel?: string;
+  contact?: string | null;
+  data_complete?: 'YA' | 'TIDAK' | null;
+  first_completed_at?: string | null;
   ticket_type?: string | null;
   impact?: string | null;
   urgency?: string | null;
@@ -180,6 +188,12 @@ export interface Ticket {
   duty_confirmed_at?: string | null;
   waiting_started_at?: string | null;
   waiting_ended_at?: string | null;
+  submitted_by?: string | null;
+  review_started_at?: string | null;
+  review_started_by?: string | null;
+  verified_at?: string | null;
+  verified_by?: string | null;
+  review_skipped?: boolean;
   blocked_by?: string | null;
   closed_at?: string | null;
   status_label?: string;
@@ -189,14 +203,39 @@ export interface Ticket {
   attachments: Attachment[];
   worklogs: Worklog[];
   audit_logs: AuditLog[];
-  slaDeadline?: string | null;
-  isSLABreached?: boolean;
+  sla?: TicketSla | null;
 
   created_at: string;
   ticket_number?: string;
   issued_at?: string | null;
   process_started_at?: string | null;
   completed_at?: string | null;
+}
+
+export type SlaStatus = 'MET' | 'BREACHED' | 'AT_RISK' | 'ON_TRACK';
+export interface TicketSla {
+  key: string;
+  coverage: 'ALWAYS' | 'BUSINESS';
+  target_response_hours: number;
+  target_resolution_hours: number;
+  elapsed_response_hours: number;
+  elapsed_resolution_hours: number;
+  response_done: boolean;
+  resolution_done: boolean;
+  response_status: SlaStatus;
+  resolution_status: SlaStatus;
+}
+export interface SlaMaster {
+  targets: { priority_id: string; response_hours: number; resolution_hours: number; coverage: 'ALWAYS' | 'BUSINESS' }[];
+  settings: { work_hours_per_day: number; work_day_start: number; at_risk_threshold: number };
+}
+
+export interface TriageMasterItem { id: string; label: string; is_active: boolean }
+export interface TriageMaster {
+  impacts: TriageMasterItem[];
+  urgencies: TriageMasterItem[];
+  priorities: { id: string; label: string; description: string | null }[];
+  matrix: Record<string, Record<string, string>>;
 }
 
 export interface CategoryItem {

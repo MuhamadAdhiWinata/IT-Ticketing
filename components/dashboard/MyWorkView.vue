@@ -18,11 +18,11 @@
       <!-- KPI -->
       <div class="flex items-center gap-2">
         <div class="px-3 py-2 bg-primary/5 border border-primary/15 rounded-lg text-center">
-          <span class="text-[10px] text-primary font-bold block">Proses</span>
+          <span class="text-[10px] text-primary font-bold block">Dikerjakan</span>
           <span class="text-base font-bold text-primary font-mono">{{ activeCount }}</span>
         </div>
         <div class="px-3 py-2 bg-warning/5 border border-warning/15 rounded-lg text-center">
-          <span class="text-[10px] text-warning font-bold block">Delegasi</span>
+          <span class="text-[10px] text-warning font-bold block">Menunggu Pemohon</span>
           <span class="text-base font-bold text-warning font-mono">{{ delegatedCount }}</span>
         </div>
         <div class="px-3 py-2 bg-success/5 border border-success/15 rounded-lg text-center">
@@ -30,7 +30,7 @@
           <span class="text-base font-bold text-success font-mono">{{ completedCount }}</span>
         </div>
         <div class="px-3 py-2 bg-muted border border-border rounded-lg text-center">
-          <span class="text-[10px] text-muted-foreground font-bold block">Draft</span>
+          <span class="text-[10px] text-muted-foreground font-bold block">Baru - Ditriase</span>
           <span class="text-base font-bold text-muted-foreground font-mono">{{ draftCount }}</span>
         </div>
       </div>
@@ -40,7 +40,7 @@
     <div class="bg-surface rounded-lg border border-border p-3 shadow-xs">
       <div class="flex overflow-x-auto no-scrollbar items-center gap-1.5">
         <button
-          v-for="st in ['ALL', 'PROCESS', 'SELESAI', 'DELEGASI', 'DRAFT']"
+          v-for="st in ['ALL', ...STATUS_FILTERS]"
           :key="st"
           type="button"
           @click="statusFilter = st"
@@ -51,7 +51,7 @@
               : 'bg-muted text-muted-foreground hover:bg-border/50'
           ]"
         >
-          {{ st === 'ALL' ? 'Semua Status' : st === 'SELESAI' ? 'Selesai' : st }}
+          {{ st === 'ALL' ? 'Semua Status' : st }}
         </button>
       </div>
     </div>
@@ -68,7 +68,7 @@
           <span class="font-mono font-bold text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/15">
             {{ t.id }}
           </span>
-          <UiStatusBadge :priority="t.priority" size="xs" />
+          <PriorityBadge :ticket="t" />
         </div>
 
         <h3 class="text-sm font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">
@@ -90,10 +90,12 @@
 </template>
 
 <script setup lang="ts">
+import PriorityBadge from '~/components/common/PriorityBadge.vue';
 import { ref, computed } from 'vue';
 import { Briefcase } from 'lucide-vue-next';
 import type { AppUser, Ticket } from '~/types';
 import { formatOrgLabel } from '~/utils/identity';
+import { STATUS_FILTERS, matchesStatusFilter } from '~/utils/ticketSpec';
 
 function orgLabel(t: Ticket) {
   return formatOrgLabel({
@@ -122,12 +124,12 @@ const myAssignedTickets = computed(() => {
 });
 
 const filteredTickets = computed(() => {
-  if (statusFilter.value === 'ALL') return myAssignedTickets.value;
-  return myAssignedTickets.value.filter(t => t.status === statusFilter.value);
+  return myAssignedTickets.value.filter(t => matchesStatusFilter(t, statusFilter.value));
 });
 
-const activeCount = computed(() => myAssignedTickets.value.filter(t => t.status === 'PROCESS').length);
-const delegatedCount = computed(() => myAssignedTickets.value.filter(t => t.status === 'DELEGASI').length);
-const completedCount = computed(() => myAssignedTickets.value.filter(t => t.status === 'SELESAI').length);
-const draftCount = computed(() => myAssignedTickets.value.filter(t => t.status === 'DRAFT').length);
+const countPhase = (phase: string) => myAssignedTickets.value.filter(t => t.status_phase === phase).length;
+const activeCount = computed(() => countPhase('Dikerjakan'));
+const delegatedCount = computed(() => countPhase('Menunggu Pemohon'));
+const completedCount = computed(() => countPhase('Selesai'));
+const draftCount = computed(() => ['Baru', 'Diakui', 'Ditriase'].reduce((n, p) => n + countPhase(p), 0));
 </script>

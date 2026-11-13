@@ -1,4 +1,4 @@
-import { IT_ROLES } from '~/utils/roles';
+import { itRoles } from '~/utils/roles';
 import { and, desc, eq, inArray, like, or } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { tickets, ticketMembers, worklogs, users, vendors, files, auditLogs } from '~/server/database/schema';
@@ -122,7 +122,7 @@ export async function getHistory(actor: Actor, ticketId: string) {
 export async function listWorkers(actor: Actor) {
   requireIT(actor);
   const rows = await db.select({ id: users.id, name: users.name, role: users.role, department: users.department })
-    .from(users).where(inArray(users.role, IT_ROLES));
+    .from(users).where(inArray(users.role, itRoles()));
   return { workers: rows };
 }
 

@@ -39,7 +39,8 @@ export const WORKFLOW_CONTROLLED_FIELDS = [
   'delegationType', 'vendorId', 'vendorName', 'technicianId', 'technicianName',
   'referenceNo', 'delegationNotes', 'delegatedAt', 'returnedAt', 'returnedNotes',
   'issuedAt', 'processStartedAt', 'resolutionSummary', 'solutionType', 'odooTaskUrl', 'techDebtUrl',
-  'reopenCount', 'acknowledgedAt', 'acceptedAt', 'referencedTicketId',
+  'reopenCount', 'acknowledgedAt', 'triagedAt', 'acceptedAt', 'referencedTicketId',
   'ticketType', 'impact', 'urgency', 'changeReason', 'catalogItem', 'dataApprovalNote', 'transferTarget',
   'dutyConfirmedBy', 'dutyConfirmedAt', 'waitingStartedAt', 'waitingEndedAt', 'blockedBy', 'closedAt',
+  'submittedBy', 'reviewStartedAt', 'reviewStartedBy', 'verifiedAt', 'verifiedBy', 'reviewSkipped',
 ];

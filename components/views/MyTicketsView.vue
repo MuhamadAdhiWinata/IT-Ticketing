@@ -19,7 +19,7 @@
           <span class="text-base font-bold text-primary font-mono">{{ store.myTickets.length }}</span>
         </div>
         <div class="px-3 py-2 bg-success/5 border border-success/15 rounded-lg text-center">
-          <span class="text-[10px] text-success font-bold block">Selesai</span>
+          <span class="text-[10px] text-success font-bold block">Selesai / Ditutup</span>
           <span class="text-base font-bold text-success font-mono">{{ completedCount }}</span>
         </div>
         <button
@@ -37,7 +37,7 @@
     <div class="bg-surface rounded-lg border border-border p-3 shadow-xs">
       <div class="flex overflow-x-auto no-scrollbar items-center gap-1.5">
         <button
-          v-for="st in ['ALL', 'DRAFT', 'PROCESS', 'DELEGASI', 'SELESAI']"
+          v-for="st in ['ALL', ...STATUS_FILTERS]"
           :key="st"
           type="button"
           @click="statusFilter = st"
@@ -48,7 +48,7 @@
               : 'bg-muted text-muted-foreground hover:bg-border/50'
           ]"
         >
-          {{ st === 'ALL' ? 'Semua Status' : st === 'SELESAI' ? 'Selesai' : st }}
+          {{ st === 'ALL' ? 'Semua Status' : st }}
         </button>
       </div>
     </div>
@@ -86,7 +86,7 @@
                 <template v-if="t.location"> · {{ t.location }}</template>
               </div>
             </td>
-            <td class="p-3"><UiStatusBadge :priority="t.priority" size="xs" /></td>
+            <td class="p-3"><PriorityBadge :ticket="t" /></td>
             <td class="p-3"><UiStatusBadge :status="t.status" :label="t.status_label" size="xs" /></td>
             <td class="p-3 text-muted-foreground whitespace-nowrap">{{ formatDate(t.created_at) }}</td>
             <td class="p-3 text-right">
@@ -113,10 +113,12 @@
 </template>
 
 <script setup lang="ts">
+import PriorityBadge from '~/components/common/PriorityBadge.vue';
 import { ref, computed, watch, onMounted } from 'vue';
 import { ClipboardList, Plus } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
 import type { AppUser, Ticket } from '~/types';
+import { STATUS_FILTERS, matchesStatusFilter } from '~/utils/ticketSpec';
 
 const props = defineProps<{
   tickets: Ticket[];
@@ -128,12 +130,11 @@ const store = useAppStore();
 const statusFilter = ref('ALL');
 
 const completedCount = computed(() =>
-  store.myTickets.filter(t => t.status === 'SELESAI').length
+  store.myTickets.filter(t => t.status_phase === 'Selesai').length
 );
 
 const filteredTickets = computed(() => {
-  if (statusFilter.value === 'ALL') return props.tickets;
-  return props.tickets.filter(t => t.status === statusFilter.value);
+  return props.tickets.filter(t => matchesStatusFilter(t, statusFilter.value));
 });
 
 const formatDate = (iso: string) => {

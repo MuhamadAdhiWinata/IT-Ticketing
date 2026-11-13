@@ -3,13 +3,14 @@ import { db } from '~/server/database/client';
 import { users } from '~/server/database/schema';
 import { successResponse, errorResponse } from '~/server/utils/response';
 import { departmentFromDivision, shapeUserRow } from '~/server/utils/org';
-import { requireRole } from '~/server/utils/authorize';
+import { requireClaim } from '~/server/utils/authorize';
+import { CLAIM } from '~/utils/permissions';
 import { UNITS } from '~/utils/ticketSpec';
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
   const method = event.method;
-  await requireRole(event, 'SYSTEM_ADMIN');
+  await requireClaim(event, CLAIM.MANAGE_MASTER);
 
   if (!id) {
     throw createError({ statusCode: 400, statusMessage: 'User ID required' });
@@ -57,6 +58,9 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, statusMessage: 'Department wajib diisi (pilih Divisi atau isi Departemen manual)' });
     }
 
+    if (body.role && !(await db.query.roles.findFirst({ where: (r, { eq: e }) => e(r.id, body.role) }))) {
+      throw createError({ statusCode: 400, statusMessage: `Peran ${body.role} tidak ada` });
+    }
     await db.update(users).set({
       name: body.name ?? existing.name,
       email: body.email ?? existing.email,

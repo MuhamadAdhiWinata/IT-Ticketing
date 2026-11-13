@@ -76,10 +76,10 @@
     <section class="space-y-1.5">
       <h3 class="text-xs font-bold text-foreground">Aturan penting</h3>
       <ul class="list-disc pl-5 space-y-1 text-xs text-muted-foreground">
-        <li>Hanya <code class="font-mono">IT_WORKER</code> dan <code class="font-mono">SYSTEM_ADMIN</code> yang dapat menulis. Pencatat selalu akun pemilik token.</li>
+        <li>Hanya peran tim IT (klaim <code class="font-mono">it.access</code>) yang dapat menulis. Pencatat selalu akun pemilik token.</li>
         <li>Aktivitas baru selalu menjadi catatan baru dan tidak mengubah status tiket.</li>
         <li>Perubahan status mengikuti alur yang sama dengan aplikasi. Transisi tidak valid ditolak beserta daftar yang diizinkan.</li>
-        <li>Worker hanya dapat mengambil tiket untuk dirinya. Tiket <code class="font-mono">SELESAI</code> mengunci penugasan dan member.</li>
+        <li>Ambil tiket dan penugasan hanya di fase Dikerjakan; worker hanya mengambil untuk dirinya, PM menugaskan worker lain. Tiket <code class="font-mono">SELESAI</code> mengunci penugasan dan member.</li>
         <li>Klien AI diminta konfirmasi dulu sebelum mengubah status, membuka ulang, menugaskan, atau menambah member.</li>
         <li>Token yang bocor: nonaktifkan di tab Token, lalu buat yang baru.</li>
       </ul>

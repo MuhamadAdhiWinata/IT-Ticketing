@@ -18,12 +18,8 @@ const props = defineProps<{
 const label = computed(() => {
   if (props.label) return props.label;
   if (props.status) {
-    const labels: Record<TicketStatus, string> = {
-      DRAFT: 'Draft',
-      PROCESS: 'Proses',
-      DELEGASI: 'Delegasi',
-      SELESAI: 'Selesai',
-    };
+    // Tanpa label turunan server: fase terdekat dari status DB (fase pasti ada di status_label).
+    const labels: Record<TicketStatus, string> = { DRAFT: 'Baru', PROCESS: 'Dikerjakan', DELEGASI: 'Dikerjakan', SELESAI: 'Selesai' };
     return labels[props.status];
   }
   if (props.priority) {
@@ -44,16 +40,8 @@ const LABEL_VARIANTS: Record<string, 'default' | 'primary' | 'warning' | 'succes
 };
 
 const badgeVariant = computed(() => {
-  if (props.label) return LABEL_VARIANTS[props.label] ?? 'default';
-  if (props.status) {
-    const variants: Record<TicketStatus, 'default' | 'primary' | 'warning' | 'success' | 'danger'> = {
-      DRAFT: 'default',
-      PROCESS: 'primary',
-      DELEGASI: 'warning',
-      SELESAI: 'success',
-    };
-    return variants[props.status];
-  }
+  if (label.value && LABEL_VARIANTS[label.value]) return LABEL_VARIANTS[label.value];
+  if (props.status) return 'default';
   if (props.priority) {
     const variants: Record<TicketPriority, 'default' | 'primary' | 'warning' | 'danger'> = {
       LOW: 'default',

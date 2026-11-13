@@ -2,6 +2,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { mcpTokens, users } from '~/server/database/schema';
+import { getDutyState } from '~/server/services/duty';
 import { type Actor, fail, newId, nowTs } from './common';
 
 export const TOKEN_PREFIX = 'itk_';
@@ -75,5 +76,6 @@ export async function authenticateMcp(bearer: string | undefined): Promise<Actor
   const row = rows[0];
   if (!row) return null;
   await db.update(mcpTokens).set({ lastUsedAt: nowTs() }).where(eq(mcpTokens.id, row.tokenId));
-  return { id: row.user.id, name: row.user.name, role: row.user.role };
+  const duty = await getDutyState(row.user.id);
+  return { id: row.user.id, name: row.user.name, role: row.user.role, dutyActive: duty.active };
 }

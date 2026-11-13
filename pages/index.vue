@@ -32,7 +32,6 @@
           :currentUser="store.currentUser"
           :onSelectTicket="(ticket) => store.openTicketDetail(ticket.id)"
           :onTakeTicket="(ticket) => store.updateTicketAssignee(ticket.id, store.currentUser!.id)"
-          :onMoveStatus="store.updateTicketStatus"
         />
 
         <MyWorkView
@@ -56,7 +55,11 @@
 
         <SettingsView v-else-if="store.activeTab === 'settings'" />
 
-        <McpTokensView v-else-if="store.activeTab === 'mcp-token' && store.currentUser?.role !== 'USER_NON_IT'" />
+        <AccessControlView v-else-if="store.activeTab === 'access' && authStore.isSystemAdmin" />
+
+        <DutyScheduleView v-else-if="store.activeTab === 'duty-schedule'" />
+
+        <McpTokensView v-else-if="store.activeTab === 'mcp-token' && isITRole(store.currentUser?.role)" />
       </template>
     </template>
   </div>
@@ -65,7 +68,10 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue';
 import { useAppStore } from '~/stores/app';
+import { isITRole } from '~/utils/roles';
 import { useAuthStore } from '~/stores/auth';
+import { useDutyStore } from '~/stores/duty';
+import DutyScheduleView from '~/components/views/DutyScheduleView.vue';
 import TrackingView from '~/components/views/TrackingView.vue';
 import MyTicketsView from '~/components/views/MyTicketsView.vue';
 import ITDashboard from '~/components/dashboard/ITDashboard.vue';
@@ -77,6 +83,7 @@ import CreateTicketView from '~/components/views/CreateTicketView.vue';
 import TicketDetailView from '~/components/views/TicketDetailView.vue';
 import SettingsView from '~/components/views/SettingsView.vue';
 import McpTokensView from '~/components/views/McpTokensView.vue';
+import AccessControlView from '~/components/views/AccessControlView.vue';
 
 const store = useAppStore();
 const authStore = useAuthStore();
@@ -92,6 +99,7 @@ onMounted(async () => {
   }
 
   await store.initApp();
+  useDutyStore().listen();
 
   // Deep-link: if URL has ticketId, fetch ticket detail from API
   if (store.activeView === 'ticket-detail' && store.selectedTicketId && !store.selectedTicket) {

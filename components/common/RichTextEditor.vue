@@ -67,10 +67,35 @@
         <svg v-if="uploadingImage" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
         <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
       </button>
+      <button
+        v-if="files"
+        type="button"
+        @click="fileAttach?.click()"
+        class="p-1.5 rounded hover:bg-muted-foreground/10 transition-colors"
+        title="Lampirkan Berkas"
+      >
+        <Paperclip class="w-4 h-4" />
+      </button>
     </div>
     
     <!-- Editor Content -->
     <EditorContent :editor="editor" />
+
+    <!-- Lampiran terpilih (aktif bila pemanggil memakai v-model:files) -->
+    <div v-if="files?.length" class="border-t border-border bg-muted px-3 py-2 flex flex-wrap items-center gap-1.5">
+      <span
+        v-for="(pf, i) in files"
+        :key="i"
+        class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-surface border border-border text-[11px] text-foreground"
+      >
+        <Paperclip class="w-3 h-3 shrink-0 text-muted-foreground" />
+        {{ pf.file.name }}
+        <span class="text-muted-foreground">({{ (pf.file.size / 1024).toFixed(1) }} KB)</span>
+        <button type="button" class="text-muted-foreground hover:text-foreground" title="Hapus" @click="emit('update:files', files.filter((_, j) => j !== i))">
+          <X class="w-3 h-3" />
+        </button>
+      </span>
+    </div>
     
     <!-- Hidden file input -->
     <input
@@ -80,6 +105,7 @@
       class="hidden"
       @change="handleImageUpload"
     />
+    <input ref="fileAttach" type="file" multiple class="hidden" @change="addFiles" />
   </div>
 </template>
 
@@ -90,12 +116,15 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import { Paperclip, X } from 'lucide-vue-next';
+import type { PendingAttachment } from '~/types';
 
 const props = withDefaults(defineProps<{
   modelValue: string;
   placeholder?: string;
   readonly?: boolean;
   upload?: (file: File) => Promise<string>;
+  files?: PendingAttachment[];
 }>(), {
   placeholder: 'Tulis sesuatu...',
   readonly: false,
@@ -103,9 +132,18 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: string];
+  'update:files': [value: PendingAttachment[]];
 }>();
 
+function addFiles(e: Event) {
+  const input = e.target as HTMLInputElement;
+  const added = Array.from(input.files ?? []).map(file => ({ file }));
+  input.value = '';
+  emit('update:files', [...(props.files ?? []), ...added]);
+}
+
 const fileInput = ref<HTMLInputElement | null>(null);
+const fileAttach = ref<HTMLInputElement | null>(null);
 const uploadingImage = ref(false);
 
 const editor = useEditor({

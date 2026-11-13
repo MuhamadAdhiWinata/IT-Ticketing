@@ -61,7 +61,10 @@
             role="option"
             :aria-selected="modelValue === option.value"
           >
-            <span class="truncate">{{ option.label }}</span>
+            <span class="min-w-0">
+              <span class="block truncate">{{ option.label }}</span>
+              <span v-if="option.detail" class="block text-[10px] font-normal text-muted-foreground">{{ option.detail }}</span>
+            </span>
             <Check v-if="modelValue === option.value" class="w-3.5 h-3.5 text-primary shrink-0 ml-1" />
           </button>
         </div>
@@ -78,7 +81,7 @@ import { ChevronDown, Check } from 'lucide-vue-next';
 const props = withDefaults(
   defineProps<{
     modelValue: string;
-    options?: (string | { value: string; label: string })[];
+    options?: (string | { value: string; label: string; detail?: string })[];
     label?: string;
     placeholder?: string;
     size?: 'sm' | 'md';
@@ -103,7 +106,7 @@ const isOpen = ref(false);
 const dropdownRef = ref<HTMLElement | null>(null);
 const searchInputRef = ref<HTMLInputElement | null>(null);
 const searchQuery = ref('');
-const remoteOptions = ref<{ value: string; label: string }[]>([]);
+const remoteOptions = ref<{ value: string; label: string; detail?: string }[]>([]);
 const loading = ref(false);
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 

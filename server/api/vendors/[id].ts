@@ -1,7 +1,8 @@
 import { db } from '~/server/database/client';
 import { vendors } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
-import { requireRole } from '~/server/utils/authorize';
+import { requireClaim } from '~/server/utils/authorize';
+import { CLAIM } from '~/utils/permissions';
 import { eq } from 'drizzle-orm';
 
 export default defineEventHandler(async (event) => {
@@ -23,7 +24,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (method === 'PUT') {
-    await requireRole(event, 'SYSTEM_ADMIN');
+    await requireClaim(event, CLAIM.MANAGE_MASTER);
     const body = await readBody(event);
 
     await db.update(vendors).set({
@@ -41,7 +42,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (method === 'DELETE') {
-    await requireRole(event, 'SYSTEM_ADMIN');
+    await requireClaim(event, CLAIM.MANAGE_MASTER);
     await db.delete(vendors).where(eq(vendors.id, id)).execute();
     return successResponse({ id, deleted: true });
   }

@@ -206,7 +206,7 @@ describe('Serializers', () => {
   describe('serializeWorklog', () => {
     it('maps all fields correctly', () => {
       const result = serializeWorklog({
-        id: 'WL-001', ticketId: 'TCK-001', stageKey: 'IN_PROGRESS',
+        id: 'WL-001', ticketId: 'TCK-001', stageKey: 'Dikerjakan',
         workerId: 'IT-001', workerName: 'Budi', date: '2026-09-21',
         startAt: '09:00', finishAt: '10:00', durationMinutes: 60,
         description: 'Working', createdAt: '2026-09-21 10:00:00',

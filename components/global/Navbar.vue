@@ -17,6 +17,15 @@
 
     <!-- Right -->
     <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+      <span
+        v-if="duty.isActive"
+        class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-success/10 text-success border border-success/30 text-[10px] font-bold uppercase whitespace-nowrap"
+        :title="`Shift Duty Engineer berakhir ${fmtLocal(duty.endAt)}`"
+      >
+        <span class="w-1.5 h-1.5 rounded-full bg-success animate-pulse" aria-hidden="true"></span>
+        ON DUTY<span class="hidden sm:inline normal-case font-semibold"> s/d {{ endTime }}</span>
+      </span>
+
       <RefreshButton mode="all" />
 
       <UiButton size="sm" class="min-h-11 min-w-11 md:min-h-0 md:min-w-0" @click="store.openCreateTicket()">
@@ -93,10 +102,17 @@ import { useAppStore } from '~/stores/app';
 import { useAuthStore } from '~/stores/auth';
 import { useConfirmModal } from '~/composables/useConfirmModal';
 import { formatOrgLabel } from '~/utils/identity';
+import { useDutyStore } from '~/stores/duty';
+import { fmtLocal } from '~/utils/utcTime';
 
 const store = useAppStore();
 const authStore = useAuthStore();
 const { confirm } = useConfirmModal();
+const duty = useDutyStore();
+
+const endTime = computed(() => duty.endAt
+  ? new Date(duty.endAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+  : '');
 
 const isProfileOpen = ref(false);
 const profileDropdownRef = ref<HTMLElement | null>(null);

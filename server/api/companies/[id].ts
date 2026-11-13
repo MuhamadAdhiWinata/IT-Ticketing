@@ -2,7 +2,8 @@ import { eq, inArray } from 'drizzle-orm';
 import { db } from '~/server/database/client';
 import { companies, divisions, users } from '~/server/database/schema';
 import { successResponse } from '~/server/utils/response';
-import { requireRole } from '~/server/utils/authorize';
+import { requireClaim } from '~/server/utils/authorize';
+import { CLAIM } from '~/utils/permissions';
 
 function serializeCompany(c: { id: string; name: string }) {
   return { id: c.id, name: c.name };
@@ -11,7 +12,7 @@ function serializeCompany(c: { id: string; name: string }) {
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
   const method = event.method;
-  await requireRole(event, 'SYSTEM_ADMIN');
+  await requireClaim(event, CLAIM.MANAGE_MASTER);
 
   if (!id) {
     throw createError({ statusCode: 400, statusMessage: 'Company ID required' });

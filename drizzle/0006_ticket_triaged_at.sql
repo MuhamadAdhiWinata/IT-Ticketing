@@ -1,0 +1,1 @@
+ALTER TABLE `tickets` ADD `triaged_at` timestamp;

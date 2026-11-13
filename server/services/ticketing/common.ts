@@ -5,7 +5,7 @@ import { db } from '~/server/database/client';
 import { tickets, ticketMembers } from '~/server/database/schema';
 import { fileStorage } from '~/server/services/storage';
 import { sanitizeFilename } from '~/server/utils/upload';
-import { IT_ROLES } from '~/utils/roles';
+import { isITRole, itRoles } from '~/utils/roles';
 
 export type DbExec = typeof db;
 
@@ -13,13 +13,15 @@ export interface Actor {
   id: string;
   name: string;
   role: string;
+  // Pemilik jadwal duty aktif: klaim DUTY_ENGINEER digabung, dan log yang ditulisnya ditandai on_duty.
+  dutyActive?: boolean;
 }
 
-export { IT_ROLES };
-export const isIT = (a: Actor) => IT_ROLES.includes(a.role);
+export { isITRole, itRoles };
+export const isIT = (a: Actor) => isITRole(a.role, a.dutyActive);
 
-export function toActor(user: { id: string; name: string; role: string }): Actor {
-  return { id: user.id, name: user.name, role: user.role };
+export function toActor(user: { id: string; name: string; role: string; dutyActive?: boolean }): Actor {
+  return { id: user.id, name: user.name, role: user.role, dutyActive: !!user.dutyActive };
 }
 
 export function fail(status: number, message: string, data?: Record<string, unknown>): never {
@@ -27,7 +29,7 @@ export function fail(status: number, message: string, data?: Record<string, unkn
 }
 
 export function requireIT(actor: Actor) {
-  if (!isIT(actor)) fail(403, 'Forbidden: hanya IT_WORKER atau SYSTEM_ADMIN');
+  if (!isIT(actor)) fail(403, 'Forbidden: butuh klaim it.access (tim IT)');
 }
 
 export function parse<S extends z.ZodType>(schema: S, input: unknown): z.infer<S> {

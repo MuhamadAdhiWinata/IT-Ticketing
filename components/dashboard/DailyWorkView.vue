@@ -71,8 +71,8 @@
           </div>
         </div>
 
-        <!-- Worker Filter (hanya untuk SYSTEM_ADMIN) -->
-        <div v-if="store.currentUser?.role === 'SYSTEM_ADMIN'" class="w-full sm:w-auto flex items-center justify-end sm:justify-start gap-2 pt-3 sm:pt-0 border-t sm:border-t-0 border-border">
+        <!-- Worker Filter (klaim worklog.view_all) -->
+        <div v-if="canViewAll" class="w-full sm:w-auto flex items-center justify-end sm:justify-start gap-2 pt-3 sm:pt-0 border-t sm:border-t-0 border-border">
           <span class="text-xs font-bold text-muted-foreground shrink-0">Worker:</span>
           <div class="min-w-[180px]">
             <AppSelect
@@ -228,7 +228,7 @@
 
               <div class="flex items-center gap-2 text-[11px]">
                 <span v-if="item.wl.stageKey" class="font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border">
-                  {{ STAGE_LABELS[item.wl.stageKey] || item.wl.stageKey }}
+                  {{ item.wl.stageKey }}
                 </span>
                 <span class="font-bold px-2 py-0.5 rounded bg-info/10 text-info flex items-center gap-1">
                   <Clock class="w-3 h-3 text-info" />
@@ -367,6 +367,7 @@
                 Batal
               </button>
               <button
+                v-if="!isRichTextEmpty(newWlDesc)"
                 type="submit"
                 class="px-5 py-2 bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold rounded-lg shadow-xs cursor-pointer"
               >
@@ -382,6 +383,8 @@
 
 <script setup lang="ts">
 import { isITRole } from '~/utils/roles';
+import { PHASES, type Phase } from '~/utils/ticketSpec';
+import { CLAIM, roleHas } from '~/utils/permissions';
 import { ref, computed, watch } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { useToast } from '~/composables/useToast';
@@ -429,11 +432,12 @@ const presets = [
   { id: 'custom', label: 'Rentang Kustom' },
 ];
 
+const canViewAll = roleHas(store.currentUser?.role, CLAIM.VIEW_ALL_WORKLOGS);
 const activePreset = ref<'today' | '7days' | '30days' | 'month' | 'custom'>('7days');
 const startDate = ref(getDaysAgoIso(6));
 const endDate = ref(getTodayIso());
 const selectedWorkerId = ref(
-  store.currentUser?.role !== 'SYSTEM_ADMIN'
+  !canViewAll
     ? store.currentUser!.id
     : 'ALL'
 );
@@ -445,10 +449,10 @@ const newWlStart = ref('09:00');
 const newWlFinish = ref('09:45');
 const newWlDuration = ref(45);
 const newWlDesc = ref('');
-const newWlStage = ref('ASSIGN');
+const newWlStage = ref('Baru');
 
 const itWorkers = computed(() => {
-  return store.allUsers.filter(u => isITRole(u.role) && u.role !== 'SYSTEM_ADMIN');
+  return store.allUsers.filter(u => isITRole(u.role) && !roleHas(u.role, CLAIM.VIEW_ALL_WORKLOGS));
 });
 
 const applyPreset = (presetId: string) => {
@@ -592,19 +596,13 @@ const totalHoursInRange = computed(() => {
 // Semua tiket bisa dipilih; tahap yang tersedia mengikuti status (sama dengan detail tiket).
 const activeCandidateTickets = computed(() => store.tickets);
 
-const STAGE_LABELS: Record<string, string> = {
-  ASSIGN: 'Assigned (Penugasan)',
-  IN_PROGRESS: 'Process (Pengerjaan)',
-  COMPLETION: 'Selesai Internal',
-};
-const defaultStageFor = (status?: string) => status === 'PROCESS' ? 'IN_PROGRESS' : status === 'SELESAI' ? 'COMPLETION' : 'ASSIGN';
+// Tahap = fase tiket; boleh fase saat ini atau sebelumnya (sama dengan server).
 const selectedWlTicket = computed(() => store.tickets.find(t => t.id === newWlTicketId.value));
 const stageOptions = computed(() => {
-  const status = selectedWlTicket.value?.status;
-  const keys = ['ASSIGN', ...(status === 'PROCESS' ? ['IN_PROGRESS'] : []), ...(status === 'SELESAI' ? ['COMPLETION'] : [])];
-  return keys.map(k => ({ value: k, label: STAGE_LABELS[k]! }));
+  const cur = PHASES.indexOf((selectedWlTicket.value?.status_phase ?? 'Baru') as Phase);
+  return PHASES.slice(0, cur + 1).map(p => ({ value: p, label: p }));
 });
-watch(newWlTicketId, () => { newWlStage.value = defaultStageFor(selectedWlTicket.value?.status); });
+watch(newWlTicketId, () => { newWlStage.value = selectedWlTicket.value?.status_phase ?? 'Baru'; });
 
 const workerOptions = computed(() => {
   return [
@@ -654,7 +652,7 @@ const submitWorklog = async () => {
   toast('Log pekerjaan berhasil disimpan.', 'success');
   newWlDesc.value = '';
   newWlTicketId.value = '';
-  newWlStage.value = 'ASSIGN';
+  newWlStage.value = 'Baru';
   isAddModalOpen.value = false;
 };
 

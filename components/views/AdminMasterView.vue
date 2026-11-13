@@ -11,7 +11,7 @@
           Manajemen Master Data
         </h1>
         <p class="text-xs text-muted-foreground">
-          Kelola master kategori, Aplikasi/Kendala &amp; Modul layanan IT terpisah, prioritas tiket, serta akun pengguna sistem.
+          Kelola master kategori, Aplikasi/Kendala &amp; Modul layanan IT terpisah, Dampak, Urgensi, prioritas P1-P4 beserta matriksnya, serta akun pengguna sistem.
         </p>
       </div>
 
@@ -44,7 +44,16 @@
           :class="activeTab === 'PRIORITIES' ? 'bg-surface text-primary shadow-xs' : 'text-muted-foreground hover:text-foreground'"
         >
           <AlertCircle class="w-4 h-4" />
-          <span>Prioritas Tiket</span>
+          <span>Prioritas & Triase</span>
+        </button>
+
+        <button
+          @click="activeTab = 'SLA'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2"
+          :class="activeTab === 'SLA' ? 'bg-surface text-primary shadow-xs' : 'text-muted-foreground hover:text-foreground'"
+        >
+          <Clock class="w-4 h-4" />
+          <span>SLA</span>
         </button>
 
         <button
@@ -311,38 +320,9 @@
 
       </div>
 
-      <!-- TAB 2: PRIORITAS TIKET -->
-      <div v-if="activeTab === 'PRIORITIES'" class="p-5 sm:p-6 space-y-4">
-        <div>
-          <h3 class="text-sm font-bold text-foreground">Daftar Tingkat Prioritas Tiket</h3>
-          <p class="text-[11px] text-muted-foreground">Standar tingkat urgensi dan kesulitan penanganan tiket</p>
-        </div>
-
-        <div class="overflow-x-auto custom-scrollbar">
-          <table class="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr class="bg-muted border-b border-border text-[11px] font-bold uppercase text-muted-foreground">
-                <th class="p-3">Kode Prioritas</th>
-                <th class="p-3">Label</th>
-                <th class="p-3">Preview Badge</th>
-                <th class="p-3">Deskripsi / SLA Level</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-border">
-              <tr v-for="p in prioritiesList" :key="p.id" class="hover:bg-muted/70 transition-colors">
-                <td class="p-3 font-mono font-bold text-primary">{{ p.id }}</td>
-                <td class="p-3 font-bold text-foreground">{{ p.label }}</td>
-                <td class="p-3">
-                  <span :class="['px-2 py-0.5 rounded text-xs font-bold uppercase', getTicketPriorityBadgeClass(p.id)]">
-                    {{ getTicketPriorityLabel(p.id) }}
-                  </span>
-                </td>
-                <td class="p-3 text-muted-foreground">{{ p.desc }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <!-- TAB 2: PRIORITAS & TRIASE (Dampak, Urgensi, P1-P4, matriks) -->
+      <TriageMasterPanel v-if="activeTab === 'PRIORITIES'" />
+      <SlaMasterPanel v-if="activeTab === 'SLA'" />
 
       <!-- TAB: PERUSAHAAN & DIVISI -->
       <div v-if="activeTab === 'ORG'" class="p-5 sm:p-6 space-y-8">
@@ -566,7 +546,7 @@
                     :class="[
                       'px-2 py-0.5 rounded text-[10px] font-bold uppercase',
                       u.role === 'SYSTEM_ADMIN' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' :
-                      u.role !== 'USER_NON_IT' ? 'bg-primary/5 text-primary dark:bg-blue-950 dark:text-blue-300' :
+                      isITRole(u.role) ? 'bg-primary/5 text-primary dark:bg-blue-950 dark:text-blue-300' :
                       'bg-muted text-foreground'
                     ]"
                   >
@@ -847,19 +827,23 @@ import {
   Users,
   Plus,
   Building2,
+  Clock,
 } from 'lucide-vue-next';
 import type { CategoryItem, ProjectKendalaItem, SubmoduleItem, CompanyItem, DivisionItem, AppUser, UserRole } from '~/types';
-import { getTicketPriorityLabel, getTicketPriorityBadgeClass, getProjectKendalaLabel } from '~/utils/ticketHelpers';
+import { getProjectKendalaLabel } from '~/utils/ticketHelpers';
+import TriageMasterPanel from '~/components/features/Master/TriageMasterPanel.vue';
+import SlaMasterPanel from '~/components/features/Master/SlaMasterPanel.vue';
 import { nextId } from '~/utils/id';
 import { useToast } from '~/composables/useToast';
 import { UNITS } from '~/utils/ticketSpec';
+import { isITRole } from '~/utils/roles';
 import AppSelect from '~/components/common/AppSelect.vue';
 
 const store = useAppStore();
 const { confirm: doConfirm, state: confirmState } = useConfirmModal();
 const { toast } = useToast();
 
-const activeTab = ref<'CATEGORIES' | 'PRIORITIES' | 'ORG' | 'USERS'>('CATEGORIES');
+const activeTab = ref<'CATEGORIES' | 'PRIORITIES' | 'SLA' | 'ORG' | 'USERS'>('CATEGORIES');
 const selectedCategoryFilter = ref('ALL');
 const selectedProjectKendalaFilter = ref('ALL');
 const selectedDivisionCompanyFilter = ref('ALL');
@@ -886,13 +870,8 @@ const projectKendalaFormOptions = computed(() => store.projectKendala.map(s => (
   label: `[${s.id}] ${s.name}`
 })));
 
-const roleFormOptions = [
-  { value: 'USER_NON_IT', label: 'USER_NON_IT' },
-  { value: 'IT_WORKER', label: 'IT_WORKER' },
-  { value: 'SYSTEM_ADMIN', label: 'SYSTEM_ADMIN' },
-  { value: 'PM', label: 'PM' },
-  { value: 'DUTY_ENGINEER', label: 'DUTY_ENGINEER' },
-];
+// Peran dinamis dari matriks RBAC (DB); ditambah lewat menu Hak Akses.
+const roleFormOptions = computed(() => store.roleIds.map(r => ({ value: r, label: r })));
 const unitFormOptions = [{ value: '', label: '-- Tanpa Unit --' }, ...UNITS.map(u => ({ value: u, label: u }))];
 
 // ── Opsi dropdown Perusahaan & Divisi ──
@@ -905,13 +884,6 @@ const divisionCompanyFilterOptions = computed(() => [
   { value: 'ALL', label: `Semua Perusahaan (${store.divisions.length} record)` },
   ...store.companies.map(c => ({ value: c.id, label: `[${c.id}] ${c.name}` }))
 ]);
-const prioritiesList = [
-  { id: 'LOW', label: 'Low', desc: 'Kendala ringan / non-urgently, penanganan rutin.' },
-  { id: 'MEDIUM', label: 'Medium', desc: 'Kendala standar operasional harian.' },
-  { id: 'HIGH', label: 'High', desc: 'Kendala berdampak pada produktivitas tim/departemen.' },
-  { id: 'CRITICAL', label: 'Critical', desc: 'Sistem down total / insiden darurat kritikal.' },
-];
-
 // Modals: Category
 const isCategoryModalOpen = ref(false);
 const editingCatId = ref<string | null>(null);
