@@ -21,25 +21,6 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
             type="button"
-            @click="serviceView = 'SUPPORT_IT'"
-            :class="[
-              'p-4 rounded-lg border text-left transition-all flex items-center gap-3',
-              serviceView === 'SUPPORT_IT'
-                ? 'bg-primary/5 border-primary ring-2 ring-primary/20 text-primary font-bold'
-                : 'bg-surface border-border text-foreground'
-            ]"
-          >
-            <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0 text-lg">
-              🖥️
-            </div>
-            <div>
-              <p class="text-sm font-bold">Support IT</p>
-              <p class="text-xs text-muted-foreground">Hardware, Jaringan, Printer, Akun</p>
-            </div>
-          </button>
-
-          <button
-            type="button"
             @click="serviceView = 'IT_PROGRAMMER'"
             :class="[
               'p-4 rounded-lg border text-left transition-all flex items-center gap-3',
@@ -54,6 +35,25 @@
             <div>
               <p class="text-sm font-bold">IT Programmer</p>
               <p class="text-xs text-muted-foreground">Aplikasi, ERP SAP, Bug, Fitur Baru</p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            @click="serviceView = 'SUPPORT_IT'"
+            :class="[
+              'p-4 rounded-lg border text-left transition-all flex items-center gap-3',
+              serviceView === 'SUPPORT_IT'
+                ? 'bg-primary/5 border-primary ring-2 ring-primary/20 text-primary font-bold'
+                : 'bg-surface border-border text-foreground'
+            ]"
+          >
+            <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0 text-lg">
+              🖥️
+            </div>
+            <div>
+              <p class="text-sm font-bold">Support IT</p>
+              <p class="text-xs text-muted-foreground">Hardware, Jaringan, Printer, Akun</p>
             </div>
           </button>
         </div>
@@ -216,36 +216,17 @@
       </div>
 
       <!-- Bukti -->
-      <div ref="uploadSection" class="space-y-3">
-        <label class="block text-xs font-semibold text-foreground">
+      <div ref="uploadSection" class="space-y-1.5">
+        <label class="block text-[11px] font-bold text-foreground">
           Bukti <span class="text-red-500">*</span>
-          <span class="text-muted-foreground font-normal">(unggah berkas atau tulis langkah, minimal salah satu)</span>
+          <span class="text-muted-foreground font-normal">(tulis langkah, sisipkan gambar, atau lampirkan berkas; minimal salah satu)</span>
         </label>
-        <RichTextEditor v-model="evidenceSteps" placeholder="Langkah untuk mengulang kendala..." />
-        <div class="border-2 border-dashed border-border rounded-lg p-5 text-center bg-muted/30 relative">
-          <input 
-            type="file" 
-            multiple
-            @change="handleFileDrop"
-            class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-          />
-          <div v-if="pendingFiles.length > 0" class="space-y-2">
-            <div v-for="(pf, i) in pendingFiles" :key="i" class="flex items-center justify-center gap-2 text-sm text-primary font-semibold">
-              <Check class="w-4 h-4 shrink-0" />
-              <span>{{ pf.file.name }}</span>
-              <span class="text-xs text-muted-foreground font-normal">({{ (pf.file.size / 1024).toFixed(1) }} KB)</span>
-              <button @click.stop="removePendingFile(i)" class="text-red-400 hover:text-red-600 ml-1">
-                <X class="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <p class="text-[10px] text-muted-foreground">Klik area ini untuk menambah file lain</p>
-          </div>
-          <div v-else class="flex flex-col items-center justify-center space-y-1">
-            <Upload class="w-6 h-6 text-muted-foreground" />
-            <p class="text-xs text-muted-foreground font-medium">Klik atau seret file ke sini untuk unggah</p>
-            <p class="text-[10px] text-muted-foreground">Bisa pilih beberapa file sekaligus</p>
-          </div>
-        </div>
+        <RichTextEditor
+          v-model="evidenceSteps"
+          v-model:files="pendingFiles"
+          placeholder="Langkah untuk mengulang kendala..."
+          :upload="uploadInlineImage"
+        />
       </div>
 
       <!-- Submit Buttons -->
@@ -311,7 +292,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { ArrowLeft, Upload, Check, CheckCircle2, Eye, X, Shield, AlertTriangle } from 'lucide-vue-next';
+import { ArrowLeft, CheckCircle2, Eye, X, Shield, AlertTriangle } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';
 import { apiFetch } from '~/services/api';
 import { useModal } from '~/composables/useModal';
@@ -329,7 +310,7 @@ const { showError, showSuccess } = useModal();
 const isIntake = computed(() => useAuthStore().isIntake);
 const isOpen = computed(() => store.activeView === 'create-ticket');
 
-const serviceView = ref<'SUPPORT_IT' | 'IT_PROGRAMMER'>('SUPPORT_IT');
+const serviceView = ref<'SUPPORT_IT' | 'IT_PROGRAMMER'>('IT_PROGRAMMER');
 const ticketPrefix = computed(() => serviceView.value === 'SUPPORT_IT' ? 'TIKSP' : 'TIKPG');
 const ticketNumber = ref(Math.floor(100000 + Math.random() * 900000));
 const behalfUserId = ref<string | null>(null);
@@ -356,7 +337,7 @@ const displayPelaporOrg = computed(() => formatOrgLabel(pelaporIdentity.value ??
 const title = ref('');
 const projectKendala = ref('');
 const submodule = ref('');
-const location = ref('Lantai 2');
+const location = ref('');
 const description = ref('');
 const expectedBehavior = ref('');
 const unit = ref('');
@@ -408,20 +389,6 @@ watch(projectKendala, () => {
   submodule.value = '';
 });
 
-const handleFileDrop = (e: Event) => {
-  const target = e.target as HTMLInputElement;
-  if (target.files) {
-    for (const file of Array.from(target.files)) {
-      pendingFiles.value.push({ file });
-    }
-  }
-  target.value = '';
-};
-
-const removePendingFile = (index: number) => {
-  pendingFiles.value.splice(index, 1);
-};
-
 const handleSubmit = async () => {
   const missing = (msg: string) => { showError('Formulir Tidak Lengkap', msg); return true; };
   if (!pelaporIdentity.value?.unit && !unit.value) return void missing('Mohon pilih Unit.');
@@ -442,6 +409,21 @@ const handleSubmit = async () => {
     return;
   }
   await createTicket(false);
+};
+
+// Tiket belum ada: server menyimpan gambar ke folder draft dan hanya mengembalikan URL.
+const uploadInlineImage = async (file: File): Promise<string> => {
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const res = await apiFetch<{ success: boolean; data: { file_url: string }[] }>('/api/upload', { method: 'POST', body: fd });
+    const url = res.data?.[0]?.file_url;
+    if (!url) throw new Error('URL gambar tidak ditemukan');
+    return url;
+  } catch (e: any) {
+    showError('Gagal Upload Gambar', e?.data?.statusMessage || e?.message || 'Terjadi kesalahan.');
+    throw e;
+  }
 };
 
 const createTicket = async (shouldIssue: boolean = false) => {
@@ -470,7 +452,7 @@ const createTicket = async (shouldIssue: boolean = false) => {
       if (pendingFiles.value.length > 0) {
         const fd = new FormData();
         fd.append('ticketId', newTicket.id);
-        fd.append('stage', 'REQUEST');
+        fd.append('stage', 'Baru');
         fd.append('visibility', 'USER_VISIBLE');
         for (const pf of pendingFiles.value) {
           fd.append('files', pf.file);

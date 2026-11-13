@@ -16,7 +16,7 @@ const logs = async (id: string) => (await db.select().from(auditLogs).where(eq(a
 describe('pindah fase (kanban)', () => {
   it('maju dan mundur bebas, tiap perpindahan tercatat di audit log', async () => {
     const id = await seedTicket({ status: 'DRAFT' });
-    await db.update(tickets).set({ ticketType: 'PERTANYAAN' }).where(eq(tickets.id, id));
+    await db.update(tickets).set({ ticketType: 'PERTANYAAN', solutionType: 'PANDUAN', resolutionSummary: 'ok' }).where(eq(tickets.id, id));
     for (const to of ['Diakui', 'Ditriase', 'Dikerjakan', 'Menunggu Pemohon', 'Dikerjakan', 'Selesai', 'Dikerjakan', 'Ditriase', 'Baru'] as const) {
       await moveTicketPhase(PM, { ticketId: id, to });
       expect(await phaseOf(id)).toBe(to);
@@ -39,8 +39,12 @@ describe('pindah fase (kanban)', () => {
 
   it('worker boleh Dikerjakan <-> Menunggu Pemohon <-> Selesai', async () => {
     const id = await seedTicket({ status: 'PROCESS', triaged: true, assignedTo: IT_A.id });
+    await expect(moveTicketPhase(IT_A, { ticketId: id, to: 'Menunggu Pemohon' })).rejects.toMatchObject({ statusCode: 400 });
+    await db.update(tickets).set({ solutionType: 'PANDUAN', resolutionSummary: 'ok' }).where(eq(tickets.id, id));
     await moveTicketPhase(IT_A, { ticketId: id, to: 'Menunggu Pemohon' });
     expect(await phaseOf(id)).toBe('Menunggu Pemohon');
+    await expect(moveTicketPhase(IT_A, { ticketId: id, to: 'Selesai' })).rejects.toMatchObject({ statusCode: 409 });
+    await db.update(tickets).set({ verifiedAt: '2026-10-01 09:00:00' }).where(eq(tickets.id, id));
     await moveTicketPhase(IT_A, { ticketId: id, to: 'Selesai' });
     expect(await phaseOf(id)).toBe('Selesai');
     await moveTicketPhase(IT_A, { ticketId: id, to: 'Dikerjakan' });

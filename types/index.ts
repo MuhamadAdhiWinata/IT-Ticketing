@@ -5,7 +5,8 @@ export type TicketStatus = 'DRAFT' | 'PROCESS' | 'DELEGASI' | 'SELESAI';
 
 export type DelegationType = 'DELEGASI_VENDOR' | 'DELEGASI_TEKNISI';
 
-export type AttachmentStage = 'REQUEST' | 'IN_PROGRESS' | 'DELEGATION' | 'COMPLETION';
+// Tahap log/berkas = nama fase tiket (lihat PHASES di utils/ticketSpec.ts).
+export type AttachmentStage = 'Baru' | 'Diakui' | 'Ditriase' | 'Dikerjakan' | 'Menunggu Pemohon' | 'Selesai';
 
 export type AttachmentVisibility = 'USER_VISIBLE' | 'INTERNAL_ONLY';
 
@@ -187,6 +188,12 @@ export interface Ticket {
   duty_confirmed_at?: string | null;
   waiting_started_at?: string | null;
   waiting_ended_at?: string | null;
+  submitted_by?: string | null;
+  review_started_at?: string | null;
+  review_started_by?: string | null;
+  verified_at?: string | null;
+  verified_by?: string | null;
+  review_skipped?: boolean;
   blocked_by?: string | null;
   closed_at?: string | null;
   status_label?: string;

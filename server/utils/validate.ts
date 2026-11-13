@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { UNITS, AFFECTED_SCOPES, WORK_STATUSES, CHANNELS, values } from '~/utils/ticketSpec';
+import { UNITS, AFFECTED_SCOPES, WORK_STATUSES, CHANNELS, PHASES, values } from '~/utils/ticketSpec';
 
 export const LoginSchema = z.object({
   email: z.string().email('Email tidak valid'),
@@ -97,7 +97,7 @@ export const CustomWorklogSchema = z.object({
   finish_at: z.string().min(1),
   duration_minutes: z.number().min(0),
   description: z.string().min(1),
-  stageKey: z.string().min(1),
+  stageKey: z.enum(PHASES),
   worker_id: z.string().optional(),
   worker_name: z.string().optional(),
 });

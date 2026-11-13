@@ -120,8 +120,10 @@ describe('Duty Engineer', () => {
 describe('Eksekusi Pelaksana', () => {
   it('Menunggu Pemohon mencatat mulai dan akhir', async () => {
     const id = await seedTicket({ status: 'PROCESS', assignedTo: IT_A.id });
-    await updateExecution(IT_A, { ticketId: id, waiting: true });
+    await expect(updateExecution(IT_A, { ticketId: id, waiting: true })).rejects.toMatchObject({ statusCode: 400 });
+    await updateExecution(IT_A, { ticketId: id, solution_type: 'PANDUAN', resolution_summary: 'Panduan dikirim', waiting: true });
     expect((await row(id)).waitingStartedAt).toBeTruthy();
+    expect((await row(id)).submittedBy).toBe(IT_A.name);
     await expect(updateExecution(IT_A, { ticketId: id, waiting: true })).rejects.toMatchObject({ statusCode: 409 });
     await updateExecution(IT_A, { ticketId: id, waiting: false });
     expect((await row(id)).waitingEndedAt).toBeTruthy();

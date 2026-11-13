@@ -1,25 +1,16 @@
 import { canTriageRole } from '~/utils/roles';
-import { derivePhase, type StatusSource } from '~/utils/ticketSpec';
+import { PHASES, derivePhase, type Phase, type StatusSource } from '~/utils/ticketSpec';
 import { getValidTransitions } from '~/server/utils/ticket-lifecycle';
 import { type Actor, type DbExec, getMemberIds, getTicketRow, isIT } from './common';
 
 type TicketLike = { status: string; requestedBy: string; createdBy: string; assignedTo: string | null } & Partial<StatusSource>;
 
-export type ActivityStage = 'ASSIGN' | 'IN_PROGRESS' | 'COMPLETION';
-
-// Kirim di tahap ASSIGN selalu ada; IN_PROGRESS hanya saat PROCESS; COMPLETION hanya saat SELESAI (sama dengan TicketDetailView).
-export function activityStagesFor(status: string): ActivityStage[] {
-  const stages: ActivityStage[] = ['ASSIGN'];
-  if (status === 'PROCESS') stages.push('IN_PROGRESS');
-  if (status === 'SELESAI') stages.push('COMPLETION');
-  return stages;
+// Tahap log/berkas = fase tiket. Boleh mencatat di fase saat ini dan fase sebelumnya, tidak di fase yang belum tercapai.
+export function activityStagesFor(t: StatusSource): Phase[] {
+  return PHASES.slice(0, PHASES.indexOf(derivePhase(t)) + 1);
 }
 
-export function defaultActivityStage(status: string): ActivityStage {
-  if (status === 'PROCESS') return 'IN_PROGRESS';
-  if (status === 'SELESAI') return 'COMPLETION';
-  return 'ASSIGN';
-}
+export const defaultActivityStage = (t: StatusSource): Phase => derivePhase(t);
 
 // Rule 06/07: assignment & member terkunci setelah SELESAI.
 export const isLocked = (t: TicketLike) => t.status === 'SELESAI';
@@ -74,7 +65,7 @@ export async function getAllowedActions(exec: DbExec, actor: Actor, ticketId: st
       }))
     : [];
 
-  const stages = activityStagesFor(t.status);
+  const stages = activityStagesFor(t);
   return {
     ticket_id: t.id,
     status: t.status,

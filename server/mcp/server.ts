@@ -9,7 +9,8 @@ import { addActivity, logWorkTime } from '~/server/services/ticketing/activities
 import { addComment, addInternalNote } from '~/server/services/ticketing/discussion';
 import { assignTicket, addMembers } from '~/server/services/ticketing/assignment';
 import { reopenTicket, transitionStatus, STATUSES } from '~/server/services/ticketing/workflow';
-import { addAttachments, ATTACH_STAGES } from '~/server/services/ticketing/attachments';
+import { addAttachments } from '~/server/services/ticketing/attachments';
+import { PHASES } from '~/utils/ticketSpec';
 import { VISIBILITIES, MAX_FILE_BYTES } from '~/server/services/ticketing/common';
 
 type Kind = 'read' | 'write' | 'workflow' | 'attachment' | 'discovery';
@@ -85,13 +86,13 @@ export function buildMcpServer(actor: Actor) {
     {
       ticketId,
       description: z.string().min(1).max(20000).describe('Catatan pekerjaan'),
-      stageKey: z.enum(['ASSIGN', 'IN_PROGRESS', 'COMPLETION']).optional().describe('Default mengikuti status tiket; lihat get_allowed_actions.add_ticket_activity.stages'),
+      stageKey: z.enum(PHASES).optional().describe('Fase tempat catatan dicatat. Default fase tiket saat ini; lihat get_allowed_actions.add_ticket_activity.stages'),
       idempotencyKey: idem,
     },
     a => idempotent('add_ticket_activity', a, tx => addActivity(actor, a, tx)), { write: true });
 
   def('log_work_time', 'write',
-    'Catat log jam kerja (seperti Log Harian) pada tiket. Tiket yang belum Dikerjakan (fase Baru sampai Ditriase) hanya menerima stageKey ASSIGN. Ditolak bila jam tumpang tindih dengan log lain milik caller.',
+    'Catat log jam kerja (seperti Log Harian) pada tiket. stageKey adalah fase (Baru, Diakui, Ditriase, Dikerjakan, Menunggu Pemohon, Selesai), default Dikerjakan, dan tidak boleh melewati fase tiket saat ini. Ditolak bila jam tumpang tindih dengan log lain milik caller.',
     {
       ticketId,
       description: z.string().min(1).max(20000),
@@ -99,7 +100,7 @@ export function buildMcpServer(actor: Actor) {
       finish_at: z.string().describe('HH:MM'),
       date: z.string().optional().describe('YYYY-MM-DD, default hari ini'),
       duration_minutes: z.number().int().optional().describe('Default finish - start'),
-      stageKey: z.enum(['ASSIGN', 'IN_PROGRESS', 'COMPLETION']).optional(),
+      stageKey: z.enum(PHASES).optional(),
       idempotencyKey: idem,
     },
     a => idempotent('log_work_time', a, tx => logWorkTime(actor, a, {}, tx)), { write: true });
@@ -152,7 +153,7 @@ export function buildMcpServer(actor: Actor) {
       ticketId,
       fileName: z.string().min(1).max(200),
       contentBase64: z.string().min(1),
-      stage: z.enum(ATTACH_STAGES).optional(),
+      stage: z.enum(PHASES).optional(),
       visibility: z.enum(VISIBILITIES).optional(),
       idempotencyKey: idem,
     },

@@ -52,9 +52,10 @@ describe('2-5. repeated activities on one ticket', () => {
   it('rejects stage not available for the status and empty content', async () => {
     const id = await seedTicket({ status: 'PROCESS' });
     const w = await as(IT_A);
-    const bad = await w.call('add_ticket_activity', { ticketId: id, description: 'x', stageKey: 'COMPLETION' });
+    const bad = await w.call('add_ticket_activity', { ticketId: id, description: 'x', stageKey: 'Selesai' });
     expect(bad.isError).toBe(true);
-    expect(bad.data.allowed_stages).toContain('IN_PROGRESS');
+    expect(bad.data.allowed_stages).toContain('Dikerjakan');
+    expect(bad.data.allowed_stages).not.toContain('Selesai');
     expect((await w.call('add_ticket_activity', { ticketId: id, description: '   ' })).isError).toBe(true);
     expect(await countWorklogs(id)).toBe(0);
   });
@@ -213,17 +214,17 @@ describe('10. permissions', () => {
     expect((await a.call('log_work_time', { ...base, start_at: '12:00', finish_at: '11:00' })).isError).toBe(true);
     const draft = await seedTicket({ status: 'DRAFT' });
     expect((await a.call('log_work_time', { ticketId: draft, description: 'x', start_at: '09:00', finish_at: '10:00' })).data.status).toBe(409);
-    expect((await a.call('log_work_time', { ticketId: draft, description: 'x', start_at: '09:00', finish_at: '10:00', stageKey: 'IN_PROGRESS' })).data.status).toBe(409);
+    expect((await a.call('log_work_time', { ticketId: draft, description: 'x', start_at: '09:00', finish_at: '10:00', stageKey: 'Dikerjakan' })).data.status).toBe(409);
   });
 
-  it('log_work_time on DRAFT is accepted for stage ASSIGN and keeps the stage', async () => {
+  it('log_work_time on DRAFT is accepted for the current phase and keeps the stage', async () => {
     const draft = await seedTicket({ status: 'DRAFT' });
     const a = await as(IT_A);
-    const r = await a.call('log_work_time', { ticketId: draft, description: '<p>assign <strong>log</strong></p>', start_at: '13:00', finish_at: '13:30', date: '2026-10-07', stageKey: 'ASSIGN' });
+    const r = await a.call('log_work_time', { ticketId: draft, description: '<p>assign <strong>log</strong></p>', start_at: '13:00', finish_at: '13:30', date: '2026-10-07', stageKey: 'Baru' });
     expect(r.isError).toBe(false);
-    expect(r.data.activity.stageKey).toBe('ASSIGN');
+    expect(r.data.activity.stageKey).toBe('Baru');
     const [row] = await db.select().from(worklogs).where(eq(worklogs.ticketId, draft));
-    expect([row!.stageKey, row!.description]).toEqual(['ASSIGN', '<p>assign <strong>log</strong></p>']);
+    expect([row!.stageKey, row!.description]).toEqual(['Baru', '<p>assign <strong>log</strong></p>']);
   });
 
   it('accepts rich-text description beyond 5000 chars', async () => {
@@ -338,7 +339,7 @@ describe('13. failure leaves no partial state', () => {
   it('attachment stores file and row together; empty/oversize rejected', async () => {
     const id = await seedTicket({ status: 'PROCESS' });
     const a = await as(IT_A);
-    const ok = await a.call('add_attachment', { ticketId: id, fileName: 'bukti.txt', contentBase64: Buffer.from('isi').toString('base64'), stage: 'IN_PROGRESS', visibility: 'INTERNAL_ONLY' });
+    const ok = await a.call('add_attachment', { ticketId: id, fileName: 'bukti.txt', contentBase64: Buffer.from('isi').toString('base64'), stage: 'Dikerjakan', visibility: 'INTERNAL_ONLY' });
     expect(ok.isError).toBe(false);
     expect(ok.data.attachments[0]).toMatchObject({ file_name: 'bukti.txt', visibility: 'INTERNAL_ONLY', uploaded_by: IT_A.id });
     expect((await a.call('add_attachment', { ticketId: id, fileName: 'k.txt', contentBase64: '=' })).isError).toBe(true);

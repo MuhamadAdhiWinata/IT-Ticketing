@@ -75,7 +75,7 @@ export default defineEventHandler(async (event) => {
   await db.insert(files).values({
     id: attachId,
     ticketId: id,
-    stage: body.stage || 'REQUEST',
+    stage: body.stage || 'Baru',
     visibility: body.visibility || 'USER_VISIBLE',
     fileName: body.file_name || '',
     fileSize: body.file_size || '',

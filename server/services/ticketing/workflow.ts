@@ -10,6 +10,7 @@ import {
 import { insertAttachments } from './attachments';
 import { PHASES, SOLUTION_TYPES, derivePhase, deriveStatusLabel, needsDutyConfirm, values, type Phase } from '~/utils/ticketSpec';
 import { canTriageRole } from '~/utils/roles';
+import { requireSolution, submitPatch } from './triage';
 
 export const STATUSES = ['DRAFT', 'PROCESS', 'DELEGASI', 'SELESAI'] as const;
 
@@ -57,6 +58,13 @@ const STAGE_BY_TRANSITION: Record<string, 'START_WORK' | 'IN_PROGRESS' | 'DELEGA
   'PROCESS>DELEGASI': 'DELEGATION',
 };
 
+// Tahap (fase) tempat log dan berkas dari transisi itu dicatat.
+const PHASE_BY_STAGE: Record<'START_WORK' | 'IN_PROGRESS' | 'DELEGATION', Phase> = {
+  START_WORK: 'Ditriase',
+  IN_PROGRESS: 'Dikerjakan',
+  DELEGATION: 'Dikerjakan',
+};
+
 function rejectTransition(from: string, to: string): never {
   const allowed = getValidTransitions(from);
   fail(409, `Cannot transition from ${from} to ${to}. Transisi yang diizinkan dari ${from}: ${allowed.join(', ') || '(tidak ada)'}`, {
@@ -98,6 +106,10 @@ export async function transitionStatus(
       patch.processStartedAt = t.processStartedAt || ts;
       patch.issuedAt = t.issuedAt || ts;
     } else if (stageKey === 'IN_PROGRESS') {
+      if (t.waitingStartedAt && !t.waitingEndedAt) {
+        if (!t.verifiedAt) fail(409, 'Pengecekan pemohon belum lolos; tunggu pemohon atau PM klik Lewati Pengecekan');
+        patch.waitingEndedAt = ts;
+      }
       patch.completedAt = ts;
       patch.firstCompletedAt = t.firstCompletedAt || ts;
       if (v.solution) {
@@ -147,7 +159,7 @@ export async function transitionStatus(
         await tx.insert(worklogs).values({
           id: newId('WL'),
           ticketId: v.ticketId,
-          stageKey,
+          stageKey: PHASE_BY_STAGE[stageKey],
           workerId: actor.id,
           onDuty: actor.dutyActive ? 1 : 0,
           date: ts.slice(0, 10),
@@ -158,7 +170,7 @@ export async function transitionStatus(
           createdAt: ts,
         });
       }
-      attachments = await insertAttachments(tx, track, actor, v.ticketId, stageKey, 'USER_VISIBLE', ts, files);
+      attachments = await insertAttachments(tx, track, actor, v.ticketId, PHASE_BY_STAGE[stageKey], 'USER_VISIBLE', ts, files);
     } else if (files.length > 0) {
       fail(400, 'files: lampiran hanya didukung pada transisi DRAFT>PROCESS, PROCESS>SELESAI, PROCESS>DELEGASI');
     }
@@ -243,8 +255,13 @@ export async function moveTicketPhase(actor: Actor, input: z.input<typeof MovePh
       Object.assign(patch, { completedAt: null, closedAt: null, transferTarget: null, reopenCount: t.reopenCount + 1 });
     }
 
-    if (v.to === 'Menunggu Pemohon') Object.assign(patch, { waitingStartedAt: ts, waitingEndedAt: null });
-    else if (t.waitingStartedAt && !t.waitingEndedAt) patch.waitingEndedAt = ts;
+    if (v.to === 'Menunggu Pemohon') {
+      requireSolution(t);
+      Object.assign(patch, submitPatch(actor, ts));
+    } else if (t.waitingStartedAt && !t.waitingEndedAt) {
+      if (v.to === 'Selesai' && !t.verifiedAt) fail(409, 'Pengecekan pemohon belum lolos; tunggu pemohon atau PM klik Lewati Pengecekan');
+      patch.waitingEndedAt = ts;
+    }
 
     await tx.update(tickets).set(patch).where(eq(tickets.id, t.id));
     await tx.insert(auditLogs).values({

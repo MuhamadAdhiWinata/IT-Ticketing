@@ -7,6 +7,7 @@ import {
   fail, inTx, lockTicket, newId, nowTs, parse, requireIT, ticketSummary, withFileCleanup, hm,
 } from './common';
 import { uploadFiles, linkFilesToWorklog } from './files';
+import { PHASES, derivePhase, type Phase } from '~/utils/ticketSpec';
 import { activityStagesFor, defaultActivityStage } from './permissions';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -37,10 +38,10 @@ export async function addActivity(
 
   return withFileCleanup(track => inTx(exec, async (tx) => {
     const ticket = await lockTicket(tx, v.ticketId);
-    const allowed = activityStagesFor(ticket.status);
-    const stageKey = v.stageKey ?? defaultActivityStage(ticket.status);
-    if (!allowed.includes(stageKey as any)) {
-      fail(409, `stageKey ${stageKey} tidak tersedia pada status ${ticket.status}`, { allowed_stages: allowed });
+    const allowed = activityStagesFor(ticket);
+    const stageKey = v.stageKey ?? defaultActivityStage(ticket);
+    if (!allowed.includes(stageKey as Phase)) {
+      fail(409, `stageKey ${stageKey} tidak tersedia pada fase ${derivePhase(ticket)}`, { allowed_stages: allowed });
     }
 
     const ts = nowTs();
@@ -81,7 +82,7 @@ const TimeSchema = z.object({
   finish_at: z.string().regex(TIME, 'finish_at harus HH:MM'),
   duration_minutes: z.number().int().min(0).max(24 * 60).optional(),
   description: z.string().trim().min(1, 'Deskripsi wajib diisi').max(20000, 'Deskripsi terlalu panjang'),
-  stageKey: z.enum(['ASSIGN', 'IN_PROGRESS', 'COMPLETION']).default('IN_PROGRESS'),
+  stageKey: z.enum(PHASES).default('Dikerjakan'),
 });
 
 // Log harian (DailyWorkView). `workerId` hanya diisi jalur web; tool MCP tidak pernah meneruskannya.
@@ -100,8 +101,10 @@ export async function logWorkTime(
 
   return inTx(exec, async (tx) => {
     const ticket = await lockTicket(tx, v.ticketId);
-    // Tiket DRAFT hanya menerima log tahap ASSIGN (sama dengan "Kirim" di tahap Assign pada detail tiket).
-    if (ticket.status === 'DRAFT' && v.stageKey !== 'ASSIGN') fail(409, 'Tiket belum dikerjakan (fase Baru sampai Ditriase); catat pada tahap ASSIGN atau tunggu PM memulai pengerjaan');
+    const allowed = activityStagesFor(ticket);
+    if (!allowed.includes(v.stageKey)) {
+      fail(409, `Tahap ${v.stageKey} belum tercapai (fase tiket: ${derivePhase(ticket)}); catat pada fase saat ini atau sebelumnya`, { allowed_stages: allowed });
+    }
 
     let workerId = actor.id;
     let workerName = actor.name;

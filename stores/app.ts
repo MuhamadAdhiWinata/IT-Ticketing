@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { TriageMaster, AppUser, Ticket, CategoryItem, ProjectKendalaItem, SubmoduleItem, CompanyItem, DivisionItem, PendingAttachment } from '~/types';
+import type { TriageMaster, SlaMaster, AppUser, Ticket, CategoryItem, ProjectKendalaItem, SubmoduleItem, CompanyItem, DivisionItem, PendingAttachment } from '~/types';
 import { useAuthStore } from '~/stores/auth';
 import { refreshThemeTokens } from '~/composables/useCompany';
 import { apiFetch } from '~/services/api';
@@ -21,6 +21,7 @@ export const useAppStore = defineStore('app', {
     myTicketsLoading: false,
     categories: [] as CategoryItem[],
     triageMaster: null as TriageMaster | null,
+    slaMaster: null as SlaMaster | null,
     projectKendala: [] as ProjectKendalaItem[],
     submodules: [] as SubmoduleItem[],
     companies: [] as CompanyItem[],
@@ -57,6 +58,14 @@ export const useAppStore = defineStore('app', {
       }
     },
 
+    async loadSlaMaster() {
+      try {
+        this.slaMaster = (await apiFetch<{ data: SlaMaster }>('/api/sla-master')).data;
+      } catch (e) {
+        console.error('Gagal memuat master SLA:', e);
+      }
+    },
+
     // Klaim, matriks peran, dan menu sidebar dari DB (sebelum halaman dirender agar filter peran benar).
     async loadRbac() {
       try {
@@ -75,7 +84,7 @@ export const useAppStore = defineStore('app', {
       const authStore = useAuthStore();
       this.currentUser = authStore.user;
       await this.loadRbac();
-      await this.loadTriageMaster();
+      await Promise.all([this.loadTriageMaster(), this.loadSlaMaster()]);
 
       const [usersRes, ticketsRes, catsRes, projectKendalaRes, submodsRes, prefsRes, companiesRes, divisionsRes] = await Promise.all([
         apiFetch<{ success: boolean; data: AppUser[] }>('/api/users').catch(() => null),

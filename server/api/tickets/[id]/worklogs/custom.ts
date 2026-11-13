@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
 
   await logWorkTime(
     toActor(user),
-    { ticketId: id, date: d.date, start_at: d.start_at, finish_at: d.finish_at, duration_minutes: d.duration_minutes, description: d.description, stageKey: d.stageKey as any },
+    { ticketId: id, date: d.date, start_at: d.start_at, finish_at: d.finish_at, duration_minutes: d.duration_minutes, description: d.description, stageKey: d.stageKey },
     { workerId: d.worker_id },
   );
 

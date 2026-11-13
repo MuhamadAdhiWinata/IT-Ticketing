@@ -6,8 +6,8 @@ import { createNotification } from '~/server/utils/notifications';
 import { canTriageRole, isDutyRole } from '~/utils/roles';
 import { getTriageMaster } from '~/server/services/triage-master';
 import {
-  TICKET_TYPES, CATALOG_ITEMS, TRANSFER_TARGETS, BLOCKED_BY, P_TO_PRIORITY,
-  priorityFromMatrix, priorityToP, values,
+  TICKET_TYPES, CATALOG_ITEMS, TRANSFER_TARGETS, BLOCKED_BY, SOLUTION_TYPES, P_TO_PRIORITY,
+  priorityFromMatrix, priorityToP, derivePhase, values,
 } from '~/utils/ticketSpec';
 import { type Actor, type DbExec, fail, inTx, lockTicket, newId, nowTs, parse, requireIT, ticketSummary } from './common';
 
@@ -33,11 +33,97 @@ const ExecutionSchema = z.object({
   ticketId: z.string().min(1),
   blocked_by: z.enum(values(BLOCKED_BY)).nullable().optional(),
   odoo_task_url: urlField.nullable().optional(),
+  // Solusi Penyelesaian disimpan lebih dulu di form Eksekusi; wajib lengkap baru saat tiket diselesaikan (transitionStatus).
+  solution_type: z.enum(values(SOLUTION_TYPES)).nullable().optional(),
+  resolution_summary: z.string().trim().max(5000).nullable().optional(),
+  tech_debt_url: urlField.nullable().optional(),
   waiting: z.boolean().optional(),
 });
 
 const audit = (tx: DbExec, ticketId: string, actor: Actor, action: string, detail?: string, notes?: string) =>
   tx.insert(auditLogs).values({ id: newId('AUD'), ticketId, action, performedAt: nowTs(), performedBy: actor.id, onDuty: actor.dutyActive ? 1 : 0, detail: detail ?? null, notes: notes ?? null });
+
+// Kirim ke pemohon (masuk Menunggu Pemohon): hasil wajib sudah ada, pengecekan pemohon mulai dari nol.
+export function requireSolution(t: { solutionType?: string | null; resolutionSummary?: string | null; techDebtUrl?: string | null }) {
+  if (!t.solutionType || !t.resolutionSummary?.trim()) fail(400, 'Isi Jenis Solusi dan ringkasan solusi dulu; hasil dikirim ke pemohon untuk dicek');
+  if (t.solutionType === 'SEMENTARA' && !t.techDebtUrl) fail(400, 'Solusi SEMENTARA wajib punya tautan Utang Teknis');
+}
+export const submitPatch = (actor: Actor, ts: string): Partial<typeof tickets.$inferInsert> => ({
+  waitingStartedAt: ts, waitingEndedAt: null, submittedBy: actor.name,
+  reviewStartedAt: null, reviewStartedBy: null, verifiedAt: null, verifiedBy: null, reviewSkipped: 0,
+});
+
+const ReviewSchema = z.object({
+  ticketId: z.string().min(1),
+  action: z.enum(['start', 'pass', 'reject', 'skip', 'finish']),
+  reason: reasonText.optional(),
+  outcome: z.enum(['SELESAI', 'DITUTUP']).optional(),
+});
+
+// Pengecekan hasil di fase Menunggu Pemohon.
+// Pemohon: start (menerima hasil) -> pass (lolos) atau reject (kembali ke Dikerjakan, alasan wajib).
+// PM: skip (lewati pengecekan, alasan wajib) lalu finish (Selesai / Ditutup); Dialihkan lewat triase. Semua tercatat di audit.
+export async function reviewTicket(actor: Actor, input: z.input<typeof ReviewSchema>, exec?: DbExec) {
+  const v = parse(ReviewSchema, input);
+  const isPM = canTriageRole(actor.role, actor.dutyActive);
+  return inTx(exec, async (tx) => {
+    const t = await lockTicket(tx, v.ticketId);
+    if (derivePhase(t) !== 'Menunggu Pemohon') fail(409, 'Tiket tidak sedang Menunggu Pemohon');
+    const ts = nowTs();
+    const ref = t.ticketNumber || t.id;
+    const notify = (userId: string | null, title: string, message: string) =>
+      userId && userId !== actor.id ? createNotification({ userId, ticketId: t.id, type: 'ASSIGNED', title, message }, tx) : null;
+    const patch: Partial<typeof tickets.$inferInsert> = {};
+    let action: string;
+    let detail: string | undefined;
+
+    if (v.action === 'start' || v.action === 'pass' || v.action === 'reject') {
+      if (t.requestedBy !== actor.id) fail(403, 'Forbidden: hanya pemohon tiket');
+      if (t.verifiedAt) fail(409, 'Pengecekan sudah selesai');
+      if (v.action === 'start') {
+        if (t.reviewStartedAt) fail(409, 'Pengecekan sudah dimulai');
+        Object.assign(patch, { reviewStartedAt: ts, reviewStartedBy: actor.name });
+        action = 'PENGECEKAN_DIMULAI';
+        await notify(t.assignedTo, 'Pemohon Mulai Mengecek', `Pemohon ${actor.name} mulai mengecek hasil tiket ${ref}`);
+      } else {
+        if (!t.reviewStartedAt) fail(409, 'Klik Mulai Cek dahulu');
+        if (v.action === 'pass') {
+          Object.assign(patch, { verifiedAt: ts, verifiedBy: actor.name, reviewSkipped: 0 });
+          action = 'PENGECEKAN_LOLOS';
+          await notify(t.assignedTo, 'Hasil Lolos Pengecekan', `Pemohon ${actor.name} menyatakan hasil tiket ${ref} sesuai`);
+        } else {
+          if (!v.reason) fail(400, 'reason: alasan wajib saat hasil belum sesuai');
+          patch.waitingEndedAt = ts;
+          action = 'PENGECEKAN_DITOLAK';
+          await notify(t.assignedTo, 'Hasil Belum Sesuai', `Pemohon ${actor.name} menolak hasil tiket ${ref}: ${v.reason}`);
+        }
+      }
+    } else {
+      if (!isPM) fail(403, 'Forbidden: hanya PM');
+      if (v.action === 'skip') {
+        if (t.verifiedAt) fail(409, 'Pengecekan sudah selesai');
+        if (!v.reason) fail(400, 'reason: alasan wajib saat melewati pengecekan pemohon');
+        Object.assign(patch, { verifiedAt: ts, verifiedBy: actor.name, reviewSkipped: 1 });
+        action = 'PENGECEKAN_DILEWATI';
+        await notify(t.requestedBy, 'Pengecekan Dilewati', `PM ${actor.name} melewati pengecekan hasil tiket ${ref}: ${v.reason}`);
+      } else {
+        if (!t.verifiedAt) fail(409, 'Pengecekan pemohon belum lolos; tunggu pemohon atau lewati pengecekan');
+        const closed = v.outcome === 'DITUTUP';
+        Object.assign(patch, {
+          status: 'SELESAI', completedAt: ts, firstCompletedAt: t.firstCompletedAt || ts, waitingEndedAt: ts,
+          closedAt: closed ? ts : null, transferTarget: null,
+        });
+        action = closed ? 'TIKET_DITUTUP' : 'TIKET_DISELESAIKAN';
+        detail = 'Menunggu Pemohon -> Selesai';
+        await notify(t.requestedBy, closed ? 'Tiket Ditutup' : 'Tiket Selesai', `Tiket ${ref} ${closed ? 'ditutup' : 'selesai'} oleh ${actor.name}`);
+      }
+    }
+
+    await tx.update(tickets).set(patch).where(eq(tickets.id, t.id));
+    await audit(tx, t.id, actor, action, detail, v.reason);
+    return { ticket: await ticketSummary(tx, t.id) };
+  });
+}
 
 // Tombol "Akui": PM mengakui tiket baru. Idempoten; waktu pertama yang disimpan.
 export async function acknowledgeTicket(actor: Actor, input: { ticketId: string }, exec?: DbExec) {
@@ -148,6 +234,10 @@ export async function triageTicket(actor: Actor, input: z.input<typeof TriageSch
     }
 
     if (v.transfer_target) {
+      if (derivePhase(t) === 'Menunggu Pemohon') {
+        if (!t.verifiedAt) fail(409, 'Pengecekan pemohon belum lolos; tunggu pemohon atau lewati pengecekan');
+        patch.waitingEndedAt = nowTs();
+      }
       if (v.transfer_target === 'DUPLIKAT') {
         if (!v.duplicate_of) fail(400, 'duplicate_of: wajib untuk pengalihan Duplikat');
         if (v.duplicate_of === t.id) fail(400, 'duplicate_of: tidak boleh tiket itu sendiri');
@@ -179,10 +269,13 @@ export async function updateExecution(actor: Actor, input: z.input<typeof Execut
     const patch: Partial<typeof tickets.$inferInsert> = {};
     if (v.blocked_by !== undefined) patch.blockedBy = v.blocked_by;
     if (v.odoo_task_url !== undefined) patch.odooTaskUrl = v.odoo_task_url;
+    if (v.solution_type !== undefined) patch.solutionType = v.solution_type;
+    if (v.resolution_summary !== undefined) patch.resolutionSummary = v.resolution_summary || null;
+    if (v.tech_debt_url !== undefined) patch.techDebtUrl = v.tech_debt_url;
     if (v.waiting === true) {
       if (t.waitingStartedAt && !t.waitingEndedAt) fail(409, 'Tiket sudah dalam status Menunggu Pemohon');
-      patch.waitingStartedAt = nowTs();
-      patch.waitingEndedAt = null;
+      requireSolution({ ...t, ...patch });
+      Object.assign(patch, submitPatch(actor, nowTs()));
     } else if (v.waiting === false) {
       if (!t.waitingStartedAt || t.waitingEndedAt) fail(409, 'Tiket tidak sedang Menunggu Pemohon');
       patch.waitingEndedAt = nowTs();

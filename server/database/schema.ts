@@ -228,6 +228,13 @@ export const tickets = mysqlTable('tickets', {
   waitingStartedAt: timestamp('waiting_started_at', { mode: 'string' }),
   waitingEndedAt: timestamp('waiting_ended_at', { mode: 'string' }),
   blockedBy: varchar('blocked_by', { length: 20 }), // RILIS | PIHAK_KETIGA | LAINNYA
+  // Pengecekan pemohon di fase Menunggu Pemohon (waktu kirim = waitingStartedAt). Nama disimpan langsung, seperti dutyConfirmedBy.
+  submittedBy: varchar('submitted_by', { length: 255 }),
+  reviewStartedAt: timestamp('review_started_at', { mode: 'string' }),
+  reviewStartedBy: varchar('review_started_by', { length: 255 }),
+  verifiedAt: timestamp('verified_at', { mode: 'string' }), // lolos pengecekan pemohon, atau dilewati PM (reviewSkipped)
+  verifiedBy: varchar('verified_by', { length: 255 }),
+  reviewSkipped: int('review_skipped', { unsigned: true }).notNull().default(0),
   closedAt: timestamp('closed_at', { mode: 'string' }),
 
   // Timestamps

@@ -39,7 +39,7 @@ export async function seedTicket(opts: {
   for (const description of opts.activities ?? []) {
     i++;
     await db.insert(worklogs).values({
-      id: `WL-SEED-${id}-${i}`, ticketId: id, stageKey: 'IN_PROGRESS', workerId: IT_A.id,
+      id: `WL-SEED-${id}-${i}`, ticketId: id, stageKey: 'Dikerjakan', workerId: IT_A.id,
       date: '2026-10-01', startAt: '08:00', finishAt: '08:00', durationMinutes: 0, description,
       createdAt: `2026-10-01 08:0${i}:00`,
     });

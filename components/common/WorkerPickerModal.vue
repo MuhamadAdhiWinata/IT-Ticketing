@@ -54,13 +54,14 @@
 
 <script setup lang="ts">
 import { isITRole } from '~/utils/roles';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Check } from 'lucide-vue-next';
 import type { AppUser } from '~/types';
 
 const props = defineProps<{
   show: boolean;
   users: AppUser[];
+  initial?: string[];
 }>();
 
 defineEmits<{
@@ -70,6 +71,8 @@ defineEmits<{
 
 const search = ref('');
 const selected = ref<string[]>([]);
+// Setiap dibuka, pilihan diisi ulang dari nilai tersimpan.
+watch(() => props.show, (open) => { if (open) { selected.value = [...(props.initial ?? [])]; search.value = ''; } });
 
 const filteredWorkers = computed(() => {
   if (!search.value) return props.users.filter(u => isITRole(u.role));

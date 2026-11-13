@@ -71,11 +71,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { apiFetch } from '~/services/api';
+import { useAppStore } from '~/stores/app';
 import { useToast } from '~/composables/useToast';
 import { useConfirmModal } from '~/composables/useConfirmModal';
 import { COVERAGE_LABEL } from '~/utils/slaCalc';
 import type { SlaMaster } from '~/types';
 
+const store = useAppStore();
 const { toast } = useToast();
 const { confirm } = useConfirmModal();
 
@@ -102,6 +104,7 @@ async function save() {
   try {
     const res = await apiFetch<{ data: SlaMaster }>('/api/sla-master', { method: 'PUT', body: draft.value });
     current = res.data;
+    store.slaMaster = res.data;
     load(res.data);
     toast('Master SLA tersimpan.', 'success');
   } catch (e: any) {

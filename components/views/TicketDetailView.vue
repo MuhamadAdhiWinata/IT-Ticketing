@@ -61,9 +61,9 @@
           <div class="flex flex-col gap-1">
             <span class="text-xs text-muted-foreground">Pelaksana:</span>
             <div class="flex flex-wrap items-center gap-1.5">
-              <template v-if="ticket.members && ticket.members.length > 0">
+              <template v-if="ticket.assignedTo || (ticket.members && ticket.members.length > 0)">
                 <span
-                  v-for="m in ticket.members"
+                  v-for="m in headerWorkers"
                   :key="m.id"
                   class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100/80 dark:from-blue-950/60 dark:to-blue-900/40 border border-blue-200/80 dark:border-blue-800/60 shadow-xs"
                 >
@@ -168,8 +168,8 @@
 
           <TicketTriagePanel v-if="store.currentUser && selectedStep" :ticket="ticket" :phase="selectedStep.phase" />
 
-          <!-- Attachments in this step -->
-          <div class="space-y-2">
+          <!-- Attachments in this step (fase Ditriase tidak menampilkan lampiran/histori) -->
+          <div v-if="selectedStep?.phase !== 'Ditriase'" class="space-y-2">
             <span class="text-[10px] font-bold text-muted-foreground uppercase">Lampiran / Bukti pada Fase Ini:</span>
             <div v-if="(stepperStages[selectedStepIndex]?.attachments?.length ?? 0) > 0" class="space-y-2">
               <template v-for="att in stepperStages[selectedStepIndex]?.attachments ?? []" :key="att.id">
@@ -272,8 +272,8 @@
           </Teleport>
 
           <!-- History Catatan / Worklog pada Tahap Ini -->
-          <div v-if="filteredWorklogs.length > 0" class="space-y-2 pt-2 border-t border-border">
-            <span class="text-[10px] font-bold text-muted-foreground uppercase">Catatan & Histori pada Fase Ini:</span>
+          <div v-if="selectedStep?.phase !== 'Ditriase' && filteredWorklogs.length > 0" class="space-y-2 pt-2 border-t border-border">
+            <span class="text-[10px] font-bold text-muted-foreground uppercase">{{ noteWord }} & Histori pada Fase Ini:</span>
             <div class="space-y-3">
               <div
                 v-for="wl in filteredWorklogs"
@@ -298,42 +298,42 @@
             </div>
           </div>
 
-          <!-- Aksi catatan / selesaikan: hanya di fase aktif -->
-          <div v-if="isITRole(store.currentUser?.role) && selectedStep?.current" class="pt-3 border-t border-border space-y-3">
-            <div class="space-y-1.5">
-              <label class="block text-[11px] font-bold text-foreground">Catatan:</label>
-              <RichTextEditor
-                v-model="stageNotes"
-                placeholder="Tuliskan catatan (opsional)..."
-                :upload="uploadInlineImage"
-              />
-            </div>
-            <div v-if="canSolve" class="space-y-2 p-3 rounded-lg border border-border bg-muted/30">
-              <p class="text-[11px] font-bold text-foreground">Solusi Penyelesaian (diisi saat menyelesaikan tiket):</p>
-              <select v-model="solution.type" aria-label="Jenis solusi" class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground">
-                <option v-for="o in SOLUTION_TYPES" :key="o.value" :value="o.value">{{ o.label }}</option>
-              </select>
-              <textarea v-model="solution.summary" rows="3" aria-label="Ringkasan solusi" placeholder="Jelaskan solusi yang diterapkan..." class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground" />
-              <input v-if="solution.type === 'SEMENTARA'" v-model="solution.tech_debt_url" type="url" aria-label="Tautan utang teknis" placeholder="Tautan utang teknis (wajib)" class="w-full px-2 py-1.5 rounded-lg border border-border bg-surface text-xs text-foreground" />
-            </div>
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <button
-                @click="handleSaveNote()"
-                class="w-full px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
-              >
-                <Clock class="w-4 h-4" />
-                <span>Kirim</span>
-              </button>
-              <button
-                v-if="canSolve"
-                @click="handleSubmitCurrentStage()"
-                class="w-full px-4 py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
-              >
-                <CheckCircle2 class="w-4 h-4" />
-                <span>Selesaikan</span>
-              </button>
-            </div>
+          <!-- Fase Ditriase: tombol Mulai Dikerjakan di posisi yang sama dengan Kirim catatan -->
+          <div v-if="showStartWork" class="pt-3 border-t border-border space-y-2">
+            <button
+              type="button"
+              :disabled="starting || !canStart"
+              @click="handleStartWork"
+              class="w-full px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
+            >
+              <Play class="w-4 h-4" />
+              <span>{{ starting ? 'Memproses...' : 'Mulai Dikerjakan' }}</span>
+            </button>
+            <p v-if="!canStart" class="text-[11px] text-muted-foreground text-center">{{ startHint }}</p>
           </div>
+
+          <!-- Progress/catatan: hanya di fase aktif; fase Ditriase memakai Diskusi Tiket. Tombol kirim muncul bila editor berisi. -->
+          <div v-if="isITRole(store.currentUser?.role) && selectedStep?.current && selectedStep.phase !== 'Ditriase'" class="pt-3 border-t border-border space-y-2">
+            <label class="block text-[11px] font-bold text-foreground">{{ noteWord }}:</label>
+            <RichTextEditor
+              v-model="stageNotes"
+              v-model:files="stageFiles"
+              :placeholder="`Tuliskan ${noteWord.toLowerCase()}...`"
+              :upload="uploadInlineImage"
+            />
+            <button
+              v-if="!isRichTextEmpty(stageNotes)"
+              type="button"
+              @click="handleSaveNote()"
+              class="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
+            >
+              <Send class="w-4 h-4" />
+              <span>Kirim {{ noteWord }}</span>
+            </button>
+          </div>
+
+          <!-- Eksekusi (diisi PM): paling bawah di fase Dikerjakan -->
+          <TicketExecutionForm v-if="showExecution" :ticket="ticket" />
         </div>
       </div>
     </div>
@@ -403,12 +403,14 @@
           <label class="block text-[11px] font-bold text-foreground">Tulis Komentar:</label>
           <RichTextEditor
             v-model="commentDraft"
+            v-model:files="commentFiles"
             placeholder="Tuliskan pertanyaan / balasan..."
             :upload="uploadInlineImage"
           />
           <button
+            v-if="!isRichTextEmpty(commentDraft)"
             type="submit"
-            :disabled="isRichTextEmpty(commentDraft) || commentSending"
+            :disabled="commentSending"
             class="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
           >
             <Send class="w-4 h-4" />
@@ -460,11 +462,12 @@
             class="w-full px-3 py-2 rounded-lg border border-border bg-surface text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
           ></textarea>
           <button
+            v-if="noteDraft.trim()"
             type="submit"
-            :disabled="!noteDraft.trim() || noteSending"
-            class="w-full sm:w-auto px-4 py-2.5 bg-amber-700 hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
+            :disabled="noteSending"
+            class="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground text-xs font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
           >
-            <Lock class="w-4 h-4" />
+            <Send class="w-4 h-4" />
             <span>{{ noteSending ? 'Menyimpan...' : 'Simpan Catatan' }}</span>
           </button>
         </form>
@@ -475,12 +478,13 @@
 
 <script setup lang="ts">
 import { isITRole } from '~/utils/roles';
-import { PHASES, type Phase } from '~/utils/ticketSpec';
+import { PHASES, needsDutyConfirm, type Phase } from '~/utils/ticketSpec';
+import { useAuthStore } from '~/stores/auth';
 import { ref, computed, watch, nextTick } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { apiFetch } from '~/services/api';
-import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon, User, X, Download, Image as ImageIcon, FileText, File, Send, Lock } from 'lucide-vue-next';
-import type { TicketStatus, TicketComment, TicketInternalNote } from '~/types';
+import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon, User, X, Download, Image as ImageIcon, FileText, File, Send, Lock, Play } from 'lucide-vue-next';
+import type { TicketStatus, TicketComment, TicketInternalNote, PendingAttachment } from '~/types';
 import { triggerPrintPDF } from '~/utils/export';
 import PriorityBadge from '~/components/common/PriorityBadge.vue';
 import { isImage, isPdf, getFileExtLabel } from '~/utils/fileHelpers';
@@ -491,8 +495,10 @@ import RichTextEditor from '~/components/common/RichTextEditor.vue';
 import { toSafeHtml, isRichTextEmpty } from '~/utils/richText';
 import { SOLUTION_TYPES, labelOf } from '~/utils/ticketSpec';
 import TicketTriagePanel from '~/components/features/Triage/TicketTriagePanel.vue';
+import TicketExecutionForm from '~/components/features/Triage/TicketExecutionForm.vue';
 
 const store = useAppStore();
+const auth = useAuthStore();
 const { showError } = useModal();
 const { toast } = useToast();
 const isOpen = computed(() => store.activeView === 'ticket-detail');
@@ -509,17 +515,45 @@ const requesterIdentityLabel = computed(() => {
   }, 'User');
 });
 const isCompleted = computed(() => ticket.value?.status === 'SELESAI');
+// Pelaksana utama (assignedTo) lebih dulu, lalu member pendukung tanpa duplikat.
+const headerWorkers = computed(() => {
+  const t = ticket.value;
+  if (!t) return [];
+  const list = t.assignedTo ? [{ id: `main-${t.assignedTo}`, user_name: t.assignedToName || t.assignedTo }] : [];
+  return [...list, ...(t.members ?? []).filter(m => m.user_id !== t.assignedTo)];
+});
 
 const selectedStepIndex = ref(0);
 const activeStepEl = ref<HTMLElement | null>(null);
 const stageNotes = ref('');
-const solution = ref({ type: 'PANDUAN', summary: '', tech_debt_url: '' });
+const stageFiles = ref<PendingAttachment[]>([]);
+const commentFiles = ref<PendingAttachment[]>([]);
 const previewImage = ref<{ url: string; name: string } | null>(null);
 
-// Kunci tahap log/berkas di API mengikuti status DB (sama dengan activityStagesFor di server).
-const stageKey = computed(() => ({ PROCESS: 'IN_PROGRESS', SELESAI: 'COMPLETION' } as Record<string, string>)[ticket.value?.status ?? ''] ?? 'ASSIGN');
+// Tahap log/berkas = fase tiket saat ini (sama dengan activityStagesFor di server).
+const stageKey = computed(() => ticket.value?.status_phase ?? 'Baru');
 const selectedStep = computed(() => stepperStages.value[selectedStepIndex.value]);
-const canSolve = computed(() => !!selectedStep.value?.current && ticket.value?.status === 'PROCESS');
+// Di fase Dikerjakan catatan disebut Progress; Dikerjakan tidak bisa langsung Selesai (lewat Menunggu Pemohon).
+const noteWord = computed(() => (selectedStep.value?.phase === 'Dikerjakan' ? 'Progress' : 'Catatan'));
+const showExecution = computed(() => isITRole(store.currentUser?.role) && selectedStep.value?.phase === 'Dikerjakan' && !!selectedStep.value.current && ticket.value?.status !== 'SELESAI');
+
+// Mulai Dikerjakan (fase Ditriase): triase harus terisi dulu; Insiden P1/P2 juga butuh konfirmasi Duty Engineer.
+const starting = ref(false);
+const showStartWork = computed(() => auth.canTriage && selectedStep.value?.phase === 'Ditriase' && selectedStep.value.current && ticket.value?.status === 'DRAFT');
+const canStart = computed(() => !!ticket.value?.ticket_type && (!needsDutyConfirm(ticket.value.ticket_type, ticket.value.priority) || !!ticket.value.duty_confirmed_at));
+const startHint = computed(() => (!ticket.value?.ticket_type ? 'Isi triase (Jenis Tiket) dulu.' : 'Menunggu konfirmasi Duty Engineer.'));
+const handleStartWork = async () => {
+  if (!ticket.value || !canStart.value) return;
+  starting.value = true;
+  try {
+    await store.completeStage(ticket.value.id, 'START_WORK');
+    toast('Tiket mulai dikerjakan.', 'success');
+  } catch (e: any) {
+    showError('Gagal Memulai Pekerjaan', e?.data?.statusMessage || e?.message || 'Terjadi kesalahan.');
+  } finally {
+    starting.value = false;
+  }
+};
 
 const openPreview = (att: { file_path?: string | null; file_name: string }) => {
   if (att.file_path) {
@@ -532,41 +566,15 @@ const handleImageError = (e: Event) => {
   img.style.display = 'none';
 };
 
-const handleSubmitCurrentStage = async () => {
-  if (!ticket.value || !canSolve.value) return;
-
-  const f = solution.value;
-  if (!f.summary.trim()) return showError('Solusi Belum Diisi', 'Isi ringkasan solusi penyelesaian.');
-  if (f.type === 'SEMENTARA' && !f.tech_debt_url.trim()) {
-    return showError('Tautan Wajib', 'Solusi sementara wajib menyertakan tautan utang teknis.');
-  }
-  const sol: Record<string, string> = { type: f.type, summary: f.summary.trim() };
-  if (f.type === 'SEMENTARA') sol.tech_debt_url = f.tech_debt_url.trim();
-
-  try {
-    await store.completeStage(ticket.value.id, 'IN_PROGRESS', isRichTextEmpty(stageNotes.value) ? undefined : stageNotes.value, undefined, undefined, undefined, sol);
-    solution.value = { type: 'PANDUAN', summary: '', tech_debt_url: '' };
-  } catch (e: any) {
-    showError('Gagal Memproses', e?.data?.statusMessage || e?.message || 'Terjadi kesalahan.');
-  }
-  stageNotes.value = '';
-};
-
 const handleSaveNote = async () => {
   if (!ticket.value || isRichTextEmpty(stageNotes.value)) return;
-  await store.saveWorklogNote(ticket.value.id, stageKey.value, stageNotes.value);
+  await store.saveWorklogNote(ticket.value.id, stageKey.value, stageNotes.value, stageFiles.value);
   stageNotes.value = '';
+  stageFiles.value = [];
 };
 
-// ponytail: log/berkas dipetakan ke fase lewat kunci tahap API; log ASSIGN tampil di ketiga fase pra-kerja (tanpa stempel fase per log).
-const STAGE_PHASES: Record<string, Phase[]> = {
-  REQUEST: ['Baru'],
-  ASSIGN: ['Baru', 'Diakui', 'Ditriase'],
-  IN_PROGRESS: ['Dikerjakan', 'Menunggu Pemohon'],
-  DELEGATION: ['Dikerjakan', 'Menunggu Pemohon'],
-  COMPLETION: ['Selesai'],
-};
-const inPhase = (stage: string | null | undefined, phase: Phase) => !!stage && !!STAGE_PHASES[stage]?.includes(phase);
+// Tahap log/berkas disimpan sebagai nama fase, jadi tiap fase hanya menampilkan miliknya.
+const inPhase = (stage: string | null | undefined, phase: Phase) => stage === phase;
 
 const PHASE_DESC: Record<Phase, string> = {
   Baru: 'Tiket dibuat pemohon',
@@ -698,12 +706,19 @@ const handleSendComment = async () => {
 
   commentSending.value = true;
   try {
+    let body: FormData | { message: string } = { message };
+    if (commentFiles.value.length) {
+      body = new FormData();
+      body.append('message', message);
+      for (const pf of commentFiles.value) body.append('files', pf.file);
+    }
     const res = await apiFetch<{ success: boolean; data: TicketComment }>(`/api/tickets/${ticket.value.id}/comments`, {
       method: 'POST',
-      body: { message },
+      body,
     });
     comments.value.push(res.data);
     commentDraft.value = '';
+    commentFiles.value = [];
     toast('Komentar terkirim', 'success');
   } catch (e: any) {
     showError('Gagal Mengirim Komentar', e?.data?.statusMessage || e?.message || 'Terjadi kesalahan.');

@@ -43,7 +43,7 @@ Sumber: `server/utils/ticket-lifecycle.ts` (`VALID_TRANSITIONS`), tidak ada tran
 
 Aturan yang ditegakkan server:
 - Aktivitas baru selalu record baru di `worklogs`, tidak menimpa, tidak mengubah status (Rule 18).
-- Tahap aktivitas: `ASSIGN` selalu; `IN_PROGRESS` hanya saat PROCESS; `COMPLETION` hanya saat SELESAI.
+- Tahap aktivitas = nama fase (`Baru`, `Diakui`, `Ditriase`, `Dikerjakan`, `Menunggu Pemohon`, `Selesai`). Boleh fase tiket saat ini atau sebelumnya, tidak boleh fase yang belum tercapai.
 - Komentar (`comments`), aktivitas (`worklogs`), catatan internal (`internal_notes`) entitas terpisah.
 - Assignment dan member terkunci saat SELESAI (Rule 06/07).
 - Transisi ke DELEGASI wajib membawa data delegasi; vendor_id harus ada.

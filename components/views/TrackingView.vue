@@ -396,9 +396,10 @@ onUnmounted(() => {
 });
 
 const stageMap: Record<string, string> = {
-  TAHAP_ASSIGN_SELESAI: 'ASSIGN',
-  TAHAP_IN_PROGRESS_SELESAI: 'IN_PROGRESS',
-  TAHAP_COMPLETION_SELESAI: 'COMPLETION',
+  TAHAP_ASSIGN_SELESAI: 'Ditriase',
+  TAHAP_START_WORK_SELESAI: 'Ditriase',
+  TAHAP_IN_PROGRESS_SELESAI: 'Dikerjakan',
+  TAHAP_COMPLETION_SELESAI: 'Selesai',
 };
 
 const matchingWorklogs = (action: string) => {

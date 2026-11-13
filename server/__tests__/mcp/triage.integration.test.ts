@@ -59,7 +59,7 @@ describe('CRITICAL wajib lampiran (server, dari tabel files)', () => {
     await expect(transitionStatus(PM, { ticketId: id, to: 'PROCESS' })).rejects.toMatchObject({ statusCode: 400 });
     await db.insert(files).values({
       id: `F-T-${id}`, ticketId: id, fileName: 'bukti.pdf', fileSize: '1',
-      filePath: '/api/uploads/x', stage: 'REQUEST', visibility: 'USER_VISIBLE', uploadedBy: IT_A.id, uploadedAt: '2026-10-01 08:00:00',
+      filePath: '/api/uploads/x', stage: 'Baru', visibility: 'USER_VISIBLE', uploadedBy: IT_A.id, uploadedAt: '2026-10-01 08:00:00',
     });
     await transitionStatus(PM, { ticketId: id, to: 'PROCESS' });
     expect((await row(id)).status).toBe('PROCESS');

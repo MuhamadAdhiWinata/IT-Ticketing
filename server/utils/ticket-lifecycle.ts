@@ -42,4 +42,5 @@ export const WORKFLOW_CONTROLLED_FIELDS = [
   'reopenCount', 'acknowledgedAt', 'triagedAt', 'acceptedAt', 'referencedTicketId',
   'ticketType', 'impact', 'urgency', 'changeReason', 'catalogItem', 'dataApprovalNote', 'transferTarget',
   'dutyConfirmedBy', 'dutyConfirmedAt', 'waitingStartedAt', 'waitingEndedAt', 'blockedBy', 'closedAt',
+  'submittedBy', 'reviewStartedAt', 'reviewStartedBy', 'verifiedAt', 'verifiedBy', 'reviewSkipped',
 ];
