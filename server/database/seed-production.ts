@@ -1,5 +1,6 @@
 import { config } from 'dotenv';
 import { resolve } from 'path';
+import { existsSync, readFileSync } from 'fs';
 config({ path: resolve(process.cwd(), '.env') });
 
 import bcrypt from 'bcryptjs';
@@ -8,6 +9,8 @@ import { eq, sql } from 'drizzle-orm';
 import { db } from './client';
 import { seedRbac } from '../services/rbac';
 import { seedSlaMaster } from '../services/sla-master';
+import { importDataset } from '../services/import';
+import { IMPORT_DATASETS } from '../../utils/importSpec';
 import { users, userPreferences, companySettings, categories } from './schema';
 
 // Seeder production: data kosong, hanya akun admin, company_settings 'default', dan 2 kategori.
@@ -53,6 +56,24 @@ console.log('[SEED:PROD] peran, klaim, dan menu bawaan siap.');
 
 await seedSlaMaster();
 console.log('[SEED:PROD] master SLA bawaan siap.');
+
+// Opsional: SEED_DIR=<folder> berisi <dataset>.csv (format = template di menu Import), mis. users.csv, companies.csv.
+// Diimpor berurutan dengan aturan yang sama dengan UI (id baru dibuat, id lama diperbarui, semua-atau-tidak per file).
+const seedDir = process.env.SEED_DIR;
+if (seedDir) {
+  for (const { key } of IMPORT_DATASETS) {
+    const file = resolve(process.cwd(), seedDir, `${key}.csv`);
+    if (!existsSync(file)) continue;
+    const r = await importDataset(key, readFileSync(file, 'utf8'));
+    if (r.errorCount) {
+      console.error(`[SEED:PROD] ${key}.csv gagal (${r.errorCount} kesalahan):`);
+      r.errors.forEach(e => console.error(`  baris ${e.line}: ${e.message}`));
+      process.exit(1);
+    }
+    console.log(`[SEED:PROD] ${key}.csv: ${r.created} dibuat, ${r.updated} diperbarui.`);
+    r.passwords.forEach(p => console.log(`[SEED:PROD] Password sementara ${p.email}: ${p.password}`));
+  }
+}
 
 console.log('[SEED:PROD] Selesai.');
 process.exit(0);

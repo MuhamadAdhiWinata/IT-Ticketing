@@ -73,6 +73,16 @@
           <Users class="w-4 h-4" />
           <span>Master Account & Simulasi Role ({{ store.allUsers.length }})</span>
         </button>
+
+        <button
+          v-if="canImport"
+          @click="activeTab = 'IMPORT'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2"
+          :class="activeTab === 'IMPORT' ? 'bg-surface text-primary shadow-xs' : 'text-muted-foreground hover:text-foreground'"
+        >
+          <FileSpreadsheet class="w-4 h-4" />
+          <span>Import / Template</span>
+        </button>
       </div>
 
       <!-- TAB 1: KATEGORI, APLIKASI/PROJECT & SUB MODUL (RELASIONAL TERPISAH) -->
@@ -323,6 +333,7 @@
       <!-- TAB 2: PRIORITAS & TRIASE (Dampak, Urgensi, P1-P4, matriks) -->
       <TriageMasterPanel v-if="activeTab === 'PRIORITIES'" />
       <SlaMasterPanel v-if="activeTab === 'SLA'" />
+      <ImportPanel v-if="activeTab === 'IMPORT' && canImport" />
 
       <!-- TAB: PERUSAHAAN & DIVISI -->
       <div v-if="activeTab === 'ORG'" class="p-5 sm:p-6 space-y-8">
@@ -828,11 +839,14 @@ import {
   Plus,
   Building2,
   Clock,
+  FileSpreadsheet,
 } from 'lucide-vue-next';
 import type { CategoryItem, ProjectKendalaItem, SubmoduleItem, CompanyItem, DivisionItem, AppUser, UserRole } from '~/types';
 import { getProjectKendalaLabel } from '~/utils/ticketHelpers';
 import TriageMasterPanel from '~/components/features/Master/TriageMasterPanel.vue';
 import SlaMasterPanel from '~/components/features/Master/SlaMasterPanel.vue';
+import ImportPanel from '~/components/features/Master/ImportPanel.vue';
+import { CLAIM, roleHas } from '~/utils/permissions';
 import { nextId } from '~/utils/id';
 import { useToast } from '~/composables/useToast';
 import { UNITS } from '~/utils/ticketSpec';
@@ -843,7 +857,8 @@ const store = useAppStore();
 const { confirm: doConfirm, state: confirmState } = useConfirmModal();
 const { toast } = useToast();
 
-const activeTab = ref<'CATEGORIES' | 'PRIORITIES' | 'SLA' | 'ORG' | 'USERS'>('CATEGORIES');
+const activeTab = ref<'CATEGORIES' | 'PRIORITIES' | 'SLA' | 'ORG' | 'USERS' | 'IMPORT'>('CATEGORIES');
+const canImport = computed(() => roleHas(store.currentUser?.role, CLAIM.IMPORT_MASTER));
 const selectedCategoryFilter = ref('ALL');
 const selectedProjectKendalaFilter = ref('ALL');
 const selectedDivisionCompanyFilter = ref('ALL');

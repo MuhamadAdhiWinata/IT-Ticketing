@@ -16,6 +16,7 @@ export const CLAIM = {
   DELETE_TICKET: 'ticket.delete',
   VIEW_ALL_WORKLOGS: 'worklog.view_all',
   MANAGE_MASTER: 'master.manage',
+  IMPORT_MASTER: 'master.import',
   MANAGE_SETTINGS: 'settings.manage',
   MANAGE_DUTY: 'duty.manage',
 } as const;
@@ -54,6 +55,7 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: CLAIM.VIEW_ALL_WORKLOGS, label: 'Lihat Log Harian semua worker', group: 'Tiket' },
   { key: CLAIM.MANAGE_DUTY, label: 'Kelola jadwal shift Duty Engineer (buat, ubah, batalkan, tukar)', group: 'Tiket' },
   { key: CLAIM.MANAGE_MASTER, label: 'Kelola data master dan pengguna', group: 'Administrasi' },
+  { key: CLAIM.IMPORT_MASTER, label: 'Import data master dan pengguna dari CSV/Excel, unduh template dan data', group: 'Administrasi' },
   { key: CLAIM.MANAGE_SETTINGS, label: 'Ubah pengaturan perusahaan', group: 'Administrasi' },
 ];
 
