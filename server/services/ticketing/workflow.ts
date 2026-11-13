@@ -8,7 +8,7 @@ import {
   fail, hm, inTx, lockTicket, newId, nowTs, parse, requireIT, ticketSummary, withFileCleanup,
 } from './common';
 import { insertAttachments } from './attachments';
-import { SOLUTION_TYPES, derivePhase, deriveStatusLabel, needsDutyConfirm, values } from '~/utils/ticketSpec';
+import { PHASES, SOLUTION_TYPES, derivePhase, deriveStatusLabel, needsDutyConfirm, values, type Phase } from '~/utils/ticketSpec';
 import { canTriageRole } from '~/utils/roles';
 
 export const STATUSES = ['DRAFT', 'PROCESS', 'DELEGASI', 'SELESAI'] as const;
@@ -99,6 +99,7 @@ export async function transitionStatus(
       patch.issuedAt = t.issuedAt || ts;
     } else if (stageKey === 'IN_PROGRESS') {
       patch.completedAt = ts;
+      patch.firstCompletedAt = t.firstCompletedAt || ts;
       if (v.solution) {
         patch.solutionType = v.solution.type;
         patch.resolutionSummary = v.solution.summary;
@@ -195,6 +196,75 @@ async function reopenIn(tx: DbExec, actor: Actor, t: typeof tickets.$inferSelect
     detail: 'Tiket dibuka ulang dari SELESAI ke PROCESS oleh IT',
   });
   return { previous_status: 'SELESAI', ticket: await ticketSummary(tx, t.id), attachments: [] };
+}
+
+const MovePhaseSchema = z.object({
+  ticketId: z.string().min(1),
+  to: z.enum(PHASES),
+  notes: z.string().trim().max(2000).optional(),
+});
+const EARLY_PHASES: Phase[] = ['Baru', 'Diakui', 'Ditriase'];
+
+// Pindah fase dari kanban: bebas maju atau mundur (kondisi lapangan dinamis), selalu tercatat di audit log.
+// Kolom penurun fase (acknowledged/triaged/waiting/completed) disesuaikan agar derivePhase() menghasilkan fase tujuan.
+export async function moveTicketPhase(actor: Actor, input: z.input<typeof MovePhaseSchema>, exec?: DbExec) {
+  requireIT(actor);
+  const v = parse(MovePhaseSchema, input);
+  return inTx(exec, async (tx) => {
+    const t = await lockTicket(tx, v.ticketId);
+    const from = derivePhase(t);
+    if (from === v.to) fail(409, `Tiket sudah di fase ${v.to}`);
+    const early = EARLY_PHASES.includes(v.to);
+    if ((early || EARLY_PHASES.includes(from)) && !canTriageRole(actor.role, actor.dutyActive)) {
+      fail(403, 'Forbidden: perpindahan dari/ke fase Baru, Diakui, Ditriase hanya untuk PM');
+    }
+    const ts = nowTs();
+    const patch: Partial<typeof tickets.$inferInsert> = {};
+
+    if (v.to === 'Baru') Object.assign(patch, { acknowledgedAt: null, triagedAt: null });
+    else {
+      if (!t.acknowledgedAt) patch.acknowledgedAt = ts;
+      if (v.to === 'Diakui') patch.triagedAt = null;
+      else if (!t.triagedAt) patch.triagedAt = ts;
+    }
+
+    if (early) patch.status = 'DRAFT';
+    else if (v.to === 'Selesai') Object.assign(patch, { status: 'SELESAI', completedAt: ts, firstCompletedAt: t.firstCompletedAt || ts, closedAt: null, transferTarget: null });
+    else if (t.status === 'DRAFT' || t.status === 'SELESAI') patch.status = 'PROCESS';
+
+    // Masuk ke pekerjaan dari fase awal: syarat yang sama dengan Mulai Dikerjakan.
+    if (!early && t.status === 'DRAFT') {
+      if (!t.ticketType) fail(400, 'Isi triase (Jenis Tiket) dulu sebelum tiket dikerjakan');
+      if (needsDutyConfirm(t.ticketType, t.priority) && !t.dutyConfirmedAt) fail(400, 'Insiden P1/P2 wajib dikonfirmasi Duty Engineer sebelum diproses');
+      patch.processStartedAt = t.processStartedAt || ts;
+      patch.issuedAt = t.issuedAt || ts;
+    }
+    if (t.status === 'SELESAI' && v.to !== 'Selesai') {
+      Object.assign(patch, { completedAt: null, closedAt: null, transferTarget: null, reopenCount: t.reopenCount + 1 });
+    }
+
+    if (v.to === 'Menunggu Pemohon') Object.assign(patch, { waitingStartedAt: ts, waitingEndedAt: null });
+    else if (t.waitingStartedAt && !t.waitingEndedAt) patch.waitingEndedAt = ts;
+
+    await tx.update(tickets).set(patch).where(eq(tickets.id, t.id));
+    await tx.insert(auditLogs).values({
+      id: newId('AUD'),
+      ticketId: t.id,
+      action: 'FASE_DIPINDAHKAN',
+      performedAt: ts,
+      performedBy: actor.id,
+      onDuty: actor.dutyActive ? 1 : 0,
+      detail: `${deriveStatusLabel(t)} -> ${v.to}`,
+      notes: v.notes ?? null,
+    });
+    if (t.requestedBy !== actor.id) {
+      await createNotification({
+        userId: t.requestedBy, ticketId: t.id, type: 'ASSIGNED', title: 'Status Tiket Berubah',
+        message: `Tiket ${t.ticketNumber || t.id} dipindahkan dari fase ${deriveStatusLabel(t)} ke ${v.to} oleh ${actor.name}`,
+      }, tx);
+    }
+    return { previous_phase: from, ticket: await ticketSummary(tx, t.id) };
+  });
 }
 
 export async function reopenTicket(actor: Actor, input: { ticketId: string }, exec?: DbExec) {

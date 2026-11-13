@@ -50,9 +50,7 @@
           <span class="text-[10px] uppercase tracking-wider text-muted-foreground font-bold block">Status & Penanganan</span>
           <div class="flex items-center justify-between">
             <span class="text-xs text-muted-foreground">Prioritas:</span>
-            <span :class="['px-2 py-0.5 rounded text-xs font-bold uppercase', getTicketPriorityBadgeClass(ticket.priority)]">
-              {{ getTicketPriorityLabel(ticket.priority) }}
-            </span>
+            <PriorityBadge :ticket="ticket" show-impact />
           </div>
           <div class="flex items-center justify-between">
             <span class="text-xs text-muted-foreground">Status Saat Ini:</span>
@@ -484,7 +482,7 @@ import { apiFetch } from '~/services/api';
 import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon, User, X, Download, Image as ImageIcon, FileText, File, Send, Lock } from 'lucide-vue-next';
 import type { TicketStatus, TicketComment, TicketInternalNote } from '~/types';
 import { triggerPrintPDF } from '~/utils/export';
-import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
+import PriorityBadge from '~/components/common/PriorityBadge.vue';
 import { isImage, isPdf, getFileExtLabel } from '~/utils/fileHelpers';
 import { formatRequesterIdentity } from '~/utils/identity';
 import { useModal } from '~/composables/useModal';

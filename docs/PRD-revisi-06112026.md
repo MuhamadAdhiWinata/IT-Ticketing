@@ -116,7 +116,7 @@ Peran, klaim, dan menu sidebar disimpan di DB (`roles`, `permissions`, `role_per
 
 - Fase Baru, Diakui, Ditriase adalah pekerjaan PM (klaim `ticket.triage`): Akui, Mulai Triase, isi triase, Mulai Dikerjakan. Admin tidak dapat melakukannya.
 - Pelaksana tidak lagi dipilih di form triase. Ambil Tiket (worker, untuk dirinya, bila belum ada Pelaksana) dan Tugaskan Pelaksana (PM) hanya di fase Dikerjakan; di fase lain server menolak dengan 409. Berlaku juga untuk endpoint `/assignee`, `/members`, dan tool MCP `assign_ticket`, `add_ticket_members`.
-- Membuat tiket tidak lagi menawarkan "Simpan & Assign". Kartu kanban tidak bisa dipindah/diseret; fase berubah lewat aksi di detail tiket.
+- Membuat tiket tidak lagi menawarkan "Simpan & Assign". Kartu kanban Dashboard bisa diseret antar fase, maju maupun mundur, lewat `POST /api/tickets/:id/move-phase` `{to, notes?}` (klaim `it.access`). Setiap perpindahan tercatat di audit log sebagai `FASE_DIPINDAHKAN` (detail `Fase asal -> Fase tujuan`). Dari/ke Baru, Diakui, Ditriase hanya PM; masuk ke Dikerjakan dari fase awal tetap butuh triase terisi dan konfirmasi Duty Engineer untuk Insiden P1/P2.
 - Semua daftar tiket (Tiket Saya, Pekerjaan Saya, Dashboard, Laporan, CSV) menampilkan fase/hasil akhir (`status_label`), bukan DRAFT/PROCESS/DELEGASI/SELESAI.
 
 ## Auto-Rotate Duty Engineer Shift
@@ -129,3 +129,25 @@ Pemilik jadwal shift aktif otomatis mendapat klaim peran `DUTY_ENGINEER` di atas
 - `GET /api/rbac/me` menambah `active_permissions`, `is_duty_active`, `current_duty_end_at`, `next_duty_start_at` (jadwal mulai dalam 24 jam).
 - Audit: kolom `on_duty` di `audit_logs` dan `worklogs` bernilai 1 bila penulisnya sedang ON DUTY; UI menampilkan label "On Duty" di riwayat dan aktivitas.
 - UI: menu **Jadwal Duty** (input `datetime-local` dikonversi ke ISO UTC sebelum dikirim), `stores/duty.ts` memasang satu `setTimeout` ke batas shift terdekat (hanya bila selisih < 24 jam) dan ambil ulang `/api/rbac/me`, plus ulang saat `visibilitychange`. Navbar menampilkan badge "ON DUTY s/d HH:mm".
+
+## Master Dampak, Urgensi, dan Prioritas (P1-P4)
+
+Dampak, Urgensi, label Prioritas, dan matriks Dampak x Urgensi menjadi Prioritas disimpan di DB (migrasi 0009: `impacts`, `urgencies`, `priority_levels`, `priority_matrix`), diisi nilai awal otomatis saat server start (hanya bila kosong).
+
+- Master Data > **Prioritas & Triase** (klaim `master.manage`): tambah/ubah/urut/nonaktifkan Dampak dan Urgensi, ubah label dan deskripsi P1-P4, isi matriks. Simpan satu kali (`PUT /api/triage-master`, satu transaksi). `GET /api/triage-master` untuk semua pengguna login.
+- Himpunan P tetap P1-P4 karena terhubung ke SLA kategori (P1=CRITICAL, P2=HIGH, P3=MEDIUM, P4=LOW); tidak bisa ditambah/dihapus.
+- Dampak/Urgensi yang masih dipakai tiket tidak dapat dihapus (409); nonaktifkan saja (tidak muncul di form triase, tiket lama tetap terbaca).
+- Triase memvalidasi Dampak/Urgensi terhadap master, dan saran prioritas Insiden memakai matriks dari DB.
+- Dashboard (kanban, tabel), Tiket Saya, Pekerjaan Saya, detail, dan Laporan menampilkan badge `P1 · Kritis` plus Urgensi dan Dampak, bukan lagi Low/Medium/High/Critical. Dashboard punya filter Prioritas (P1-P4), Urgensi, dan Dampak.
+
+## Master SLA dan field Tally (workbook "SLA Tiket HO")
+
+Sumber: `ISSUE/Copy of SLA Tiket HO.xlsx` (sheet SLA Configuration, Tally_Raw, Panduan, Uji).
+
+- Master SLA (migrasi 0010, tabel `sla_targets` dan `sla_settings`, diedit di Master Data tab SLA, klaim `master.manage`): target respon/resolusi P1 sampai P4 + Default, cakupan 24/7 atau Jam Kerja, jam kerja per hari (9), jam mulai (08:00 WIB), ambang berisiko (80%). Nilai awal = sheet.
+- Engine `utils/slaCalc.ts` (fungsi murni, diuji dengan 6 kasus tab Uji): jam layanan Senin sampai Sabtu 08-17 WIB, Minggu tidak dihitung kecuali 24/7. Target P1 sampai P4 hanya untuk Insiden; jenis lain dan tiket belum ditriase memakai Default.
+- Respon = masuk sampai diakui. Resolusi neto = jam layanan dikurangi jeda Menunggu Pemohon. `first_completed_at` (selesai pertama) tidak ditimpa saat dibuka ulang. Dialihkan tidak dihitung selesai. Status: Sesuai SLA, Berisiko, Lewat SLA, On Track.
+- Dasar kolom `categories.sla_*` lama tidak dipakai lagi.
+- Field formulir baru dari Tally_Raw: Kontak yang dapat dihubungi (`tickets.contact`, wajib), Cabang atau bagian (dipakai kolom Lokasi, opsional untuk IT Programmer), opsi "Belum tahu" pada Pekerjaan masih bisa berjalan (tetap perlu triase, bukan default P4).
+- Triase PM: "Data lengkap saat masuk" Ya/Tidak/Belum dinilai (`tickets.data_complete`).
+- Belum dikerjakan: banyak interval Jeda Pemohon (hanya satu tersimpan), metrik Review Mingguan (median/P90 respon, kepatuhan %), daftar hari libur.

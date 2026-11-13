@@ -172,6 +172,9 @@ export interface Ticket {
   is_event?: boolean;
   evidence_steps?: string | null;
   channel?: string;
+  contact?: string | null;
+  data_complete?: 'YA' | 'TIDAK' | null;
+  first_completed_at?: string | null;
   ticket_type?: string | null;
   impact?: string | null;
   urgency?: string | null;
@@ -193,14 +196,39 @@ export interface Ticket {
   attachments: Attachment[];
   worklogs: Worklog[];
   audit_logs: AuditLog[];
-  slaDeadline?: string | null;
-  isSLABreached?: boolean;
+  sla?: TicketSla | null;
 
   created_at: string;
   ticket_number?: string;
   issued_at?: string | null;
   process_started_at?: string | null;
   completed_at?: string | null;
+}
+
+export type SlaStatus = 'MET' | 'BREACHED' | 'AT_RISK' | 'ON_TRACK';
+export interface TicketSla {
+  key: string;
+  coverage: 'ALWAYS' | 'BUSINESS';
+  target_response_hours: number;
+  target_resolution_hours: number;
+  elapsed_response_hours: number;
+  elapsed_resolution_hours: number;
+  response_done: boolean;
+  resolution_done: boolean;
+  response_status: SlaStatus;
+  resolution_status: SlaStatus;
+}
+export interface SlaMaster {
+  targets: { priority_id: string; response_hours: number; resolution_hours: number; coverage: 'ALWAYS' | 'BUSINESS' }[];
+  settings: { work_hours_per_day: number; work_day_start: number; at_risk_threshold: number };
+}
+
+export interface TriageMasterItem { id: string; label: string; is_active: boolean }
+export interface TriageMaster {
+  impacts: TriageMasterItem[];
+  urgencies: TriageMasterItem[];
+  priorities: { id: string; label: string; description: string | null }[];
+  matrix: Record<string, Record<string, string>>;
 }
 
 export interface CategoryItem {

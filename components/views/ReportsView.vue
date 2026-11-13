@@ -229,9 +229,7 @@
                   {{ getTicketContributors(t) }}
                 </td>
                 <td class="p-3">
-                  <span :class="['px-2 py-0.5 rounded text-[10px] font-bold uppercase', getTicketPriorityBadgeClass(t.priority)]">
-                    {{ getTicketPriorityLabel(t.priority) }}
-                  </span>
+                  <PriorityBadge :ticket="t" show-impact />
                 </td>
                 <td class="p-3">
                   <span
@@ -391,7 +389,7 @@ import {
   Users,
 } from 'lucide-vue-next';
 import { exportTicketsToExcel, exportWorklogsToExcel, triggerPrintPDF } from '~/utils/export';
-import { getTicketPriorityLabel, getTicketPriorityBadgeClass } from '~/utils/ticketHelpers';
+import PriorityBadge from '~/components/common/PriorityBadge.vue';
 import { formatOrgLabel } from '~/utils/identity';
 import AppSelect from '~/components/common/AppSelect.vue';
 import { toSafeHtml } from '~/utils/richText';

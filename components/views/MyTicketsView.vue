@@ -86,7 +86,7 @@
                 <template v-if="t.location"> · {{ t.location }}</template>
               </div>
             </td>
-            <td class="p-3"><UiStatusBadge :priority="t.priority" size="xs" /></td>
+            <td class="p-3"><PriorityBadge :ticket="t" /></td>
             <td class="p-3"><UiStatusBadge :status="t.status" :label="t.status_label" size="xs" /></td>
             <td class="p-3 text-muted-foreground whitespace-nowrap">{{ formatDate(t.created_at) }}</td>
             <td class="p-3 text-right">
@@ -113,6 +113,7 @@
 </template>
 
 <script setup lang="ts">
+import PriorityBadge from '~/components/common/PriorityBadge.vue';
 import { ref, computed, watch, onMounted } from 'vue';
 import { ClipboardList, Plus } from 'lucide-vue-next';
 import { useAppStore } from '~/stores/app';

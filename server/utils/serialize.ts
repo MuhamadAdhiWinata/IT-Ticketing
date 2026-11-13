@@ -141,6 +141,10 @@ export function serializeTicket(t: any) {
     evidence_steps: t.evidenceSteps ?? null,
     channel: t.channel ?? 'FORM',
 
+    contact: t.contact ?? null,
+    data_complete: t.dataComplete ?? null,
+    first_completed_at: t.firstCompletedAt ?? null,
+    sla: t.sla ?? null,
     ticket_type: t.ticketType ?? null,
     impact: t.impact ?? null,
     urgency: t.urgency ?? null,

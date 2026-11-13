@@ -43,13 +43,18 @@
       <template v-else-if="phase === 'Ditriase'">
         <p v-if="needsDuty && !ticket.duty_confirmed_at" class="text-[11px] text-red-600 font-semibold">Insiden P1/P2 menunggu konfirmasi Duty Engineer sebelum bisa dikerjakan.</p>
 
-        <form v-if="auth.canTriage && !done" class="p-4 rounded-lg border border-border bg-surface space-y-3" @submit.prevent="submitTriage">
-          <p class="text-xs font-bold text-foreground">Triase (PM)</p>
+        <div v-if="auth.canTriage && !done && triaged && !editingTriage" class="flex items-center justify-between gap-3 p-3 rounded-lg border border-border bg-surface">
+          <p class="text-xs text-muted-foreground">Triase sudah diisi (ringkasan di bawah).</p>
+          <button type="button" class="px-3 py-1.5 rounded-lg border border-border text-xs font-bold" @click="startEditTriage">Ubah Triase</button>
+        </div>
+        <form v-else-if="auth.canTriage && !done" class="p-4 rounded-lg border border-border bg-surface space-y-3" @submit.prevent="submitTriage">
+          <p class="text-xs font-bold text-foreground">{{ triaged ? 'Ubah Triase (PM)' : 'Triase (PM)' }}</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <AppSelect v-model="tf.ticket_type" :options="TICKET_TYPES" label="Jenis Tiket" placeholder="-- Pilih --" size="sm" />
             <AppSelect v-model="tf.catalog_item" :options="CATALOG_ITEMS" label="Butir Katalog" placeholder="-- Pilih --" size="sm" />
-            <AppSelect v-model="tf.impact" :options="IMPACTS" label="Dampak" placeholder="-- Pilih --" size="sm" />
-            <AppSelect v-model="tf.urgency" :options="URGENCIES" label="Urgensi" placeholder="-- Pilih --" size="sm" />
+            <AppSelect v-model="tf.impact" :options="impactOptions" label="Dampak" placeholder="-- Pilih --" size="sm" />
+            <AppSelect v-model="tf.urgency" :options="urgencyOptions" label="Urgensi" placeholder="-- Pilih --" size="sm" />
+            <AppSelect v-model="tf.data_complete" :options="DATA_COMPLETE" label="Data Lengkap Saat Masuk" placeholder="-- Belum dinilai --" size="sm" />
             <AppSelect v-if="tf.ticket_type === 'INSIDEN'" v-model="tf.priority" :options="P_OPTIONS" :label="`Prioritas (saran matriks: ${suggestedP || '-'})`" placeholder="-- Otomatis --" size="sm" />
           </div>
           <div>
@@ -68,7 +73,8 @@
             </div>
           </div>
           <p v-if="tf.transfer_target" class="text-[11px] text-red-600">Pengalihan menutup tiket ini (hasil Dialihkan).</p>
-          <div class="flex justify-end">
+          <div class="flex justify-end gap-2">
+            <button v-if="triaged" type="button" :disabled="busy" class="px-4 py-2 rounded-lg border border-border text-xs font-bold" @click="editingTriage = false">Batal</button>
             <button type="submit" :disabled="busy" class="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold disabled:opacity-60">Simpan Triase</button>
           </div>
         </form>
@@ -159,9 +165,10 @@ import { useModal } from '~/composables/useModal';
 import { useToast } from '~/composables/useToast';
 import { isITRole } from '~/utils/roles';
 import {
-  TICKET_TYPES, IMPACTS, URGENCIES, CATALOG_ITEMS, TRANSFER_TARGETS, BLOCKED_BY, AFFECTED_SCOPES, WORK_STATUSES, CHANNELS,
+  TICKET_TYPES, CATALOG_ITEMS, TRANSFER_TARGETS, BLOCKED_BY, AFFECTED_SCOPES, WORK_STATUSES, CHANNELS,
   labelOf, priorityFromMatrix, needsDutyConfirm, type Phase,
 } from '~/utils/ticketSpec';
+import { COVERAGE_LABEL, SLA_STATUS_LABEL } from '~/utils/slaCalc';
 import AppSelect from '~/components/common/AppSelect.vue';
 import { toSafeHtml } from '~/utils/richText';
 
@@ -172,7 +179,8 @@ const { showError } = useModal();
 const { toast } = useToast();
 const busy = ref(false);
 
-const P_OPTIONS = ['P1', 'P2', 'P3', 'P4'].map(v => ({ value: v, label: v }));
+const DATA_COMPLETE = [{ value: 'YA', label: 'Ya' }, { value: 'TIDAK', label: 'Tidak' }];
+const P_OPTIONS = computed(() => (store.triageMaster?.priorities ?? []).map(p => ({ value: p.id, label: `${p.id} · ${p.label}` })));
 
 const isIT = computed(() => isITRole(store.currentUser?.role));
 const isAssignee = computed(() => props.ticket.assignedTo === store.currentUser?.id);
@@ -190,7 +198,9 @@ const fmt = (v?: string | null) => (v ? v.replace('T', ' ').slice(0, 16) : '-');
 const intakeRows = computed(() => {
   const t = props.ticket;
   const rows = [
+    { label: 'Kontak', value: t.contact || '-' },
     { label: 'Unit', value: t.unit || '-' },
+    { label: 'Cabang / bagian', value: t.location || '-' },
     { label: 'Kanal Asal', value: labelOf(CHANNELS, t.channel) },
     { label: 'Sejak kapan', value: fmt(t.since_at) },
     { label: 'Jumlah terdampak', value: labelOf(AFFECTED_SCOPES, t.affected_scope) || '-' },
@@ -206,9 +216,16 @@ const summaryRows = computed(() => {
   const rows: { label: string; value: string }[] = [];
   const add = (label: string, value?: string | null) => { if (value) rows.push({ label, value }); };
   add('Jenis', labelOf(TICKET_TYPES, t.ticket_type));
-  if (t.impact || t.urgency) add('Dampak / Urgensi', `${labelOf(IMPACTS, t.impact) || '-'} / ${labelOf(URGENCIES, t.urgency) || '-'}`);
-  if (t.ticket_type === 'INSIDEN') add('Prioritas', t.p_level);
+  if (t.impact || t.urgency) add('Dampak / Urgensi', `${masterLabel(store.triageMaster?.impacts, t.impact) || '-'} / ${masterLabel(store.triageMaster?.urgencies, t.urgency) || '-'}`);
+  if (t.ticket_type === 'INSIDEN' && t.p_level) add('Prioritas', `${t.p_level} (${masterLabel(store.triageMaster?.priorities, t.p_level)})`);
   add('Butir katalog', t.catalog_item);
+  add('Data lengkap saat masuk', t.data_complete ? labelOf(DATA_COMPLETE, t.data_complete) : 'Belum dinilai');
+  if (t.sla) {
+    const s = t.sla;
+    add('Cakupan SLA', `${s.key} · ${COVERAGE_LABEL[s.coverage]}`);
+    add('SLA respon', `${s.elapsed_response_hours} / ${s.target_response_hours} jam · ${SLA_STATUS_LABEL[s.response_status]}`);
+    add('SLA resolusi', `${s.elapsed_resolution_hours} / ${s.target_resolution_hours} jam · ${SLA_STATUS_LABEL[s.resolution_status]}`);
+  }
   add('Pelaksana', t.assignedToName);
   add('Diakui', t.acknowledged_at ? fmt(t.acknowledged_at) : null);
   add('Diterima Pelaksana', t.accepted_at ? fmt(t.accepted_at) : null);
@@ -226,17 +243,28 @@ const summaryRows = computed(() => {
 
 const blankTf = () => ({
   ticket_type: props.ticket.ticket_type || '', impact: props.ticket.impact || '', urgency: props.ticket.urgency || '',
-  priority: '', catalog_item: props.ticket.catalog_item || '',
+  priority: props.ticket.p_level || '', catalog_item: props.ticket.catalog_item || '', data_complete: props.ticket.data_complete || '',
   change_reason: '', data_approval_note: props.ticket.data_approval_note || '', transfer_target: '', duplicate_of: '',
 });
 const tf = reactive(blankTf());
+// Triase terisi = Jenis Tiket sudah ada: tampil ringkasan, form baru terbuka lewat "Ubah Triase" dengan nilai terisi.
+const triaged = computed(() => !!props.ticket.ticket_type);
+const editingTriage = ref(false);
+const startEditTriage = () => { Object.assign(tf, blankTf()); editingTriage.value = true; };
 const ef = reactive({ blocked_by: props.ticket.blocked_by || '', odoo_task_url: props.ticket.odoo_task_url || '' });
 watch(() => props.ticket.id, () => {
   Object.assign(tf, blankTf());
+  editingTriage.value = false;
   Object.assign(ef, { blocked_by: props.ticket.blocked_by || '', odoo_task_url: props.ticket.odoo_task_url || '' });
 });
 
-const suggestedP = computed(() => priorityFromMatrix(tf.impact, tf.urgency));
+const suggestedP = computed(() => priorityFromMatrix(tf.impact, tf.urgency, store.triageMaster?.matrix));
+const masterLabel = (list: { id: string; label: string }[] | undefined, id?: string | null) => list?.find(x => x.id === id)?.label ?? id ?? '';
+// Item nonaktif tidak ditawarkan lagi, kecuali yang sudah terpilih pada tiket ini.
+const masterOptions = (list: { id: string; label: string; is_active?: boolean }[] | undefined, current?: string | null) =>
+  (list ?? []).filter(x => x.is_active !== false || x.id === current).map(x => ({ value: x.id, label: x.label }));
+const impactOptions = computed(() => masterOptions(store.triageMaster?.impacts, props.ticket.impact));
+const urgencyOptions = computed(() => masterOptions(store.triageMaster?.urgencies, props.ticket.urgency));
 
 async function run(path: string, body?: Record<string, unknown>, okMsg = 'Tersimpan.') {
   busy.value = true;
@@ -258,7 +286,7 @@ function submitTriage() {
   const body: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(tf)) if (v) body[k] = v;
   if (tf.ticket_type !== 'INSIDEN') delete body.priority;
-  run('triage', body, 'Triase tersimpan.').then(() => { tf.change_reason = ''; tf.priority = ''; tf.transfer_target = ''; tf.duplicate_of = ''; });
+  run('triage', body, 'Triase tersimpan.').then(() => { editingTriage.value = false; Object.assign(tf, blankTf()); });
 }
 
 function submitExecution() {

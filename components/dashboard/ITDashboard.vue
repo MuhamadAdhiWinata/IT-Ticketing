@@ -108,6 +108,8 @@
 
         <AppSelect v-model="statusFilter" :options="statusOptions" size="sm" />
         <AppSelect v-model="priorityFilter" :options="priorityOptions" size="sm" />
+        <AppSelect v-model="urgencyFilter" :options="urgencyOptions" size="sm" />
+        <AppSelect v-model="impactFilter" :options="impactOptions" size="sm" />
       </div>
 
       <!-- Technician Workload Summary -->
@@ -138,12 +140,18 @@
     <!-- Kanban -->
     <div
       v-if="viewMode === 'kanban'"
-      class="flex overflow-x-auto gap-4 pb-4 w-full custom-scrollbar xl:grid xl:grid-cols-6 xl:overflow-visible xl:pb-0 items-start"
+      class="flex overflow-x-auto gap-4 pb-4 w-full custom-scrollbar items-start snap-x snap-proximity overscroll-x-contain scroll-smooth [-webkit-overflow-scrolling:touch]"
     >
       <div
         v-for="col in kanbanColumns"
         :key="col.id"
-        class="bg-muted/40 p-3 rounded-lg border border-border space-y-3 min-h-[400px] w-[85vw] sm:w-[260px] xl:w-full shrink-0"
+        @dragover.prevent="draggedOverCol = col.id"
+        @dragleave="draggedOverCol === col.id && (draggedOverCol = null)"
+        @drop="handleDrop($event, col.id)"
+        :class="[
+          'p-3 rounded-lg border transition-colors space-y-3 min-h-[400px] w-[85vw] sm:w-[280px] shrink-0 snap-start',
+          draggedOverCol === col.id ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'bg-muted/40 border-border',
+        ]"
       >
         <div class="flex items-center justify-between px-1">
           <span class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -159,17 +167,23 @@
           <div
             v-for="t in getTicketsByStatus(col.id)"
             :key="t.id"
+            draggable="true"
+            @dragstart="handleDragStart($event, t.id)"
+            @dragend="handleDragEnd"
             @click="onSelectTicket(t)"
-            class="bg-surface p-3 rounded-lg border border-border shadow-xs hover:shadow-sm transition-all cursor-pointer space-y-2 group"
+            :class="[
+              'bg-surface p-3 rounded-lg border border-border shadow-xs hover:shadow-sm transition-all cursor-grab active:cursor-grabbing space-y-2 group',
+              draggedTicketId === t.id ? 'opacity-30 border-dashed border-primary' : '',
+            ]"
           >
             <div class="flex items-center justify-between text-[10px] font-semibold text-muted-foreground">
               <span class="font-mono text-primary font-bold">{{ t.id }}</span>
               <div class="flex items-center gap-1.5">
-                <div v-if="t.isSLABreached && t.status !== 'SELESAI'" class="flex items-center gap-0.5 text-red-600 animate-pulse" title="SLA Breached!">
+                <div v-if="isSlaBreached(t)" class="flex items-center gap-0.5 text-red-600 animate-pulse" title="SLA Breached!">
                   <AlertTriangle class="w-3 h-3" />
                   <span class="font-bold">SLA</span>
                 </div>
-                <UiStatusBadge :priority="t.priority" size="xs" />
+                <PriorityBadge :ticket="t" />
               </div>
             </div>
 
@@ -225,7 +239,7 @@
               <td class="px-4 py-3">
                 <span class="font-mono font-bold text-primary">{{ t.id }}</span>
                 <div class="mt-0.5">
-                  <UiStatusBadge :priority="t.priority" size="xs" />
+                  <PriorityBadge :ticket="t" />
                 </div>
               </td>
               <td class="px-4 py-3">
@@ -276,10 +290,20 @@ import {
 } from 'lucide-vue-next';
 import type { AppUser, Ticket } from '~/types';
 import { useAuthStore } from '~/stores/auth';
+import { useAppStore } from '~/stores/app';
+import { apiFetch } from '~/services/api';
+import { useModal } from '~/composables/useModal';
+import { useToast } from '~/composables/useToast';
+import PriorityBadge from '~/components/common/PriorityBadge.vue';
 import TicketIncomingLog from '~/components/common/TicketIncomingLog.vue';
 import AppSelect from '~/components/common/AppSelect.vue';
 import { formatOrgLabel, formatRequesterIdentity } from '~/utils/identity';
 import { STATUS_FILTERS, matchesStatusFilter } from '~/utils/ticketSpec';
+
+const isSlaBreached = (t: Ticket) =>
+  !!t.sla && (t.sla.response_status === 'BREACHED' || t.sla.resolution_status === 'BREACHED') && t.status !== 'SELESAI';
+
+const appStore = useAppStore();
 
 const props = withDefaults(defineProps<{
   tickets: Ticket[];
@@ -300,7 +324,7 @@ const stats = computed(() => {
   return {
     total: all.length,
     unassigned: all.filter(t => !t.assignedTo && t.status_phase === 'Dikerjakan').length,
-    slaBreached: all.filter(t => t.isSLABreached && t.status !== 'SELESAI').length,
+    slaBreached: all.filter(isSlaBreached).length,
     incoming: all.filter(t => t.status_phase === 'Baru').length,
   };
 });
@@ -342,13 +366,21 @@ const statusOptions = [
   ...STATUS_FILTERS.map(p => ({ value: p, label: p })),
 ];
 
-const priorityOptions = [
+// Prioritas P1-P4, Urgensi, dan Dampak: opsi dan label dari master (Master Data > Prioritas & Triase).
+const urgencyFilter = ref('ALL');
+const impactFilter = ref('ALL');
+const priorityOptions = computed(() => [
   { value: 'ALL', label: 'Semua Prioritas' },
-  { value: 'LOW', label: 'Low' },
-  { value: 'MEDIUM', label: 'Medium' },
-  { value: 'HIGH', label: 'High' },
-  { value: 'CRITICAL', label: 'Critical' },
-];
+  ...(appStore.triageMaster?.priorities ?? []).map(p => ({ value: p.id, label: `${p.id} · ${p.label}` })),
+]);
+const urgencyOptions = computed(() => [
+  { value: 'ALL', label: 'Semua Urgensi' },
+  ...(appStore.triageMaster?.urgencies ?? []).map(u => ({ value: u.id, label: u.label })),
+]);
+const impactOptions = computed(() => [
+  { value: 'ALL', label: 'Semua Dampak' },
+  ...(appStore.triageMaster?.impacts ?? []).map(i => ({ value: i.id, label: i.label })),
+]);
 
 const viewModes: Array<{ id: 'kanban' | 'table'; label: string; icon: any }> = [
   { id: 'kanban', label: 'Kanban', icon: Columns },
@@ -374,10 +406,42 @@ const filteredTickets = computed(() => {
       || (t.requested_by_division || '').toLowerCase().includes(q)
       || (t.requestedByDept || '').toLowerCase().includes(q);
     const matchStatus = matchesStatusFilter(t, statusFilter.value);
-    const matchPriority = priorityFilter.value === 'ALL' || t.priority === priorityFilter.value;
-    return matchSearch && matchStatus && matchPriority;
+    const matchPriority = priorityFilter.value === 'ALL' || t.p_level === priorityFilter.value;
+    const matchUrgency = urgencyFilter.value === 'ALL' || t.urgency === urgencyFilter.value;
+    const matchImpact = impactFilter.value === 'ALL' || t.impact === impactFilter.value;
+    return matchSearch && matchStatus && matchPriority && matchUrgency && matchImpact;
   });
 });
 
 const getTicketsByStatus = (phase: string) => filteredTickets.value.filter(t => t.status_phase === phase);
+
+// Drag & drop antar fase: bebas maju/mundur, server yang menjaga syarat dan mencatat log FASE_DIPINDAHKAN.
+const { showError } = useModal();
+const { toast } = useToast();
+const draggedTicketId = ref<string | null>(null);
+const draggedOverCol = ref<string | null>(null);
+
+const handleDragStart = (e: DragEvent, ticketId: string) => {
+  draggedTicketId.value = ticketId;
+  e.dataTransfer?.setData('text/plain', ticketId);
+  if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+};
+const handleDragEnd = () => {
+  draggedTicketId.value = null;
+  draggedOverCol.value = null;
+};
+const handleDrop = async (e: DragEvent, phase: string) => {
+  e.preventDefault();
+  const ticketId = e.dataTransfer?.getData('text/plain') || draggedTicketId.value;
+  handleDragEnd();
+  const ticket = props.tickets.find(t => t.id === ticketId);
+  if (!ticket || ticket.status_phase === phase) return;
+  try {
+    await apiFetch(`/api/tickets/${ticket.id}/move-phase`, { method: 'POST', body: { to: phase } });
+    await appStore.refreshTicket(ticket.id);
+    toast(`Tiket dipindahkan ke ${phase}.`, 'success');
+  } catch (err: any) {
+    showError('Gagal Memindahkan Tiket', err?.data?.statusMessage || err?.message || 'Terjadi kesalahan.');
+  }
+};
 </script>

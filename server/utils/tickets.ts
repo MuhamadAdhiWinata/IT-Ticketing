@@ -1,9 +1,10 @@
 import { db } from '~/server/database/client';
-import { tickets, worklogs, auditLogs, files, categories } from '~/server/database/schema';
+import { tickets, worklogs, auditLogs, files } from '~/server/database/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { serializeTicket } from './serialize';
 import { loadOrgMaps, resolveCompanyOf, resolveDivisionOf } from './org';
-import { calculateSLADeadline, isSLABreached } from './sla';
+import { computeSla } from '~/utils/slaCalc';
+import { getSlaMaster } from '~/server/services/sla-master';
 
 export interface ResolvedUser {
   name: string;
@@ -38,16 +39,14 @@ export async function getTicketsWithRelations(whereClause?: any) {
   if (ticketsList.length === 0) return [];
 
   const ticketIds = ticketsList.map(t => t.id);
-  const categoryNames = [...new Set(ticketsList.map(t => t.category))];
 
-  const [worklogsList, auditLogsList, attachmentsList, membersList, categoriesList] = await Promise.all([
+  const [worklogsList, auditLogsList, attachmentsList, membersList, slaMaster] = await Promise.all([
     db.query.worklogs.findMany({ where: (w, { inArray: i }) => i(w.ticketId, ticketIds) }),
     db.query.auditLogs.findMany({ where: (a, { inArray: i }) => i(a.ticketId, ticketIds) }),
     db.query.files.findMany({ where: (a, { inArray: i }) => i(a.ticketId, ticketIds) }),
     db.query.ticketMembers.findMany({ where: (m, { inArray: i }) => i(m.ticketId, ticketIds) }),
-    db.query.categories.findMany({ where: (c, { inArray: i }) => i(c.name, categoryNames) }),
+    getSlaMaster(),
   ]);
-  const catMap = new Map(categoriesList.map(c => [c.name, c]));
 
   // Resolve user names
   const allUserIds = [
@@ -63,12 +62,9 @@ export async function getTicketsWithRelations(whereClause?: any) {
   const userMap = await resolveUserNames(allUserIds);
 
   return ticketsList.map(ticket => {
-    const cat = catMap.get(ticket.category);
-    const slaDeadline = cat ? calculateSLADeadline(ticket.createdAt, ticket.priority as any, cat) : null;
     return serializeTicket({
       ...ticket,
-      slaDeadline,
-      isSLABreached: slaDeadline ? isSLABreached(slaDeadline) : false,
+      sla: computeSla(ticket, slaMaster),
       worklogs: worklogsList.filter(w => w.ticketId === ticket.id).map(w => ({ ...w, workerName: userMap.get(w.workerId)?.name || '' })),
       auditLogs: auditLogsList.filter(a => a.ticketId === ticket.id).map(a => ({ ...a, performedByName: userMap.get(a.performedBy)?.name || '' })),
       attachments: attachmentsList.filter(a => a.ticketId === ticket.id).map(a => ({ ...a, uploadedByName: userMap.get(a.uploadedBy)?.name || '' })),
@@ -87,15 +83,13 @@ export async function getTicketById(ticketId: string) {
   });
   if (!ticket) return null;
 
-  const [worklogsList, auditLogsList, attachmentsList, membersList, cat] = await Promise.all([
+  const [worklogsList, auditLogsList, attachmentsList, membersList, slaMaster] = await Promise.all([
     db.query.worklogs.findMany({ where: (w, { eq: e }) => e(w.ticketId, ticketId) }),
     db.query.auditLogs.findMany({ where: (a, { eq: e }) => e(a.ticketId, ticketId) }),
     db.query.files.findMany({ where: (a, { eq: e }) => e(a.ticketId, ticketId) }),
     db.query.ticketMembers.findMany({ where: (m, { eq: e }) => e(m.ticketId, ticketId) }),
-    db.query.categories.findFirst({ where: (c, { eq: e }) => e(c.name, ticket.category) }),
+    getSlaMaster(),
   ]);
-
-  const slaDeadline = cat ? calculateSLADeadline(ticket.createdAt, ticket.priority as any, cat) : null;
 
   const allUserIds = [
     ticket.createdBy,
@@ -111,8 +105,7 @@ export async function getTicketById(ticketId: string) {
 
   return serializeTicket({
     ...ticket,
-    slaDeadline,
-    isSLABreached: slaDeadline ? isSLABreached(slaDeadline) : false,
+    sla: computeSla(ticket, slaMaster),
     worklogs: worklogsList.map(w => ({ ...w, workerName: userMap.get(w.workerId)?.name || '' })),
     auditLogs: auditLogsList.map(a => ({ ...a, performedByName: userMap.get(a.performedBy)?.name || '' })),
     attachments: attachmentsList.map(a => ({ ...a, uploadedByName: userMap.get(a.uploadedBy)?.name || '' })),

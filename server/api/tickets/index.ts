@@ -93,6 +93,7 @@ export default defineEventHandler(async (event) => {
       priority: body.priority || 'MEDIUM',
       status: 'DRAFT',
       unit,
+      contact: v.data.contact,
       expectedBehavior: v.data.expected_behavior,
       sinceAt: v.data.since_at.replace('T', ' ').slice(0, 19),
       affectedScope: v.data.affected_scope,

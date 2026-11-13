@@ -68,7 +68,7 @@
           <span class="font-mono font-bold text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/15">
             {{ t.id }}
           </span>
-          <UiStatusBadge :priority="t.priority" size="xs" />
+          <PriorityBadge :ticket="t" />
         </div>
 
         <h3 class="text-sm font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">
@@ -90,6 +90,7 @@
 </template>
 
 <script setup lang="ts">
+import PriorityBadge from '~/components/common/PriorityBadge.vue';
 import { ref, computed } from 'vue';
 import { Briefcase } from 'lucide-vue-next';
 import type { AppUser, Ticket } from '~/types';

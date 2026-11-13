@@ -64,6 +64,20 @@
       "when": 1794459895359,
       "tag": "0008_duty_schedules",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1794466342822,
+      "tag": "0009_triage_master",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1794533687210,
+      "tag": "0010_sla_master_tally_fields",
+      "breakpoints": true
     }
   ]
 }

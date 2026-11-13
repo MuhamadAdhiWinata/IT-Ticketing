@@ -5,6 +5,7 @@ import {
   timestamp,
   datetime,
   int,
+  double,
   json,
   index,
   primaryKey,
@@ -204,11 +205,12 @@ export const tickets = mysqlTable('tickets', {
   expectedBehavior: text('expected_behavior'),
   sinceAt: timestamp('since_at', { mode: 'string' }),
   affectedScope: varchar('affected_scope', { length: 30 }), // SATU_PENGGUNA | SATU_UNIT | SEMUA_PENGGUNA
-  workStatus: varchar('work_status', { length: 30 }), // BERHENTI_TOTAL | TERGANGGU | DAPAT_MENUNGGU
+  workStatus: varchar('work_status', { length: 30 }), // BERHENTI_TOTAL | TERGANGGU | DAPAT_MENUNGGU | BELUM_TAHU
   workaround: text('workaround'),
   isEvent: int('is_event', { unsigned: true }).notNull().default(0),
   evidenceSteps: text('evidence_steps'),
   channel: varchar('channel', { length: 20 }).notNull().default('FORM'), // FORM | PERCAKAPAN | INTERNAL
+  contact: varchar('contact', { length: 255 }), // kontak yang dapat dihubungi (Tally: "Kontak yang dapat dihubungi")
 
   // Triase (PM)
   ticketType: varchar('ticket_type', { length: 30 }),
@@ -220,6 +222,7 @@ export const tickets = mysqlTable('tickets', {
   transferTarget: varchar('transfer_target', { length: 40 }),
   dutyConfirmedBy: varchar('duty_confirmed_by', { length: 255 }), // nama Duty Engineer
   dutyConfirmedAt: timestamp('duty_confirmed_at', { mode: 'string' }),
+  dataComplete: varchar('data_complete', { length: 20 }), // YA | TIDAK; null = belum dinilai (kolom "Lengkap saat masuk")
 
   // Eksekusi (Pelaksana)
   waitingStartedAt: timestamp('waiting_started_at', { mode: 'string' }),
@@ -236,6 +239,7 @@ export const tickets = mysqlTable('tickets', {
   acceptedAt: timestamp('accepted_at', { mode: 'string' }),
   processStartedAt: timestamp('process_started_at', { mode: 'string' }),
   completedAt: timestamp('completed_at', { mode: 'string' }),
+  firstCompletedAt: timestamp('first_completed_at', { mode: 'string' }), // selesai pertama; tidak ditimpa saat dibuka ulang (dasar SLA resolusi)
 }, (table) => ({
   idxStatus: index('idx_tickets_status').on(table.status),
   idxCreatedBy: index('idx_tickets_created_by').on(table.createdBy),
@@ -516,3 +520,50 @@ export const dutySchedules = mysqlTable('duty_schedules', {
 }, (table) => ({
   idxUserWindow: index('idx_duty_user_window').on(table.userId, table.startAt, table.endAt),
 }));
+
+// ── Master triase: Dampak, Urgensi, Prioritas (P1-P4) dan matriks Dampak x Urgensi -> Prioritas. ──
+// tickets.impact / tickets.urgency menyimpan id master (tanpa FK agar nilai lama tetap terbaca bila master diubah);
+// penghapusan master yang masih dipakai tiket ditolak oleh server/services/triage-master.ts.
+export const impacts = mysqlTable('impacts', {
+  id: varchar('id', { length: 20 }).primaryKey(),
+  label: varchar('label', { length: 100 }).notNull(),
+  sortOrder: int('sort_order', { unsigned: true }).notNull().default(0),
+  isActive: int('is_active', { unsigned: true }).notNull().default(1),
+});
+
+export const urgencies = mysqlTable('urgencies', {
+  id: varchar('id', { length: 20 }).primaryKey(),
+  label: varchar('label', { length: 100 }).notNull(),
+  sortOrder: int('sort_order', { unsigned: true }).notNull().default(0),
+  isActive: int('is_active', { unsigned: true }).notNull().default(1),
+});
+
+// P1-P4 tetap empat level (dipetakan ke CRITICAL/HIGH/MEDIUM/LOW demi SLA kategori); label dan deskripsi dapat diubah.
+export const priorityLevels = mysqlTable('priority_levels', {
+  id: varchar('id', { length: 10 }).primaryKey(),
+  label: varchar('label', { length: 100 }).notNull(),
+  description: varchar('description', { length: 255 }),
+  sortOrder: int('sort_order', { unsigned: true }).notNull().default(0),
+});
+
+export const priorityMatrix = mysqlTable('priority_matrix', {
+  impactId: varchar('impact_id', { length: 20 }).notNull(),
+  urgencyId: varchar('urgency_id', { length: 20 }).notNull(),
+  priorityId: varchar('priority_id', { length: 10 }).notNull(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.impactId, table.urgencyId] }),
+}));
+
+// ── Master SLA (sheet "SLA Configuration"): target per prioritas + parameter jam kerja. ──
+// priority_id: P1-P4 untuk Insiden, DEFAULT untuk tiket yang belum ditriase. coverage: ALWAYS (24/7) | BUSINESS (jam kerja).
+export const slaTargets = mysqlTable('sla_targets', {
+  priorityId: varchar('priority_id', { length: 10 }).primaryKey(),
+  responseHours: double('response_hours').notNull(),
+  resolutionHours: double('resolution_hours').notNull(),
+  coverage: varchar('coverage', { length: 10 }).notNull(),
+});
+
+export const slaSettings = mysqlTable('sla_settings', {
+  key: varchar('key', { length: 40 }).primaryKey(),
+  value: double('value').notNull(),
+});

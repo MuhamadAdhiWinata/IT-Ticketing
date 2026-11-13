@@ -4,8 +4,9 @@ import { tickets, auditLogs, files as filesTbl } from '~/server/database/schema'
 import { count } from 'drizzle-orm';
 import { createNotification } from '~/server/utils/notifications';
 import { canTriageRole, isDutyRole } from '~/utils/roles';
+import { getTriageMaster } from '~/server/services/triage-master';
 import {
-  TICKET_TYPES, IMPACTS, URGENCIES, CATALOG_ITEMS, TRANSFER_TARGETS, BLOCKED_BY, P_TO_PRIORITY,
+  TICKET_TYPES, CATALOG_ITEMS, TRANSFER_TARGETS, BLOCKED_BY, P_TO_PRIORITY,
   priorityFromMatrix, priorityToP, values,
 } from '~/utils/ticketSpec';
 import { type Actor, type DbExec, fail, inTx, lockTicket, newId, nowTs, parse, requireIT, ticketSummary } from './common';
@@ -16,14 +17,16 @@ const urlField = z.string().trim().max(500).refine(u => /^https?:\/\/\S+$/i.test
 const TriageSchema = z.object({
   ticketId: z.string().min(1),
   ticket_type: z.enum(values(TICKET_TYPES)).optional(),
-  impact: z.enum(values(IMPACTS)).optional(),
-  urgency: z.enum(values(URGENCIES)).optional(),
+  // Nilai dicocokkan ke master Dampak/Urgensi (DB) di triageTicket.
+  impact: z.string().trim().min(1).optional(),
+  urgency: z.string().trim().min(1).optional(),
   priority: z.enum(['P1', 'P2', 'P3', 'P4']).optional(),
   change_reason: reasonText.optional(),
   catalog_item: z.enum(values(CATALOG_ITEMS)).nullable().optional(),
   data_approval_note: reasonText.optional(),
   transfer_target: z.enum(values(TRANSFER_TARGETS)).optional(),
   duplicate_of: z.string().trim().min(1).optional(),
+  data_complete: z.enum(['YA', 'TIDAK']).nullable().optional(),
 });
 
 const ExecutionSchema = z.object({
@@ -99,6 +102,9 @@ export async function confirmDuty(actor: Actor, input: { ticketId: string }, exe
 export async function triageTicket(actor: Actor, input: z.input<typeof TriageSchema>, exec?: DbExec) {
   if (!canTriageRole(actor.role, actor.dutyActive)) fail(403, 'Forbidden: hanya PM');
   const v = parse(TriageSchema, input);
+  const master = await getTriageMaster();
+  if (v.impact && !master.impacts.some(x => x.id === v.impact)) fail(400, `impact: ${v.impact} tidak ada di master Dampak`);
+  if (v.urgency && !master.urgencies.some(x => x.id === v.urgency)) fail(400, `urgency: ${v.urgency} tidak ada di master Urgensi`);
   return inTx(exec, async (tx) => {
     const t = await lockTicket(tx, v.ticketId);
     if (t.status === 'SELESAI') fail(409, 'Tiket SELESAI: triase terkunci');
@@ -113,7 +119,7 @@ export async function triageTicket(actor: Actor, input: z.input<typeof TriageSch
     if (v.urgency) patch.urgency = v.urgency;
 
     const prevP = priorityToP(t.priority);
-    const matrixP = priorityFromMatrix(impact, urgency);
+    const matrixP = priorityFromMatrix(impact, urgency, master.matrix);
     let reasonNeeded = !!(t.ticketType && v.ticket_type && v.ticket_type !== t.ticketType);
     // Matriks hanya menghitung ulang bila input dampak/urgensi/jenis berubah; override manual PM tidak ditimpa.
     const inputsChanged = (v.impact && v.impact !== t.impact) || (v.urgency && v.urgency !== t.urgency) || (v.ticket_type && v.ticket_type !== t.ticketType);
@@ -131,6 +137,7 @@ export async function triageTicket(actor: Actor, input: z.input<typeof TriageSch
     if (v.change_reason) patch.changeReason = v.change_reason;
 
     if (v.catalog_item !== undefined) patch.catalogItem = v.catalog_item;
+    if (v.data_complete !== undefined) patch.dataComplete = v.data_complete;
     if (v.data_approval_note !== undefined) patch.dataApprovalNote = v.data_approval_note || null;
     if (type === 'PL_DATA') {
       const approval = v.data_approval_note ?? t.dataApprovalNote;

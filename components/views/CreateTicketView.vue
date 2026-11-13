@@ -103,6 +103,18 @@
         <AppSelect v-else v-model="unit" :options="UNITS.map(u => ({ value: u, label: u }))" label="Unit *" placeholder="-- Pilih Unit --" />
       </div>
 
+      <!-- Kontak -->
+      <div>
+        <label class="block text-xs font-semibold text-foreground mb-1.5">Kontak yang Dapat Dihubungi <span class="text-red-500">*</span></label>
+        <input
+          v-model="contact"
+          maxlength="255"
+          type="text"
+          placeholder="Cth: 0812xxxxxxx atau nama@perusahaan.co.id"
+          class="w-full px-4 py-3 rounded-lg border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium"
+        />
+      </div>
+
       <!-- Title -->
       <div>
         <label class="flex justify-between text-xs font-semibold text-foreground mb-1.5">
@@ -135,13 +147,16 @@
         />
       </div>
 
-      <!-- Lokasi (Support IT) -->
-      <div v-if="serviceView === 'SUPPORT_IT'">
-        <label class="block text-xs font-semibold text-foreground mb-1.5">Lokasi / Ruangan Anda <span class="text-red-500">*</span></label>
+      <!-- Lokasi / Cabang atau bagian -->
+      <div>
+        <label class="block text-xs font-semibold text-foreground mb-1.5">
+          {{ serviceView === 'SUPPORT_IT' ? 'Lokasi / Ruangan Anda' : 'Cabang atau Bagian (opsional)' }}
+          <span v-if="serviceView === 'SUPPORT_IT'" class="text-red-500">*</span>
+        </label>
         <input 
           v-model="location"
           type="text" 
-          placeholder="Cth: Lantai 3, Ruang Finance"
+          :placeholder="serviceView === 'SUPPORT_IT' ? 'Cth: Lantai 3, Ruang Finance' : 'Cth: Cabang Yogyakarta, bagian Akademik'"
           class="w-full px-4 py-3 rounded-lg border border-border bg-surface text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium"
         />
       </div>
@@ -346,6 +361,7 @@ const description = ref('');
 const expectedBehavior = ref('');
 const unit = ref('');
 const channel = ref('FORM');
+const contact = ref('');
 const sinceAt = ref('');
 const affectedScope = ref('');
 const workStatus = ref('');
@@ -412,6 +428,7 @@ const handleSubmit = async () => {
   if (!projectKendala.value.trim()) {
     return void missing(serviceView.value === 'SUPPORT_IT' ? 'Mohon pilih Kendala yang dialami.' : 'Mohon pilih Aplikasi yang sedang dikerjakan.');
   }
+  if (!contact.value.trim()) return void missing('Mohon isi Kontak yang dapat dihubungi.');
   if (!title.value.trim()) return void missing('Mohon isi Judul (maksimal 120 karakter).');
   if (!description.value.trim()) return void missing('Mohon isi "Yang Terjadi".');
   if (!expectedBehavior.value.trim()) return void missing('Mohon isi "Yang Seharusnya Terjadi".');
@@ -432,10 +449,11 @@ const createTicket = async (shouldIssue: boolean = false) => {
   try {
     const ticketPayload = {
       title: title.value.trim(),
+      contact: contact.value.trim(),
       category: serviceView.value === 'SUPPORT_IT' ? 'Support IT' : 'IT Programmer',
       project_kendala: projectKendala.value,
       submodule: submodule.value,
-      location: serviceView.value === 'IT_PROGRAMMER' ? '' : location.value.trim(),
+      location: location.value.trim(),
       description: description.value.trim(),
       expected_behavior: expectedBehavior.value.trim(),
       unit: pelaporIdentity.value?.unit || unit.value || undefined,
@@ -491,6 +509,7 @@ const closeSuccessModalAndGoMain = () => {
 
 const resetForm = () => {
   title.value = '';
+  contact.value = '';
   description.value = '';
   expectedBehavior.value = '';
   sinceAt.value = '';

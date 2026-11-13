@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import { sql } from 'drizzle-orm';
 import { db } from './client';
 import { seedRbac } from '../services/rbac';
+import { seedSlaMaster } from '../services/sla-master';
 import {
   companies, divisions, users, companySettings, categories, projectKendala, submodules, vendors,
   tickets, ticketMembers, worklogs, comments, internalNotes, files, worklogFiles, commentFiles,
@@ -90,6 +91,7 @@ function ticket(t: {
     workStatus: 'DAPAT_MENUNGGU',
     evidenceSteps: '<ol><li>Buka menu terkait</li><li>Kendala <strong>muncul</strong></li></ol>',
     channel: 'FORM',
+    contact: user(requester).email,
     ...rest,
     submodule: t.submodule ?? null,
     createdBy: creator,
@@ -384,7 +386,13 @@ const TICKETS: TicketIn[] = [
     ...(PATCH[t.id] ?? {}),
   })),
   ...EXTRA_TICKETS,
-].map((t): TicketIn => ({ ...t, triagedAt: t.ticketType ? addMin(t.acknowledgedAt ?? t.createdAt, 10) : null }));
+].map((t): TicketIn => ({
+  ...t,
+  triagedAt: t.ticketType ? addMin(t.acknowledgedAt ?? t.createdAt, 10) : null,
+  // Selesai pertama = penyelesaian asli (Dialihkan bukan penyelesaian); tiket Insiden dinilai kelengkapannya oleh PM.
+  firstCompletedAt: t.completedAt && !t.transferTarget ? t.completedAt : null,
+  dataComplete: t.ticketType === 'INSIDEN' ? 'YA' : null,
+}));
 
 // Riwayat audit diturunkan dari data tiket agar selalu cocok dengan status dan timestamp-nya.
 function auditRows() {
@@ -692,6 +700,7 @@ console.log('='.repeat(50));
 
 await cleanup();
 await seedRbac();
+await seedSlaMaster();
 const hash = await bcrypt.hash('password123', 10);
 
 await seedOrg(hash);

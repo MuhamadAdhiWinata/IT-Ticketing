@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { AppUser, Ticket, CategoryItem, ProjectKendalaItem, SubmoduleItem, CompanyItem, DivisionItem, PendingAttachment } from '~/types';
+import type { TriageMaster, AppUser, Ticket, CategoryItem, ProjectKendalaItem, SubmoduleItem, CompanyItem, DivisionItem, PendingAttachment } from '~/types';
 import { useAuthStore } from '~/stores/auth';
 import { refreshThemeTokens } from '~/composables/useCompany';
 import { apiFetch } from '~/services/api';
@@ -20,6 +20,7 @@ export const useAppStore = defineStore('app', {
     myTickets: [] as Ticket[],
     myTicketsLoading: false,
     categories: [] as CategoryItem[],
+    triageMaster: null as TriageMaster | null,
     projectKendala: [] as ProjectKendalaItem[],
     submodules: [] as SubmoduleItem[],
     companies: [] as CompanyItem[],
@@ -47,6 +48,15 @@ export const useAppStore = defineStore('app', {
       }
     },
 
+    // Master Dampak, Urgensi, Prioritas P1-P4 dan matriksnya (dipakai panel triase, dashboard, dan tab master).
+    async loadTriageMaster() {
+      try {
+        this.triageMaster = (await apiFetch<{ data: TriageMaster }>('/api/triage-master')).data;
+      } catch (e) {
+        console.error('Gagal memuat master triase:', e);
+      }
+    },
+
     // Klaim, matriks peran, dan menu sidebar dari DB (sebelum halaman dirender agar filter peran benar).
     async loadRbac() {
       try {
@@ -65,6 +75,7 @@ export const useAppStore = defineStore('app', {
       const authStore = useAuthStore();
       this.currentUser = authStore.user;
       await this.loadRbac();
+      await this.loadTriageMaster();
 
       const [usersRes, ticketsRes, catsRes, projectKendalaRes, submodsRes, prefsRes, companiesRes, divisionsRes] = await Promise.all([
         apiFetch<{ success: boolean; data: AppUser[] }>('/api/users').catch(() => null),

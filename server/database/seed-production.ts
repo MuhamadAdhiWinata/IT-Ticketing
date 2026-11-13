@@ -7,6 +7,7 @@ import { randomBytes } from 'crypto';
 import { eq, sql } from 'drizzle-orm';
 import { db } from './client';
 import { seedRbac } from '../services/rbac';
+import { seedSlaMaster } from '../services/sla-master';
 import { users, userPreferences, companySettings, categories } from './schema';
 
 // Seeder production: data kosong, hanya akun admin, company_settings 'default', dan 2 kategori.
@@ -49,6 +50,9 @@ console.log('[SEED:PROD] categories: Support IT, IT Programmer siap.');
 
 await seedRbac();
 console.log('[SEED:PROD] peran, klaim, dan menu bawaan siap.');
+
+await seedSlaMaster();
+console.log('[SEED:PROD] master SLA bawaan siap.');
 
 console.log('[SEED:PROD] Selesai.');
 process.exit(0);
