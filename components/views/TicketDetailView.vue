@@ -25,16 +25,6 @@
           </p>
         </div>
       </div>
-      <div class="flex items-center justify-end sm:justify-start gap-2">
-        <button
-          @click="handlePrint"
-          title="Cetak Laporan Tiket (PDF)"
-          class="px-3 py-1.5 rounded-lg border border-border bg-surface text-foreground text-xs font-semibold hover:bg-muted dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5"
-        >
-          <Printer class="w-3.5 h-3.5" />
-          <span>Cetak PDF</span>
-        </button>
-      </div>
     </div>
 
     <!-- Main Content -->
@@ -483,9 +473,8 @@ import { useAuthStore } from '~/stores/auth';
 import { ref, computed, watch, nextTick } from 'vue';
 import { useAppStore } from '~/stores/app';
 import { apiFetch } from '~/services/api';
-import { ArrowLeft, CheckCircle2, Paperclip, Printer, Clock, ExternalLinkIcon, User, X, Download, Image as ImageIcon, FileText, File, Send, Lock, Play } from 'lucide-vue-next';
+import { ArrowLeft, CheckCircle2, Paperclip, Clock, ExternalLinkIcon, User, X, Download, Image as ImageIcon, FileText, File, Send, Lock, Play } from 'lucide-vue-next';
 import type { TicketStatus, TicketComment, TicketInternalNote, PendingAttachment } from '~/types';
-import { triggerPrintPDF } from '~/utils/export';
 import PriorityBadge from '~/components/common/PriorityBadge.vue';
 import { isImage, isPdf, getFileExtLabel } from '~/utils/fileHelpers';
 import { formatRequesterIdentity } from '~/utils/identity';
@@ -745,9 +734,5 @@ const handleSendNote = async () => {
   } finally {
     noteSending.value = false;
   }
-};
-
-const handlePrint = () => {
-  if (ticket.value) triggerPrintPDF(ticket.value.id);
 };
 </script>

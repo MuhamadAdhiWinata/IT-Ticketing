@@ -182,6 +182,22 @@ Password admin: dari env `ADMIN_PASSWORD` bila diisi, kalau tidak dibuat acak da
 ADMIN_PASSWORD="isi-password-kuat" DATABASE_URL="mysql2://..." pnpm seed
 ```
 
+Data awal dari file (opsional): isi `SEED_DIR` dengan folder berisi `<dataset>.csv` memakai format template menu Import (`companies`, `divisions`, `users`, `categories`, `projectKendala`, `submodules`, `vendors`). Diimpor berurutan dengan aturan yang sama dengan UI (id baru dibuat, id lama diperbarui, satu file salah = file itu tidak tertulis dan seeder berhenti). Password sementara akun baru tanpa kolom `password` dicetak sekali.
+
+```bash
+SEED_DIR=./seed-data DATABASE_URL="mysql2://..." pnpm seed
+```
+
+#### Import / template CSV (Master Data > Import / Template)
+
+Klaim `master.import` (bawaan hanya `SYSTEM_ADMIN`, bisa diberikan ke peran lain di Hak Akses). Dataset: Perusahaan, Divisi, Pengguna, Kategori, Aplikasi/Kendala, Modul, Vendor.
+
+- Unduh template per dataset (`GET /api/import/template/:dataset`) atau data saat ini (`GET /api/import/export/:dataset`, format sama, siap diedit lalu diimpor ulang; password pengguna tidak diekspor).
+- Unggah lewat `POST /api/import/:dataset` body `{ csv, dryRun }`. `dryRun: true` hanya memeriksa.
+- Kunci baris = `id`: id baru dibuat, id lama diperbarui. Satu baris salah = tidak ada yang tersimpan (semua-atau-tidak). Induk (perusahaan, divisi, kategori, aplikasi) diacu lewat id atau nama.
+- Akun baru tanpa `password` diberi password acak, ditampilkan sekali. Akun lama tanpa `password` tidak diubah.
+- Format CSV (bukan `.xlsx`; Excel membukanya langsung, pemisah koma atau titik koma). Maks 2 MB dan 5000 baris per file.
+
 #### `pnpm seed:demo` (dev/staging)
 
 **Menghapus data semua tabel yang ia isi, lalu mengisi ulang.** Jangan dijalankan di database yang berisi data nyata. ID bersifat tetap (mis. `TCK-202609-001`, `WL-001`, `CMT-001`), jadi seed ulang menghasilkan data identik.
