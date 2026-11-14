@@ -107,7 +107,7 @@ export const CommentSchema = z.object({
 });
 
 export const NoteSchema = z.object({
-  note: z.string().trim().min(1, 'Catatan wajib diisi').max(2000, 'Catatan maksimal 2000 karakter'),
+  note: z.string().trim().min(1, 'Catatan wajib diisi').max(20000, 'Catatan maksimal 20000 karakter'),
 });
 
 export const PreferencesSchema = z.object({

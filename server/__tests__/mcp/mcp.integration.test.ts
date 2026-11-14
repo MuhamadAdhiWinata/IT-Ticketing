@@ -71,7 +71,7 @@ describe('6. comments', () => {
     expect(list.data.comments.map((c: any) => c.message)).toEqual(['satu', 'dua']);
     expect(list.data.comments[0].user_id).toBe(IT_A.id);
     expect(await countWorklogs(id)).toBe(0);
-    expect((await w.call('add_comment', { ticketId: id, message: 'x'.repeat(2001) })).isError).toBe(true);
+    expect((await w.call('add_comment', { ticketId: id, message: 'x'.repeat(20001) })).isError).toBe(true);
   });
 
   it('internal notes are IT-only; requester sees comments of own ticket only', async () => {

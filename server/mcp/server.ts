@@ -10,7 +10,9 @@ import { addComment, addInternalNote } from '~/server/services/ticketing/discuss
 import { assignTicket, addMembers } from '~/server/services/ticketing/assignment';
 import { reopenTicket, transitionStatus, STATUSES } from '~/server/services/ticketing/workflow';
 import { addAttachments } from '~/server/services/ticketing/attachments';
-import { PHASES } from '~/utils/ticketSpec';
+import { createTicket } from '~/server/services/ticketing/create';
+import { linkTicket } from '~/server/services/ticketing/link';
+import { PHASES, UNITS } from '~/utils/ticketSpec';
 import { VISIBILITIES, MAX_FILE_BYTES } from '~/server/services/ticketing/common';
 
 type Kind = 'read' | 'write' | 'workflow' | 'attachment' | 'discovery';
@@ -30,7 +32,8 @@ function errorResult(e: any) {
 export function buildMcpServer(actor: Actor) {
   const server = new McpServer({ name: 'it-ticketing', version: '1.0.0' }, {
     instructions:
-      'Interface operasional IT-Ticketing untuk worker. Panggil get_allowed_actions sebelum menulis. ' +
+      'Interface operasional IT-Ticketing untuk worker. Panggil whoami untuk mengetahui peran, dan get_allowed_actions sebelum menulis. ' +
+      'Membuat tiket: get_ticket_form_schema, search_tickets (cek duplikat), lalu create_ticket. ' +
       'Minta konfirmasi worker sebelum transition_ticket_status, reopen_ticket, assign_ticket, atau add_ticket_members. ' +
       'Identitas pencatat selalu dari token; jangan kirim author/worker. Baca ulang data setelah menulis untuk verifikasi.',
   });
@@ -63,8 +66,16 @@ export function buildMcpServer(actor: Actor) {
   def('get_allowed_actions', 'discovery',
     'Status tiket saat ini, transisi status yang valid, aksi yang boleh dilakukan caller, tahap aktivitas yang tersedia, dan aturan workflow. Panggil sebelum menulis.',
     { ticketId }, a => getAllowedActions(db, actor, a.ticketId));
-  def('search_tickets', 'discovery', 'Cari tiket berdasarkan ID, nomor, judul, atau nama pemohon.',
-    { q: z.string().optional(), status: z.enum(STATUSES).optional(), limit: z.number().int().optional() }, a => q.searchTickets(actor, a));
+  def('whoami', 'discovery', 'Identitas pemilik token: id, nama, peran, unit, dan klaim aksi yang dimiliki.', {}, () => q.whoami(actor));
+  def('get_ticket_form_schema', 'discovery',
+    'Field wajib, aturan bersyarat, dan nilai valid untuk create_ticket: kategori > aplikasi > modul dari master, unit, prioritas, jumlah terdampak, status pekerjaan, kanal, jenis tiket, dampak, urgensi. Panggil sebelum create_ticket.',
+    {}, () => q.getFormSchema());
+  def('search_tickets', 'discovery',
+    'Cari tiket berdasarkan ID, nomor, judul, deskripsi, bukti, atau nama pemohon (mis. kode referensi di dalam isi tiket). Bisa difilter status, category, project_kendala (nama aplikasi), dan submodule. Gunakan sebelum create_ticket untuk memeriksa duplikat.',
+    {
+      q: z.string().optional(), status: z.enum(STATUSES).optional(), limit: z.number().int().optional(),
+      category: z.string().optional(), project_kendala: z.string().optional(), submodule: z.string().optional(),
+    }, a => q.searchTickets(actor, a));
   def('list_workers', 'discovery', 'Daftar pengguna IT (untuk assign_ticket / add_ticket_members).', {}, () => q.listWorkers(actor));
   def('list_vendors', 'discovery', 'Daftar vendor (untuk delegasi pada transition_ticket_status).', {}, () => q.listVendors(actor));
 
@@ -81,6 +92,40 @@ export function buildMcpServer(actor: Actor) {
     { ticketId }, a => q.listAttachments(actor, a.ticketId));
 
   // ── Write ──
+  def('create_ticket', 'write',
+    'Buat tiket baru (status awal DRAFT; diterbitkan bila shouldIssue tidak false), alur dan validasi sama dengan formulir UI. Pemohon = pemilik token, kecuali peran intake (PM/Duty) mengirim behalfUserId. Nilai category/project_kendala/submodule harus persis dari get_ticket_form_schema. Cek duplikat dengan search_tickets dulu dan minta konfirmasi worker. Kirim idempotencyKey agar retry tidak membuat tiket ganda. Jawaban berisi id tiket; baca ulang dengan get_ticket.',
+    {
+      title: z.string().min(1).max(120),
+      contact: z.string().min(1).max(255).describe('Kontak yang dapat dihubungi'),
+      description: z.string().min(1).describe('Yang terjadi'),
+      expected_behavior: z.string().min(1).describe('Yang seharusnya terjadi'),
+      category: z.enum(['Support IT', 'IT Programmer']),
+      project_kendala: z.string().min(1).describe('Nama aplikasi/kendala dari master'),
+      submodule: z.string().max(500).optional().describe('Nama modul dari master (opsional)'),
+      location: z.string().max(500).optional().describe('Wajib untuk Support IT'),
+      priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional(),
+      unit: z.enum(UNITS).optional().describe('Wajib bila akun pembuat belum punya unit'),
+      since_at: z.string().describe('Sejak kapan, YYYY-MM-DD HH:MM'),
+      affected_scope: z.string(),
+      work_status: z.string(),
+      workaround: z.string().max(2000).optional().describe('Wajib bila work_status=TERGANGGU'),
+      is_event: z.boolean().optional(),
+      evidence_steps: z.string().max(20000).optional().describe('Bukti / langkah; wajib kecuali ada lampiran'),
+      channel: z.string().optional(),
+      shouldIssue: z.boolean().optional(),
+      behalfUserId: z.string().optional().describe('Hanya peran intake: buat atas nama user ini'),
+      attachmentCount: z.number().int().min(0).optional().describe('Jumlah lampiran yang akan diunggah (add_attachment) setelah tiket dibuat'),
+      parentTicketId: z.string().optional().describe('Tautkan ke tiket induk/terkait (disimpan di referenced_ticket_id)'),
+      idempotencyKey: idem,
+    },
+    ({ idempotencyKey, parentTicketId, ...body }) =>
+      idempotent('create_ticket', { idempotencyKey }, tx => createTicket(actor, body, { strict: true, exec: tx, referencedTicketId: parentTicketId })), { write: true });
+
+  def('link_tickets', 'write',
+    'Tautkan tiket ke tiket induk/terkait (referenced_ticket_id). referencedTicketId dikosongkan = hapus tautan. Hanya IT. Kolom yang sama dipakai penanda "Duplikat dari" saat triase.',
+    { ticketId, referencedTicketId: z.string().min(1).optional(), idempotencyKey: idem },
+    a => idempotent('link_tickets', a, tx => linkTicket(actor, { ticketId: a.ticketId, referencedTicketId: a.referencedTicketId ?? null }, tx)), { write: true });
+
   def('add_ticket_activity', 'write',
     'Tambah aktivitas (worklog "Kirim") baru pada tiket. Selalu membuat record baru, tidak menimpa yang lama, dan TIDAK mengubah status tiket.',
     {
@@ -105,12 +150,12 @@ export function buildMcpServer(actor: Actor) {
     },
     a => idempotent('log_work_time', a, tx => logWorkTime(actor, a, {}, tx)), { write: true });
 
-  def('add_comment', 'write', 'Tambah komentar diskusi pada tiket (terlihat pemohon dan IT). Maks 2000 karakter. Bukan aktivitas kerja.',
-    { ticketId, message: z.string().min(1).max(2000), idempotencyKey: idem },
+  def('add_comment', 'write', 'Tambah komentar diskusi pada tiket (terlihat pemohon dan IT). Maks 20000 karakter, teks biasa atau HTML (markdown tidak dirender). Bukan aktivitas kerja.',
+    { ticketId, message: z.string().min(1).max(20000), idempotencyKey: idem },
     a => idempotent('add_comment', a, tx => addComment(actor, a, tx)), { write: true });
 
-  def('add_internal_note', 'write', 'Tambah catatan internal (hanya IT, tidak terlihat pemohon). Maks 2000 karakter.',
-    { ticketId, note: z.string().min(1).max(2000), idempotencyKey: idem },
+  def('add_internal_note', 'write', 'Tambah catatan internal (hanya IT, tidak terlihat pemohon). Maks 20000 karakter.',
+    { ticketId, note: z.string().min(1).max(20000), idempotencyKey: idem },
     a => idempotent('add_internal_note', a, tx => addInternalNote(actor, a, tx)), { write: true });
 
   // ── Workflow ──
