@@ -26,6 +26,7 @@ export const CreateTicketSchema = z.object({
   is_event: z.boolean().optional(),
   evidence_steps: z.string().trim().max(20000).nullable().optional(),
   channel: z.enum(values(CHANNELS)).optional(),
+  external_ref: z.string().trim().max(100, 'Kode referensi maksimal 100 karakter').nullish(),
   shouldIssue: z.boolean().optional(),
   behalfUserId: z.string().nullable().optional(),
   requestedByName: z.string().optional(),

@@ -211,6 +211,8 @@ export const tickets = mysqlTable('tickets', {
   evidenceSteps: text('evidence_steps'),
   channel: varchar('channel', { length: 20 }).notNull().default('FORM'), // FORM | PERCAKAPAN | INTERNAL
   contact: varchar('contact', { length: 255 }), // kontak yang dapat dihubungi (Tally: "Kontak yang dapat dihubungi")
+  // Kode referensi dari sistem luar (mis. kode form, ID gap dokumentasi). Bisa dicari dan difilter.
+  externalRef: varchar('external_ref', { length: 100 }),
 
   // Triase (PM)
   ticketType: varchar('ticket_type', { length: 30 }),
@@ -252,6 +254,7 @@ export const tickets = mysqlTable('tickets', {
   idxCreatedBy: index('idx_tickets_created_by').on(table.createdBy),
   idxAssignedTo: index('idx_tickets_assigned_to').on(table.assignedTo),
   idxCreatedAt: index('idx_tickets_created_at').on(table.createdAt),
+  idxExternalRef: index('idx_tickets_external_ref').on(table.externalRef),
 }));
 
 export const ticketsRelations = relations(tickets, ({ one, many }) => ({

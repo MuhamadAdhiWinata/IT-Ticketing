@@ -21,6 +21,7 @@ function brief(t: typeof tickets.$inferSelect) {
   return {
     id: t.id,
     ticket_number: t.ticketNumber,
+    external_ref: t.externalRef,
     title: t.title,
     status: t.status,
     priority: t.priority,
@@ -52,7 +53,7 @@ export async function listMyTickets(actor: Actor, input: { status?: string; limi
 }
 
 export async function searchTickets(actor: Actor, input: {
-  q?: string; status?: string; limit?: number; category?: string; project_kendala?: string; submodule?: string;
+  q?: string; status?: string; limit?: number; category?: string; project_kendala?: string; submodule?: string; external_ref?: string;
 }) {
   const limit = cap(input.limit, 10, 50);
   const conds = [];
@@ -61,12 +62,13 @@ export async function searchTickets(actor: Actor, input: {
     const p = `%${q.replace(/[\\%_]/g, m => `\\${m}`)}%`;
     const byRequester = db.select({ id: users.id }).from(users).where(like(users.name, p));
     // Deskripsi dan bukti ikut dicari supaya kode referensi di dalam isi tiket (mis. kode form) bisa ditemukan.
-    conds.push(or(like(tickets.id, p), like(tickets.title, p), like(tickets.ticketNumber, p), like(tickets.description, p), like(tickets.evidenceSteps, p), inArray(tickets.requestedBy, byRequester))!);
+    conds.push(or(like(tickets.id, p), like(tickets.title, p), like(tickets.ticketNumber, p), like(tickets.description, p), like(tickets.evidenceSteps, p), like(tickets.externalRef, p), inArray(tickets.requestedBy, byRequester))!);
   }
   if (input.status) conds.push(eq(tickets.status, input.status));
   if (input.category) conds.push(eq(tickets.category, input.category));
   if (input.project_kendala) conds.push(eq(tickets.projectKendala, input.project_kendala));
   if (input.submodule) conds.push(eq(tickets.submodule, input.submodule));
+  if (input.external_ref) conds.push(eq(tickets.externalRef, input.external_ref.trim()));
   if (!isIT(actor)) conds.push(or(eq(tickets.requestedBy, actor.id), eq(tickets.createdBy, actor.id))!);
   const rows = await db.select().from(tickets).where(conds.length ? and(...conds) : undefined).orderBy(desc(tickets.createdAt)).limit(limit);
   return { tickets: rows.map(brief) };

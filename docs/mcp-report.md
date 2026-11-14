@@ -10,7 +10,7 @@ Test = nomor poin di `server/__tests__/mcp/mcp.integration.test.ts`.
 | Fitur UI existing | MCP tool | Hak akses | Test | Status |
 |---|---|---|---|---|
 | Daftar tiket saya / dashboard | `list_my_tickets` | Semua user login (IT: assigned + member, pemohon: miliknya) | 1 | Selesai |
-| Cari tiket / tracking | `search_tickets` | Semua user login (non-IT hanya tiket miliknya). Cari juga di deskripsi dan bukti; filter `category`, `project_kendala`, `submodule` | 1, create-ticket | Selesai |
+| Cari tiket / tracking | `search_tickets` | Semua user login (non-IT hanya tiket miliknya). Cari juga di deskripsi, bukti, dan kode referensi; filter `category`, `project_kendala`, `submodule`, `external_ref` (persis) | 1, create-ticket | Selesai |
 | Buat tiket (CreateTicketView) | `create_ticket` | Semua user login. Pemohon = pemilik token; `behalfUserId` hanya peran intake (klaim `ticket.intake`). Aplikasi dan modul harus ada di master. `parentTicketId` menautkan ke tiket induk | create-ticket | Selesai |
 | Nilai valid form tiket | `get_ticket_form_schema` | Semua user login | create-ticket | Selesai |
 | Identitas dan klaim token | `whoami` | Semua user login | create-ticket | Selesai |
