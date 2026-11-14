@@ -10,7 +10,11 @@ Test = nomor poin di `server/__tests__/mcp/mcp.integration.test.ts`.
 | Fitur UI existing | MCP tool | Hak akses | Test | Status |
 |---|---|---|---|---|
 | Daftar tiket saya / dashboard | `list_my_tickets` | Semua user login (IT: assigned + member, pemohon: miliknya) | 1 | Selesai |
-| Cari tiket / tracking | `search_tickets` | Semua user login (non-IT hanya tiket miliknya) | 1 | Selesai |
+| Cari tiket / tracking | `search_tickets` | Semua user login (non-IT hanya tiket miliknya). Cari juga di deskripsi dan bukti; filter `category`, `project_kendala`, `submodule` | 1, create-ticket | Selesai |
+| Buat tiket (CreateTicketView) | `create_ticket` | Semua user login. Pemohon = pemilik token; `behalfUserId` hanya peran intake (klaim `ticket.intake`). Aplikasi dan modul harus ada di master. `parentTicketId` menautkan ke tiket induk | create-ticket | Selesai |
+| Nilai valid form tiket | `get_ticket_form_schema` | Semua user login | create-ticket | Selesai |
+| Identitas dan klaim token | `whoami` | Semua user login | create-ticket | Selesai |
+| Tautkan tiket induk/terkait | `link_tickets` | IT. Kolom `referenced_ticket_id` yang sama dengan "Duplikat dari" | create-ticket | Selesai |
 | Detail tiket | `get_ticket` | Pihak tiket; lampiran INTERNAL_ONLY disembunyikan dari non-IT | 1, 6, 14 | Selesai |
 | Daftar aktivitas | `list_ticket_activities` | Pihak tiket | 2-5 | Selesai |
 | Kirim aktivitas (tombol "Kirim") | `add_ticket_activity` | IT | 2-5, 10, 11, 12 | Selesai |
@@ -30,7 +34,7 @@ Test = nomor poin di `server/__tests__/mcp/mcp.integration.test.ts`.
 | UI membaca data hasil MCP | - | - | 14 | Selesai |
 | Daftar tool == matriks | - | - | 15 | Selesai |
 
-Total 20 tool. Tidak ada tool generik (`execute_sql`, `update_any_table`, `run_arbitrary_action`); test 15 memastikannya.
+Total 24 tool. Komentar dan catatan internal maksimal 20000 karakter, teks biasa atau HTML (markdown tidak dirender). Test create-ticket = `server/__tests__/mcp/create-ticket.integration.test.ts`. Tidak ada tool generik (`execute_sql`, `update_any_table`, `run_arbitrary_action`); test 15 memastikannya.
 
 ## 2. Workflow
 
