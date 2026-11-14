@@ -75,6 +75,7 @@ export function buildMcpServer(actor: Actor) {
     {
       q: z.string().optional(), status: z.enum(STATUSES).optional(), limit: z.number().int().optional(),
       category: z.string().optional(), project_kendala: z.string().optional(), submodule: z.string().optional(),
+      external_ref: z.string().optional().describe('Kecocokan persis dengan kode referensi tiket (mis. kode form MI014, ID gap D-MST-039)'),
     }, a => q.searchTickets(actor, a));
   def('list_workers', 'discovery', 'Daftar pengguna IT (untuk assign_ticket / add_ticket_members).', {}, () => q.listWorkers(actor));
   def('list_vendors', 'discovery', 'Daftar vendor (untuk delegasi pada transition_ticket_status).', {}, () => q.listVendors(actor));
@@ -112,6 +113,7 @@ export function buildMcpServer(actor: Actor) {
       is_event: z.boolean().optional(),
       evidence_steps: z.string().max(20000).optional().describe('Bukti / langkah; wajib kecuali ada lampiran'),
       channel: z.string().optional(),
+      external_ref: z.string().max(100).optional().describe('Kode referensi dari sistem luar (kode form, ID gap); bisa dicari lewat search_tickets.external_ref'),
       shouldIssue: z.boolean().optional(),
       behalfUserId: z.string().optional().describe('Hanya peran intake: buat atas nama user ini'),
       attachmentCount: z.number().int().min(0).optional().describe('Jumlah lampiran yang akan diunggah (add_attachment) setelah tiket dibuat'),

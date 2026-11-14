@@ -329,6 +329,7 @@ const intakeRows = computed(() => {
   const t = props.ticket;
   const rows = [
     { label: 'Kontak', value: t.contact || '-' },
+    ...(t.external_ref ? [{ label: 'Kode referensi', value: t.external_ref }] : []),
     { label: 'Unit', value: t.unit || '-' },
     { label: 'Cabang / bagian', value: t.location || '-' },
     { label: 'Kanal Asal', value: labelOf(CHANNELS, t.channel) },

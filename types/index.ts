@@ -174,6 +174,7 @@ export interface Ticket {
   evidence_steps?: string | null;
   channel?: string;
   contact?: string | null;
+  external_ref?: string | null;
   data_complete?: 'YA' | 'TIDAK' | null;
   first_completed_at?: string | null;
   ticket_type?: string | null;

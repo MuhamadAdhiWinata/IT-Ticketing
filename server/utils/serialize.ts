@@ -142,6 +142,7 @@ export function serializeTicket(t: any) {
     channel: t.channel ?? 'FORM',
 
     contact: t.contact ?? null,
+    external_ref: t.externalRef ?? null,
     data_complete: t.dataComplete ?? null,
     first_completed_at: t.firstCompletedAt ?? null,
     sla: t.sla ?? null,

@@ -65,6 +65,7 @@ export async function createTicket(actor: Actor, input: unknown, opts: { strict?
       status: 'DRAFT',
       unit,
       contact: v.contact,
+      externalRef: v.external_ref || null,
       expectedBehavior: v.expected_behavior,
       sinceAt: v.since_at.replace('T', ' ').slice(0, 19),
       affectedScope: v.affected_scope,
@@ -105,7 +106,7 @@ export async function createTicket(actor: Actor, input: unknown, opts: { strict?
     }
 
     return {
-      id, ticket_number: ticketNumber, status: 'DRAFT', issued: shouldIssue,
+      id, ticket_number: ticketNumber, external_ref: v.external_ref || null, status: 'DRAFT', issued: shouldIssue,
       requested_by: requester.id, requested_by_name: requester.name, created_by: me.id, unit, channel,
     };
   });
